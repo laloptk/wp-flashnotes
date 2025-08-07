@@ -1,0 +1,9 @@
+{
+    "name": "wp-flashnotes/wp-flashnotes",
+    "description": "A brief description of your package.",
+    "autoload": {
+        "psr-4": {
+            "WPFlashNotes\\": "includes/"
+        }
+    }
+}

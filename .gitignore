@@ -1,0 +1,33 @@
+# Composer
+/vendor/
+
+# Node.js dependencies
+/node_modules/
+
+# Build files
+/build/
+/dist/
+
+# Debugging files
+*.log
+*.error_log
+
+# IDE/Editor files
+*.swp
+*.swo
+.vscode/
+.idea/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# WordPress debug file
+wp-content/debug.log
+
+# Plugin-specific build artifacts (e.g., minified files)
+wp-content/plugins/wp-flashnotes/build/
+
+# Backup files
+*.bak
+*.tmp
