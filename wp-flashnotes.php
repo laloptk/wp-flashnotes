@@ -10,6 +10,10 @@
 
 defined( 'ABSPATH' ) || exit;
 
+if (!defined('WPFN_PLUGIN_FILE')) {
+    define('WPFN_PLUGIN_FILE', __FILE__);
+}
+
 // Autoloading PSR-4 classes
 require_once plugin_dir_path( __FILE__ ) . 'vendor/autoload.php';
 
