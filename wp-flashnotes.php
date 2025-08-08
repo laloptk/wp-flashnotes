@@ -79,7 +79,7 @@ register_activation_hook(WPFN_PLUGIN_FILE, function () {
 /** ----------------------------------------------------------------
  * Schema bootstrap (registers activation hook & builds tables)
  * --------------------------------------------------------------- */
-require_once WPFN_PLUGIN_DIR . 'includes/schema/bootstrap.php';
+require_once WPFN_PLUGIN_DIR . 'includes/DataBase/Schema/bootstrap.php';
 
 /** ----------------------------------------------------------------
  * i18n
