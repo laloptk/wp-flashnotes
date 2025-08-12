@@ -35,12 +35,20 @@ abstract class BaseRepository
      * @return int Inserted ID.
      * @throws Exception On validation or DB error.
      */
-    public function insert(array $data): int
+   public function insert(array $data): int
     {
         $sanitized = $this->sanitize_data($data);
-        $format    = $this->build_format($sanitized);
 
+        if (empty($sanitized)) {
+            throw new Exception(sprintf(
+                'Insert aborted in %s: no valid fields provided.',
+                $this->get_table_name()
+            ));
+        }
+
+        $format = $this->build_format($sanitized);
         $result = $this->wpdb->insert($this->get_table_name(), $sanitized, $format);
+
         if ($result === false) {
             throw new Exception(sprintf(
                 'Insert failed in %s: %s',
