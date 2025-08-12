@@ -30,12 +30,14 @@ final class NotesTable extends BaseTable
                 id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
                 title VARCHAR(255) NOT NULL,
                 block_id VARCHAR(128) DEFAULT NULL,
+                user_id BIGINT UNSIGNED NOT NULL DEFAULT 0,
                 content LONGTEXT NOT NULL,
                 deleted_at DATETIME DEFAULT NULL,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                 PRIMARY KEY (id),
-                UNIQUE KEY uq_block_id (block_id)
+                UNIQUE KEY uq_block_id (block_id),
+                KEY idx_user_id (user_id)
             ) {$engine};";
     }
 }
