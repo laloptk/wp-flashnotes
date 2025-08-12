@@ -29,6 +29,7 @@ if (!defined('WPFN_VERSION')) {
     define('WPFN_VERSION', '1.0.0');
 }
 
+
 /** ----------------------------------------------------------------
  * Composer Autoload (REQUIRED)
  * - If missing, show admin error, auto-deactivate, and stop loading.
@@ -80,6 +81,8 @@ register_activation_hook(WPFN_PLUGIN_FILE, function () {
  * Schema bootstrap (registers activation hook & builds tables)
  * --------------------------------------------------------------- */
 require_once WPFN_PLUGIN_DIR . 'includes/DataBase/Schema/bootstrap.php';
+require_once WPFN_PLUGIN_DIR . 'includes/REST/bootstrap.php';
+require_once WPFN_PLUGIN_DIR . 'includes/CPT/bootstrap.php';
 
 /** ----------------------------------------------------------------
  * i18n
@@ -131,3 +134,125 @@ function wpfn_enqueue_admin_assets(): void {
     // wp_enqueue_script('wpfn-admin', WPFN_PLUGIN_URL . 'assets/js/admin.js', ['wp-element'], WPFN_VERSION, true);
 }
 add_action('admin_enqueue_scripts', 'wpfn_enqueue_admin_assets');
+
+if (defined('WP_CLI') && WP_CLI) {
+    require_once WPFN_PLUGIN_DIR . 'includes/CLI/crud.php';
+    require_once WPFN_PLUGIN_DIR . 'includes/CLI/testSetsCrudCommand.php';
+    require_once WPFN_PLUGIN_DIR . 'includes/CLI/testCardSetRelationsCommand.php';
+    require_once WPFN_PLUGIN_DIR . 'includes/CLI/testObjectUsageCommand.php';
+}
+require_once WPFN_PLUGIN_DIR . 'includes/Dev/crud-smoke.php';
+
+// --- One-time seed: 30 cards + 30 notes ------------------------------------
+add_action('plugins_loaded', function () {
+    // Change the key if you want to run it again later.
+    $flag_key = 'wpfn_seed_content_v2_done';
+
+    if (get_option($flag_key)) {
+        return; // already seeded
+    }
+
+    // Optional: only seed for admins to avoid doing this in public traffic.
+    if (!is_admin()) {
+        return;
+    }
+
+    // Ensure repos are loadable
+    $cardsRepoClass = '\WPFlashNotes\Repos\CardsRepository';
+    $notesRepoClass = '\WPFlashNotes\Repos\NotesRepository';
+    if (!class_exists($cardsRepoClass) || !class_exists($notesRepoClass)) {
+        error_log('[WPFlashNotes][seed] Repository classes not found. Aborting seed.');
+        return;
+    }
+
+    // Ensure tables exist (cheap check + run tasks if available)
+    global $wpdb;
+    $needed = ['wpfn_cards', 'wpfn_notes'];
+    if (function_exists('wpfn_schema_tasks')) {
+        $tasks = wpfn_schema_tasks();
+        foreach ($needed as $slug) {
+            $table = $wpdb->prefix . $slug;
+            $found = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table));
+            if ($found !== $table) {
+                foreach ($tasks as $t) {
+                    if (($t['slug'] ?? '') === $slug) {
+                        ($t['run'])();
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    $cardsRepo = new $cardsRepoClass();
+    $notesRepo = new $notesRepoClass();
+
+    // Helpers
+    $uuid = function () { return function_exists('wp_generate_uuid4') ? wp_generate_uuid4() : uniqid(); };
+
+    $insert_card = function ($title, $answer) use ($cardsRepo) {
+        // Try both payload shapes to match your repo schema.
+        try {
+            return $cardsRepo->insert([
+                'title'  => $title,
+                'answer' => $answer,
+            ]);
+        } catch (\Throwable $e) {
+            // Fallback if repo expects 'question' instead of 'title'
+            return $cardsRepo->insert([
+                'question' => $title,
+                'answer'   => $answer,
+            ]);
+        }
+    };
+
+    $insert_note = function ($title, $content) use ($notesRepo) {
+        // Minimal payload based on your previous smoke test (block_id optional/omitted)
+        return $notesRepo->insert([
+            'title'   => $title,
+            'content' => $content,
+        ]);
+    };
+
+    $card_ids = [];
+    $note_ids = [];
+    $errors   = [];
+
+    // Create 30 cards
+    for ($i = 1; $i <= 30; $i++) {
+        try {
+            $id = $insert_card(
+                "Seed Card {$i}",
+                "Seed answer {$i}"
+            );
+            $card_ids[] = (int) $id;
+        } catch (\Throwable $e) {
+            $errors[] = "card {$i}: " . $e->getMessage();
+        }
+    }
+
+    // Create 30 notes
+    for ($i = 1; $i <= 30; $i++) {
+        try {
+            $content = '<p>Seed note ' . $i . ' — ' . esc_html(($uuid)()) . '</p>';
+            $id = $insert_note(
+                "Seed Note {$i}",
+                $content
+            );
+            $note_ids[] = (int) $id;
+        } catch (\Throwable $e) {
+            $errors[] = "note {$i}: " . $e->getMessage();
+        }
+    }
+
+    // Log summary and mark as done
+    error_log('[WPFlashNotes][seed] cards=' . count($card_ids) . ' notes=' . count($note_ids) . ' errors=' . count($errors));
+    if ($errors) {
+        foreach ($errors as $err) {
+            error_log('[WPFlashNotes][seed][error] ' . $err);
+        }
+    }
+
+    update_option($flag_key, 1, false); // mark as done (autoload off)
+}, 20);
+
