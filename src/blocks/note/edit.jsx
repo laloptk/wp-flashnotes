@@ -6,8 +6,6 @@ export default function Edit({ attributes, setAttributes }) {
   const blockProps = useBlockProps({ className: 'wpfn-note' });
   const { data, loading, error } = useFetch('notes');
 
-  console.log(data);
-
   return (
     <div {...blockProps}>
       <RichText
