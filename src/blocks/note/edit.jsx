@@ -1,9 +1,12 @@
-// src/blocks/note/edit.jsx
 import { useBlockProps, RichText } from '@wordpress/block-editor';
+import useFetch from '../../hooks/useFetch';
 
 export default function Edit({ attributes, setAttributes }) {
   const { title = '', contentDraft = '' } = attributes;
   const blockProps = useBlockProps({ className: 'wpfn-note' });
+  const { data, loading, error } = useFetch('notes');
+
+  console.log(data);
 
   return (
     <div {...blockProps}>

@@ -21,7 +21,7 @@ abstract class BaseBlock
         $blocks_folder_slug = $this->get_blocks_slug();
         $block_folder_name = $this->get_block_folder_name();
         $filename = $this->get_block_meta_filename();
-        $filepath = WPFN_PLUGIN_DIR . $blocks_folder_slug . $block_folder_name . $filename;
+        $filepath = WPFN_PLUGIN_DIR . $blocks_folder_slug . $block_folder_name . "/" . $filename;
 
         if(! file_exists($filepath)) {
             throw new \RuntimeException("Missing block.json at: {$filepath}");
@@ -37,9 +37,9 @@ abstract class BaseBlock
             $args['render_callback'] = [$this, 'render'];
         }
 
-        $block_pathfile = $this->get_block_pathfile();
+        $block_filepath = $this->get_block_pathfile();
 
-        register_block_type_from_metadata( $block_pathfile, $args );
+        register_block_type_from_metadata( $block_filepath, $args );
     }
 
     protected function get_args(): array {

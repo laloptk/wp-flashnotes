@@ -8,7 +8,6 @@ final class NoteBlock extends BaseBlock
 {
     protected function get_block_folder_name(): string
     {
-        // Change to 'notes' if your folder is named that.
         return 'note';
     }
 

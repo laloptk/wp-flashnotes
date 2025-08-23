@@ -1,7 +1,7 @@
 import apiFetch from '@wordpress/api-fetch';
 import { addQueryArgs } from '@wordpress/url';
 
-class ResourceAPIService {
+export default class ResourceAPIService {
     
     constructor(type) {
         this.type = type;
@@ -13,10 +13,11 @@ class ResourceAPIService {
         return apiFetch(args);
     }
 
-    get(query_params = {}) {
+    get(query_params, { signal } = {}) {
         const args = {
             path: addQueryArgs(this.path, query_params),
             method: 'GET',
+            signal,
         }
         
         return this.request(args);
@@ -53,7 +54,7 @@ class ResourceAPIService {
         }
     }
 
-    create(body = {}) {
+    create(body = {}, { signal } = {}) {
         if(Object.keys(body).length === 0) {
             throw new Error('Body cannot be empty');
         }
@@ -62,6 +63,7 @@ class ResourceAPIService {
             path: this.path,
             method: 'POST',
             data: body,
+            signal,
         }
 
         return this.request(args);
