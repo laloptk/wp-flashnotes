@@ -1,6 +1,4 @@
 <?php
-// includes/helpers/parts.php
-declare(strict_types=1);
 
 namespace WPFlashNotes\Helpers;
 

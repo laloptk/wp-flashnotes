@@ -29,6 +29,9 @@ if (!defined('WPFN_VERSION')) {
     define('WPFN_VERSION', '1.0.0');
 }
 
+define( 'WPFN_API_VERSION',     1 );              // bump when API changes
+define( 'WPFN_API_NAMESPACE',   'wpfn/v' . WPFN_API_VERSION ); // e.g. "wpfn/v1"
+
 
 /** ----------------------------------------------------------------
  * Composer Autoload (REQUIRED)
@@ -113,14 +116,6 @@ function wpfn_register_post_types(): void {
 add_action('init', 'wpfn_register_post_types');
 
 /** ----------------------------------------------------------------
- * REST API routes
- * --------------------------------------------------------------- */
-function wpfn_register_api_routes(): void {
-    // register_rest_route(...);
-}
-add_action('rest_api_init', 'wpfn_register_api_routes');
-
-/** ----------------------------------------------------------------
  * Assets
  * --------------------------------------------------------------- */
 function wpfn_enqueue_front_assets(): void {
@@ -133,7 +128,14 @@ function wpfn_enqueue_admin_assets(): void {
     // wp_enqueue_style('wpfn-admin', WPFN_PLUGIN_URL . 'assets/css/admin.css', [], WPFN_VERSION);
     // wp_enqueue_script('wpfn-admin', WPFN_PLUGIN_URL . 'assets/js/admin.js', ['wp-element'], WPFN_VERSION, true);
 }
-add_action('admin_enqueue_scripts', 'wpfn_enqueue_admin_assets');
+add_action('admin_enqueue_scripts', 'wpfn_enqueue_admin_assets');// wp-flashnotes.php (enqueue)
+
+add_action( 'enqueue_block_editor_assets', function () {
+    wp_localize_script( 'wpfn-blocks', 'WPFlashNotes', [
+        'apiNamespace' => WPFN_API_NAMESPACE,                 // "wpfn/v1"
+        'restUrl'      => esc_url_raw( rest_url( WPFN_API_NAMESPACE ) ), // "https://site/wp-json/wpfn/v1"
+    ] );
+} );
 
 if (defined('WP_CLI') && WP_CLI) {
     require_once WPFN_PLUGIN_DIR . 'includes/CLI/crud.php';

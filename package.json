@@ -1,6 +1,6 @@
 {
   "devDependencies": {
-    "@wordpress/scripts": "^30.21.0"
+    "@wordpress/scripts": "^30.22.0"
   },
   "scripts": {
     "build": "wp-scripts build",

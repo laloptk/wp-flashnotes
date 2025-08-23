@@ -13,8 +13,7 @@ abstract class BaseController extends WP_REST_Controller
 {
     public function __construct()
     {
-        $this->namespace = 'wpfn/v1'; // All endpoints live under /wp-json/wpfn/v1/...
-        // Child classes should set $this->rest_base
+        $this->namespace = \WPFN_API_NAMESPACE;
     }
 
     protected function ok($data, int $status = 200): WP_REST_Response

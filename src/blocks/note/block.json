@@ -1,0 +1,39 @@
+{
+  "apiVersion": 3,
+  "name": "wpfn/note",
+  "title": "FlashNotes: Note",
+  "category": "widgets",
+  "icon": "sticky",
+  "description": "Create or reference a study note and display it.",
+  "supports": {
+    "html": false,
+    "anchor": true
+  },
+  "attributes": {
+    "noteId": {
+      "type": "integer"
+    },
+    "title": {
+      "type": "string",
+      "default": ""
+    },
+    "contentDraft": {
+      "type": "string",
+      "source": "text",
+      "selector": ".wpfn-note__content"
+    },
+    "blockId": {
+      "type": "string"
+    },
+    "setIds": {
+      "type": "array",
+      "items": {
+        "type": "integer"
+      },
+      "default": []
+    }
+  },
+  "editorScript": "file:./index.js",
+  "style": "file:./style.css",
+  "render": "file:./render.php"
+}
