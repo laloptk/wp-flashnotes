@@ -79,42 +79,54 @@ abstract class BaseRepository
         return $row ?: null;
     }
 
-    /**
-     * Update fields on a row.
-     *
-     * @param int   $id
-     * @param array $data
-     * @return bool True if at least one row updated; false if no change.
-     * @throws Exception On validation or DB error.
-     */
     public function update(int $id, array $data): bool
     {
         $id        = $this->validate_id($id);
         $sanitized = $this->sanitize_data($data);
         if (!$sanitized) {
-            // Nothing to update.
             return false;
         }
 
-        $format = $this->build_format($sanitized);
-        $result = $this->wpdb->update(
-            $this->get_table_name(),
-            $sanitized,
-            ['id' => $id],
-            $format,
-            ['%d']
+        $table   = $this->get_table_name();
+        $formats = $this->fieldFormats();
+
+        // Build SET list
+        $setParts = [];
+        $values   = [];
+        foreach ($sanitized as $col => $val) {
+            $setParts[] = "`{$col}` = " . ($formats[$col] ?? (is_int($val) ? '%d' : '%s'));
+            $values[]   = $val;
+        }
+
+        // Build OR diff conditions: skip null-safe issues by using <=> for null equality
+        $diffParts = [];
+        foreach ($sanitized as $col => $val) {
+            $diffParts[] = "NOT (`{$col}` <=> " . ($formats[$col] ?? (is_int($val) ? '%d' : '%s')) . ")";
+            $values[]    = $val;
+        }
+
+        $values[] = $id;
+
+        $sql = $this->wpdb->prepare(
+            "UPDATE {$table}
+            SET " . implode(', ', $setParts) . "
+            WHERE id = %d
+            AND (" . implode(' OR ', $diffParts) . ")",
+            ...$values
         );
 
+        $result = $this->wpdb->query($sql);
         if ($result === false) {
             throw new Exception(sprintf(
                 'Update failed in %s: %s',
-                $this->get_table_name(),
+                $table,
                 $this->wpdb->last_error ?: 'unknown error'
             ));
         }
 
         return $result > 0;
     }
+
 
     /**
      * Hard delete a row by ID.
