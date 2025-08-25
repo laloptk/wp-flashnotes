@@ -15,12 +15,17 @@
     },
     "title": {
       "type": "string",
-      "default": ""
+      "default": "",
+      "selector": ".wpfn-note__title"
     },
     "contentDraft": {
       "type": "string",
-      "source": "text",
+      "default": "text",
       "selector": ".wpfn-note__content"
+    },
+    "hide": {
+      "type": "boolean",
+      "default": "false"
     },
     "blockId": {
       "type": "string"

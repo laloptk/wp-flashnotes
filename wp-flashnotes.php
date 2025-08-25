@@ -145,3 +145,19 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	require_once WPFN_PLUGIN_DIR . 'includes/CLI/testCardSetRelationsCommand.php';
 	require_once WPFN_PLUGIN_DIR . 'includes/CLI/testObjectUsageCommand.php';
 }
+
+add_filter( 'wp_insert_post_data', 'my_custom_pre_save_function', 10, 2 );
+function my_custom_pre_save_function( $data, $postarr ) {
+    // Check if it's the specific post type you want to modify
+    if ( 'your_custom_post_type' === $data['post_type'] ) {
+        // Modify the post title before saving
+
+        // Add or modify custom meta data
+        // This requires using update_post_meta or add_post_meta
+        // after the post is actually saved, as $post_id is not available here.
+    }
+
+    error_log('data: ' . substr(wp_json_encode($data['post_content']) /*. "Postarr: " . $postarr*/, 0, 2000));
+    
+    return $data;
+}
