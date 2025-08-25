@@ -6,10 +6,13 @@
 
 use WPFlashNotes\Blocks\NoteBlock;
 
-//Instantiate CPTs
+// Instantiate CPTs
 $note_block = new NoteBlock();
 
 // Hook registration
-add_action( 'init', function () use ( $note_block ): void {
-    $note_block->register();
-});
+add_action(
+	'init',
+	function () use ( $note_block ): void {
+		$note_block->register();
+	}
+);

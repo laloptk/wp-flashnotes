@@ -1,0 +1,1 @@
+wp i18n make-pot . languages/wp-flashnotes.pot --exclude=node_modules,tests,vendor

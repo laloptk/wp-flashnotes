@@ -2,7 +2,7 @@
 
 namespace WPFlashNotes\Repos;
 
-defined('ABSPATH') || exit;
+defined( 'ABSPATH' ) || exit;
 
 use Exception;
 use WPFlashNotes\BaseClasses\BaseRepository;
@@ -20,263 +20,257 @@ use WPFlashNotes\BaseClasses\BaseRepository;
  *  - created_at DATETIME DEFAULT CURRENT_TIMESTAMP
  *  - updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
  */
-class SetsRepository extends BaseRepository
-{
-    /**
-     * Cache full table name.
-     */
-    protected string $table;
+class SetsRepository extends BaseRepository {
 
-    public function __construct()
-    {
-        parent::__construct();
-        $this->table = $this->wpdb->prefix . 'wpfn_sets';
-    }
+	/**
+	 * Cache full table name.
+	 */
+	protected string $table;
 
-    /**
-     * BaseRepository requirement.
-     */
-    protected function get_table_name(): string
-    {
-        return $this->table;
-    }
+	public function __construct() {
+		parent::__construct();
+		$this->table = $this->wpdb->prefix . 'wpfn_sets';
+	}
 
-    /**
-     * Map of field formats for wpdb insert/update.
-     *
-     * NOTE: We omit formats for fields we purposely don't accept (e.g., id).
-     * For nullable columns like post_id, we simply don't include the key
-     * when the value is null/zero so wpdb won't coerce it to 0.
-     */
-    protected function fieldFormats(): array
-    {
-        return [
-            'title'       => '%s',
-            'post_id'     => '%d',
-            'set_post_id' => '%d',
-            'user_id'     => '%d',
-            // created_at / updated_at are DB-managed; never set from app.
-        ];
-    }
+	/**
+	 * BaseRepository requirement.
+	 */
+	protected function get_table_name(): string {
+		return $this->table;
+	}
 
-    /**
-     * Sanitize & validate payload.
-     *
-     * Rules:
-     *  - title: required (non-empty) when present; sanitized text
-     *  - post_id: optional; if falsy -> omitted (keeps NULL in DB)
-     *  - set_post_id: positive int when present
-     *  - user_id: positive int when present
-     *  - created_at / updated_at: ignored (DB-managed)
-     *  - id: ignored (auto-increment)
-     *
-     * Throw Exception on invalid input.
-     */
-    protected function sanitize_data(array $data): array
-    {
-        $out = [];
+	/**
+	 * Map of field formats for wpdb insert/update.
+	 *
+	 * NOTE: We omit formats for fields we purposely don't accept (e.g., id).
+	 * For nullable columns like post_id, we simply don't include the key
+	 * when the value is null/zero so wpdb won't coerce it to 0.
+	 */
+	protected function fieldFormats(): array {
+		return array(
+			'title'       => '%s',
+			'post_id'     => '%d',
+			'set_post_id' => '%d',
+			'user_id'     => '%d',
+			// created_at / updated_at are DB-managed; never set from app.
+		);
+	}
 
-        if (array_key_exists('title', $data)) {
-            $title = trim(wp_strip_all_tags((string) $data['title']));
-            if ($title === '') {
-                throw new Exception('Title cannot be empty.');
-            }
-            $out['title'] = $title;
-        }
+	/**
+	 * Sanitize & validate payload.
+	 *
+	 * Rules:
+	 *  - title: required (non-empty) when present; sanitized text
+	 *  - post_id: optional; if falsy -> omitted (keeps NULL in DB)
+	 *  - set_post_id: positive int when present
+	 *  - user_id: positive int when present
+	 *  - created_at / updated_at: ignored (DB-managed)
+	 *  - id: ignored (auto-increment)
+	 *
+	 * Throw Exception on invalid input.
+	 */
+	protected function sanitize_data( array $data ): array {
+		$out = array();
 
-        if (array_key_exists('post_id', $data)) {
-            $pid = absint($data['post_id']);
-            if ($pid > 0) {
-                $out['post_id'] = $pid;
-            }
-            // if null/0/empty -> omit key to keep column NULL
-        }
+		if ( array_key_exists( 'title', $data ) ) {
+			$title = trim( wp_strip_all_tags( (string) $data['title'] ) );
+			if ( $title === '' ) {
+				throw new Exception( 'Title cannot be empty.' );
+			}
+			$out['title'] = $title;
+		}
 
-        if (array_key_exists('set_post_id', $data)) {
-            $spid = absint($data['set_post_id']);
-            if ($spid <= 0) {
-                throw new Exception('set_post_id must be a positive integer.');
-            }
-            $out['set_post_id'] = $spid;
-        }
+		if ( array_key_exists( 'post_id', $data ) ) {
+			$pid = absint( $data['post_id'] );
+			if ( $pid > 0 ) {
+				$out['post_id'] = $pid;
+			}
+			// if null/0/empty -> omit key to keep column NULL
+		}
 
-        if (array_key_exists('user_id', $data)) {
-            $uid = absint($data['user_id']);
-            if ($uid <= 0) {
-                throw new Exception('user_id must be a positive integer.');
-            }
-            $out['user_id'] = $uid;
-        }
+		if ( array_key_exists( 'set_post_id', $data ) ) {
+			$spid = absint( $data['set_post_id'] );
+			if ( $spid <= 0 ) {
+				throw new Exception( 'set_post_id must be a positive integer.' );
+			}
+			$out['set_post_id'] = $spid;
+		}
 
-        // Ignore DB-maintained timestamps & id if passed.
-        return $out;
-    }
+		if ( array_key_exists( 'user_id', $data ) ) {
+			$uid = absint( $data['user_id'] );
+			if ( $uid <= 0 ) {
+				throw new Exception( 'user_id must be a positive integer.' );
+			}
+			$out['user_id'] = $uid;
+		}
 
-    /**
-     * Sets table has NO soft-delete column -> fallback to hard delete.
-     */
-    protected function soft_delete_column(): ?string
-    {
-        return null;
-    }
+		// Ignore DB-maintained timestamps & id if passed.
+		return $out;
+	}
 
-    /**
-     * Insert with required fields enforced and uniqueness check for set_post_id.
-     */
-    public function insert(array $data): int
-    {
-        if (empty($data['title'])) {
-            throw new Exception('Missing required field: title.');
-        }
-        if (empty($data['set_post_id'])) {
-            throw new Exception('Missing required field: set_post_id.');
-        }
-        if (empty($data['user_id'])) {
-            throw new Exception('Missing required field: user_id.');
-        }
+	/**
+	 * Sets table has NO soft-delete column -> fallback to hard delete.
+	 */
+	protected function soft_delete_column(): ?string {
+		return null;
+	}
 
-        // Enforce the UNIQUE (set_post_id) invariant at app-level for a better error.
-        if ($this->get_by_set_post_id((int) $data['set_post_id'])) {
-            throw new Exception('A set already exists for this set_post_id.');
-        }
+	/**
+	 * Insert with required fields enforced and uniqueness check for set_post_id.
+	 */
+	public function insert( array $data ): int {
+		if ( empty( $data['title'] ) ) {
+			throw new Exception( 'Missing required field: title.' );
+		}
+		if ( empty( $data['set_post_id'] ) ) {
+			throw new Exception( 'Missing required field: set_post_id.' );
+		}
+		if ( empty( $data['user_id'] ) ) {
+			throw new Exception( 'Missing required field: user_id.' );
+		}
 
-        return parent::insert($data);
-    }
+		// Enforce the UNIQUE (set_post_id) invariant at app-level for a better error.
+		if ( $this->get_by_set_post_id( (int) $data['set_post_id'] ) ) {
+			throw new Exception( 'A set already exists for this set_post_id.' );
+		}
 
-    /**
-     * Protect immutable fields on updates (user_id, set_post_id, timestamps, id).
-     * If you *do* want to allow re-binding in the future, remove unset() as needed.
-     */
-    public function update(int $id, array $data): bool
-    {
-        unset($data['user_id'], $data['set_post_id'], $data['created_at'], $data['updated_at'], $data['id']);
-        return parent::update($id, $data);
-    }
+		return parent::insert( $data );
+	}
 
-    /**
-     * Lookup by set_post_id (unique).
-     */
-    public function get_by_set_post_id(int $set_post_id): ?array
-    {
-        $set_post_id = $this->validate_id($set_post_id);
-        $sql = $this->wpdb->prepare(
-            "SELECT * FROM {$this->get_table_name()} WHERE set_post_id = %d LIMIT 1",
-            $set_post_id
-        );
-        $row = $this->wpdb->get_row($sql, ARRAY_A);
-        return $row ?: null;
-    }
+	/**
+	 * Protect immutable fields on updates (user_id, set_post_id, timestamps, id).
+	 * If you *do* want to allow re-binding in the future, remove unset() as needed.
+	 */
+	public function update( int $id, array $data ): bool {
+		unset( $data['user_id'], $data['set_post_id'], $data['created_at'], $data['updated_at'], $data['id'] );
+		return parent::update( $id, $data );
+	}
 
-    /**
-     * Fetch all sets that originate from a given content post (non-unique).
-     */
-    public function get_by_post_id(int $post_id): array
-    {
-        $post_id = $this->validate_id($post_id);
-        $sql = $this->wpdb->prepare(
-            "SELECT * FROM {$this->get_table_name()} WHERE post_id = %d",
-            $post_id
-        );
-        return $this->wpdb->get_results($sql, ARRAY_A) ?: [];
-    }
+	/**
+	 * Lookup by set_post_id (unique).
+	 */
+	public function get_by_set_post_id( int $set_post_id ): ?array {
+		$set_post_id = $this->validate_id( $set_post_id );
+		$sql         = $this->wpdb->prepare(
+			"SELECT * FROM {$this->get_table_name()} WHERE set_post_id = %d LIMIT 1",
+			$set_post_id
+		);
+		$row         = $this->wpdb->get_row( $sql, ARRAY_A );
+		return $row ?: null;
+	}
 
-    /**
-     * List sets belonging to a user with paging.
-     */
-    public function list_by_user(int $user_id, int $limit = 20, int $offset = 0): array
-    {
-        $user_id = $this->validate_id($user_id);
-        $limit   = max(1, (int) $limit);
-        $offset  = max(0, (int) $offset);
+	/**
+	 * Fetch all sets that originate from a given content post (non-unique).
+	 */
+	public function get_by_post_id( int $post_id ): array {
+		$post_id = $this->validate_id( $post_id );
+		$sql     = $this->wpdb->prepare(
+			"SELECT * FROM {$this->get_table_name()} WHERE post_id = %d",
+			$post_id
+		);
+		return $this->wpdb->get_results( $sql, ARRAY_A ) ?: array();
+	}
 
-        $sql = $this->wpdb->prepare(
-            "SELECT * FROM {$this->get_table_name()} WHERE user_id = %d ORDER BY id DESC LIMIT %d OFFSET %d",
-            $user_id,
-            $limit,
-            $offset
-        );
+	/**
+	 * List sets belonging to a user with paging.
+	 */
+	public function list_by_user( int $user_id, int $limit = 20, int $offset = 0 ): array {
+		$user_id = $this->validate_id( $user_id );
+		$limit   = max( 1, (int) $limit );
+		$offset  = max( 0, (int) $offset );
 
-        return $this->wpdb->get_results($sql, ARRAY_A) ?: [];
-    }
+		$sql = $this->wpdb->prepare(
+			"SELECT * FROM {$this->get_table_name()} WHERE user_id = %d ORDER BY id DESC LIMIT %d OFFSET %d",
+			$user_id,
+			$limit,
+			$offset
+		);
 
-    /**
-     * Upsert by set_post_id:
-     *  - If it exists, update safe fields (title, post_id) and return id.
-     *  - If not, require (title, user_id) and insert.
-     */
-    public function upsert_by_set_post_id(array $data): int
-    {
-        if (empty($data['set_post_id'])) {
-            throw new Exception('set_post_id is required for upsert.');
-        }
+		return $this->wpdb->get_results( $sql, ARRAY_A ) ?: array();
+	}
 
-        $spid     = absint($data['set_post_id']);
-        $existing = $this->get_by_set_post_id($spid);
+	/**
+	 * Upsert by set_post_id:
+	 *  - If it exists, update safe fields (title, post_id) and return id.
+	 *  - If not, require (title, user_id) and insert.
+	 */
+	public function upsert_by_set_post_id( array $data ): int {
+		if ( empty( $data['set_post_id'] ) ) {
+			throw new Exception( 'set_post_id is required for upsert.' );
+		}
 
-        if ($existing) {
-            $payload = [];
-            if (!empty($data['title'])) {
-                $payload['title'] = $data['title'];
-            }
-            if (array_key_exists('post_id', $data)) {
-                $payload['post_id'] = $data['post_id'];
-            }
-            if ($payload) {
-                $this->update((int) $existing['id'], $payload);
-            }
-            return (int) $existing['id'];
-        }
+		$spid     = absint( $data['set_post_id'] );
+		$existing = $this->get_by_set_post_id( $spid );
 
-        if (empty($data['title']) || empty($data['user_id'])) {
-            throw new Exception('Insert requires title and user_id.');
-        }
+		if ( $existing ) {
+			$payload = array();
+			if ( ! empty( $data['title'] ) ) {
+				$payload['title'] = $data['title'];
+			}
+			if ( array_key_exists( 'post_id', $data ) ) {
+				$payload['post_id'] = $data['post_id'];
+			}
+			if ( $payload ) {
+				$this->update( (int) $existing['id'], $payload );
+			}
+			return (int) $existing['id'];
+		}
 
-        return $this->insert([
-            'title'       => $data['title'],
-            'post_id'     => $data['post_id'] ?? null,
-            'set_post_id' => $spid,
-            'user_id'     => (int) $data['user_id'],
-        ]);
-    }
+		if ( empty( $data['title'] ) || empty( $data['user_id'] ) ) {
+			throw new Exception( 'Insert requires title and user_id.' );
+		}
 
-    /**
- * Ensure a studyset exists for a given content post (post/page).
- *
- * If no set exists yet:
- *  - Creates a new studyset CPT post.
- *  - Inserts row in wpfn_sets linking both.
- * Returns the set's id (pk in wpfn_sets).
- */
-    public function ensure_set_for_post(int $post_id): int
-    {
-        $post_id = $this->validate_id($post_id);
+		return $this->insert(
+			array(
+				'title'       => $data['title'],
+				'post_id'     => $data['post_id'] ?? null,
+				'set_post_id' => $spid,
+				'user_id'     => (int) $data['user_id'],
+			)
+		);
+	}
 
-        // 1. Check if a set row already exists for this content post
-        $existing = $this->get_by_post_id($post_id);
-        if (!empty($existing)) {
-            return (int) $existing[0]['id']; // we assume 1:1 mapping
-        }
+	/**
+	 * Ensure a studyset exists for a given content post (post/page).
+	 *
+	 * If no set exists yet:
+	 *  - Creates a new studyset CPT post.
+	 *  - Inserts row in wpfn_sets linking both.
+	 * Returns the set's id (pk in wpfn_sets).
+	 */
+	public function ensure_set_for_post( int $post_id ): int {
+		$post_id = $this->validate_id( $post_id );
 
-        // 2. Create a new CPT post for the studyset
-        $title = get_the_title($post_id) ?: 'Untitled';
-        $set_post_id = wp_insert_post([
-            'post_title'  => $title,
-            'post_type'   => 'studyset',
-            'post_status' => 'publish',
-        ]);
+		// 1. Check if a set row already exists for this content post
+		$existing = $this->get_by_post_id( $post_id );
+		if ( ! empty( $existing ) ) {
+			return (int) $existing[0]['id']; // we assume 1:1 mapping
+		}
 
-        if (is_wp_error($set_post_id)) {
-            throw new \Exception('Failed to create studyset CPT: ' . $set_post_id->get_error_message());
-        }
+		// 2. Create a new CPT post for the studyset
+		$title       = get_the_title( $post_id ) ?: 'Untitled';
+		$set_post_id = wp_insert_post(
+			array(
+				'post_title'  => $title,
+				'post_type'   => 'studyset',
+				'post_status' => 'publish',
+			)
+		);
 
-        // 3. Insert row into wpfn_sets
-        $user_id = (int) (get_post_field('post_author', $post_id) ?: get_current_user_id());
+		if ( is_wp_error( $set_post_id ) ) {
+			throw new \Exception( 'Failed to create studyset CPT: ' . $set_post_id->get_error_message() );
+		}
 
-        return $this->upsert_by_set_post_id([
-            'title'       => $title,
-            'post_id'     => $post_id,
-            'set_post_id' => $set_post_id,
-            'user_id'     => $user_id,
-        ]);
-    }
+		// 3. Insert row into wpfn_sets
+		$user_id = (int) ( get_post_field( 'post_author', $post_id ) ?: get_current_user_id() );
+
+		return $this->upsert_by_set_post_id(
+			array(
+				'title'       => $title,
+				'post_id'     => $post_id,
+				'set_post_id' => $set_post_id,
+				'user_id'     => $user_id,
+			)
+		);
+	}
 }

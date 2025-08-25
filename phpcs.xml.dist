@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<ruleset name="WPFlashNotes Coding Standards">
+    <description>
+        PHPCS configuration for WPFlashNotes.
+        Based on WordPress Coding Standards (WPCS).
+    </description>
+
+    <!-- Scan all PHP files recursively -->
+    <file>./</file>
+
+    <!-- Exclude common non-PHP dirs -->
+    <exclude-pattern>*/vendor/*</exclude-pattern>
+    <exclude-pattern>*/node_modules/*</exclude-pattern>
+    <exclude-pattern>*/tests/*</exclude-pattern>
+    <exclude-pattern>*/build/*</exclude-pattern>
+
+    <!-- Base standard: WordPress Core -->
+    <rule ref="WordPress-Core" />
+
+    <!-- Add extra rulesets -->
+    <rule ref="WordPress-Docs" />
+    <rule ref="WordPress-Extra" />
+
+    <!-- Custom tweaks -->
+    <rule ref="Generic.Files.LineLength">
+        <properties>
+            <!-- Let’s not be draconian; 120 chars max -->
+            <property name="lineLimit" value="120"/>
+            <property name="absoluteLineLimit" value="150"/>
+        </properties>
+    </rule>
+
+    <!-- Ignore warnings for debug code during dev -->
+    <rule ref="WordPress.PHP.DevelopmentFunctions" severity="0"/>
+
+    <!-- Show progress and full report -->
+    <arg value="sp"/> <!-- Show sniff progress -->
+    <arg name="report" value="full"/>
+</ruleset>

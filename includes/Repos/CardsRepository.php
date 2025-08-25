@@ -2,7 +2,7 @@
 
 namespace WPFlashNotes\Repos;
 
-defined('ABSPATH') || exit;
+defined( 'ABSPATH' ) || exit;
 
 use WPFlashNotes\BaseClasses\BaseRepository;
 
@@ -14,278 +14,279 @@ use WPFlashNotes\BaseClasses\BaseRepository;
  * - Stores answers and right answers as normalized JSON strings (LONGTEXT).
  * - Includes a helper to record review results (simple SM-2-ish).
  */
-final class CardsRepository extends BaseRepository
-{
-    /**
-     * Allowed card types (must match ENUM in schema).
-     *
-     * @var array<int,string>
-     */
-    private const CARD_TYPES = [
-        'flip',
-        'true_false',
-        'multiple_choice',
-        'multiple_select',
-        'fill_in_blank',
-    ];
+final class CardsRepository extends BaseRepository {
 
-    /**
-     * Fully-qualified table name.
-     */
-    protected function get_table_name(): string
-    {
-        return $this->wpdb->prefix . 'wpfn_cards';
-    }
+	/**
+	 * Allowed card types (must match ENUM in schema).
+	 *
+	 * @var array<int,string>
+	 */
+	private const CARD_TYPES = array(
+		'flip',
+		'true_false',
+		'multiple_choice',
+		'multiple_select',
+		'fill_in_blank',
+	);
 
-    /**
-     * Sanitize and validate a data payload for insert/update.
-     * Only fields present in $data are processed (safe for partial updates).
-     *
-     * @param array $data
-     * @return array Sanitized subset of $data, ready for wpdb insert/update.
-     * @throws \Exception On invalid field values.
-     */
-    protected function sanitize_data(array $data): array
-    {
-        $sanitized_data = [];
+	/**
+	 * Fully-qualified table name.
+	 */
+	protected function get_table_name(): string {
+		return $this->wpdb->prefix . 'wpfn_cards';
+	}
 
-        foreach ($data as $field_name => $field_value) {
-            switch ($field_name) {
-                case 'user_id': // ✅ keep user_id
-                    $uid = (int) $field_value;
-                    if ($uid <= 0) {
-                        $uid = (int) get_current_user_id();
-                    }
-                    if ($uid <= 0) {
-                        throw new \Exception('user_id is required.');
-                    }
-                    $sanitized_data['user_id'] = $uid;
-                    break;
+	/**
+	 * Sanitize and validate a data payload for insert/update.
+	 * Only fields present in $data are processed (safe for partial updates).
+	 *
+	 * @param array $data
+	 * @return array Sanitized subset of $data, ready for wpdb insert/update.
+	 * @throws \Exception On invalid field values.
+	 */
+	protected function sanitize_data( array $data ): array {
+		$sanitized_data = array();
 
-                case 'question':
-                    $question = wp_kses_post((string) $field_value);
-                    if ($question === '') {
-                        throw new \Exception('Question cannot be empty.');
-                    }
-                    $sanitized_data['question'] = $question;
-                    break;
+		foreach ( $data as $field_name => $field_value ) {
+			switch ( $field_name ) {
+				case 'user_id': // ✅ keep user_id
+					$uid = (int) $field_value;
+					if ( $uid <= 0 ) {
+						$uid = (int) get_current_user_id();
+					}
+					if ( $uid <= 0 ) {
+						throw new \Exception( 'user_id is required.' );
+					}
+					$sanitized_data['user_id'] = $uid;
+					break;
 
-                case 'answers_json':
-                    $sanitized_data['answers_json'] = self::normalize_json_field($field_value);
-                    break;
+				case 'question':
+					$question = wp_kses_post( (string) $field_value );
+					if ( $question === '' ) {
+						throw new \Exception( 'Question cannot be empty.' );
+					}
+					$sanitized_data['question'] = $question;
+					break;
 
-                case 'right_answers_json':
-                    $sanitized_data['right_answers_json'] = self::normalize_json_field($field_value);
-                    break;
+				case 'answers_json':
+					$sanitized_data['answers_json'] = self::normalize_json_field( $field_value );
+					break;
 
-                case 'explanation':
-                    $sanitized_data['explanation'] = $field_value === null
-                        ? null
-                        : wp_kses_post((string) $field_value);
-                    break;
+				case 'right_answers_json':
+					$sanitized_data['right_answers_json'] = self::normalize_json_field( $field_value );
+					break;
 
-                case 'card_type':
-                    $card_type = sanitize_key((string) $field_value);
-                    if (!in_array($card_type, self::CARD_TYPES, true)) {
-                        throw new \Exception('Invalid card_type.');
-                    }
-                    $sanitized_data['card_type'] = $card_type;
-                    break;
+				case 'explanation':
+					$sanitized_data['explanation'] = $field_value === null
+						? null
+						: wp_kses_post( (string) $field_value );
+					break;
 
-                case 'last_seen':
-                case 'next_due':
-                case 'deleted_at':
-                case 'created_at':
-                case 'updated_at':
-                    $sanitized_data[$field_name] = self::normalize_datetime($field_value);
-                    break;
+				case 'card_type':
+					$card_type = sanitize_key( (string) $field_value );
+					if ( ! in_array( $card_type, self::CARD_TYPES, true ) ) {
+						throw new \Exception( 'Invalid card_type.' );
+					}
+					$sanitized_data['card_type'] = $card_type;
+					break;
 
-                case 'correct_count':
-                case 'incorrect_count':
-                case 'streak':
-                    $integer_value = (int) $field_value;
-                    if ($integer_value < 0) {
-                        throw new \Exception("$field_name must be >= 0.");
-                    }
-                    $sanitized_data[$field_name] = $integer_value;
-                    break;
+				case 'last_seen':
+				case 'next_due':
+				case 'deleted_at':
+				case 'created_at':
+				case 'updated_at':
+					$sanitized_data[ $field_name ] = self::normalize_datetime( $field_value );
+					break;
 
-                case 'ease_factor':
-                    $ease_factor = (float) $field_value;
-                    if ($ease_factor < 1.30) $ease_factor = 1.30;
-                    if ($ease_factor > 5.00)  $ease_factor = 5.00;
-                    $sanitized_data['ease_factor'] = $ease_factor;
-                    break;
+				case 'correct_count':
+				case 'incorrect_count':
+				case 'streak':
+					$integer_value = (int) $field_value;
+					if ( $integer_value < 0 ) {
+						throw new \Exception( "$field_name must be >= 0." );
+					}
+					$sanitized_data[ $field_name ] = $integer_value;
+					break;
 
-                case 'is_mastered':
-                    $sanitized_data['is_mastered'] = (int) !!$field_value;
-                    break;
+				case 'ease_factor':
+					$ease_factor = (float) $field_value;
+					if ( $ease_factor < 1.30 ) {
+						$ease_factor = 1.30;
+					}
+					if ( $ease_factor > 5.00 ) {
+						$ease_factor = 5.00;
+					}
+					$sanitized_data['ease_factor'] = $ease_factor;
+					break;
 
-                case 'block_id':
-                    $sanitized_data['block_id'] = $field_value === null
-                        ? null
-                        : sanitize_text_field((string) $field_value);
-                    break;
+				case 'is_mastered':
+					$sanitized_data['is_mastered'] = (int) (bool) $field_value;
+					break;
 
-                default:
-                    // Ignore unknown fields silently.
-                    break;
-            }
-        }
+				case 'block_id':
+					$sanitized_data['block_id'] = $field_value === null
+						? null
+						: sanitize_text_field( (string) $field_value );
+					break;
 
-        // ✅ Fallback: if user_id not provided, use the authenticated user
-        if (!isset($sanitized_data['user_id'])) {
-            $uid = (int) get_current_user_id();
-            if ($uid <= 0) {
-                throw new \Exception('user_id is required.');
-            }
-            $sanitized_data['user_id'] = $uid;
-        }
+				default:
+					// Ignore unknown fields silently.
+					break;
+			}
+		}
 
-        // Optional integrity rule (unchanged) …
-        if (array_key_exists('answers_json', $sanitized_data)
-            && array_key_exists('right_answers_json', $sanitized_data)
-        ) {
-            $answers_array = $sanitized_data['answers_json']
-                ? json_decode($sanitized_data['answers_json'], true)
-                : [];
-            $right_answers_array = $sanitized_data['right_answers_json']
-                ? json_decode($sanitized_data['right_answers_json'], true)
-                : [];
+		// ✅ Fallback: if user_id not provided, use the authenticated user
+		if ( ! isset( $sanitized_data['user_id'] ) ) {
+			$uid = (int) get_current_user_id();
+			if ( $uid <= 0 ) {
+				throw new \Exception( 'user_id is required.' );
+			}
+			$sanitized_data['user_id'] = $uid;
+		}
 
-            if ($answers_array && $right_answers_array && array_diff($right_answers_array, $answers_array)) {
-                throw new \Exception('right_answers_json must be a subset of answers_json.');
-            }
-        }
+		// Optional integrity rule (unchanged) …
+		if ( array_key_exists( 'answers_json', $sanitized_data )
+			&& array_key_exists( 'right_answers_json', $sanitized_data )
+		) {
+			$answers_array       = $sanitized_data['answers_json']
+				? json_decode( $sanitized_data['answers_json'], true )
+				: array();
+			$right_answers_array = $sanitized_data['right_answers_json']
+				? json_decode( $sanitized_data['right_answers_json'], true )
+				: array();
 
-        return $sanitized_data;
-    }
+			if ( $answers_array && $right_answers_array && array_diff( $right_answers_array, $answers_array ) ) {
+				throw new \Exception( 'right_answers_json must be a subset of answers_json.' );
+			}
+		}
 
-    /**
-     * wpdb format map for numeric fields.
-     *
-     * @return array<string,string>
-     */
-    protected function fieldFormats(): array
-    {
-         return [
-            'block_id'           => '%s',
-            'question'           => '%s',
-            'answers_json'       => '%s',
-            'right_answers_json' => '%s',
-            'explanation'        => '%s',
-            'card_type'          => '%s',
-            'last_seen'          => '%s',
-            'next_due'           => '%s',
-            'correct_count'      => '%d',
-            'incorrect_count'    => '%d',
-            'streak'             => '%d',
-            'ease_factor'        => '%f',
-            'is_mastered'        => '%d',
-            'deleted_at'         => '%s',
-            'created_at'         => '%s',
-            'updated_at'         => '%s',
-            'user_id'            => '%d',
-        ];
-    }
+		return $sanitized_data;
+	}
 
-    /**
-     * Normalize array|string|null into a compact JSON array string (or NULL).
-     * Ensures a dense string array (["...","..."]).
-     *
-     * @param mixed $value
-     * @return string|null
-     */
-    private static function normalize_json_field($value): ?string
-    {
-        if ($value === null || $value === '') {
-            return null;
-        }
+	/**
+	 * wpdb format map for numeric fields.
+	 *
+	 * @return array<string,string>
+	 */
+	protected function fieldFormats(): array {
+		return array(
+			'block_id'           => '%s',
+			'question'           => '%s',
+			'answers_json'       => '%s',
+			'right_answers_json' => '%s',
+			'explanation'        => '%s',
+			'card_type'          => '%s',
+			'last_seen'          => '%s',
+			'next_due'           => '%s',
+			'correct_count'      => '%d',
+			'incorrect_count'    => '%d',
+			'streak'             => '%d',
+			'ease_factor'        => '%f',
+			'is_mastered'        => '%d',
+			'deleted_at'         => '%s',
+			'created_at'         => '%s',
+			'updated_at'         => '%s',
+			'user_id'            => '%d',
+		);
+	}
 
-        if (is_string($value)) {
-            $decoded = json_decode($value, true);
-            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-                return wp_json_encode(array_values(array_map('strval', $decoded)));
-            }
-            // Treat raw string as single-item array.
-            return wp_json_encode([ (string) $value ]);
-        }
+	/**
+	 * Normalize array|string|null into a compact JSON array string (or NULL).
+	 * Ensures a dense string array (["...","..."]).
+	 *
+	 * @param mixed $value
+	 * @return string|null
+	 */
+	private static function normalize_json_field( $value ): ?string {
+		if ( $value === null || $value === '' ) {
+			return null;
+		}
 
-        if (is_array($value)) {
-            return wp_json_encode(array_values(array_map('strval', $value)));
-        }
+		if ( is_string( $value ) ) {
+			$decoded = json_decode( $value, true );
+			if ( json_last_error() === JSON_ERROR_NONE && is_array( $decoded ) ) {
+				return wp_json_encode( array_values( array_map( 'strval', $decoded ) ) );
+			}
+			// Treat raw string as single-item array.
+			return wp_json_encode( array( (string) $value ) );
+		}
 
-        return wp_json_encode([ (string) $value ]);
-    }
+		if ( is_array( $value ) ) {
+			return wp_json_encode( array_values( array_map( 'strval', $value ) ) );
+		}
 
-    /**
-     * Normalize a datetime-ish input (timestamp/int|string) to "Y-m-d H:i:s" GMT or NULL.
-     *
-     * @param mixed $value
-     * @return string|null
-     */
-    private static function normalize_datetime($value): ?string
-    {
-        if ($value === null || $value === '') {
-            return null;
-        }
+		return wp_json_encode( array( (string) $value ) );
+	}
 
-        $timestamp = is_numeric($value) ? (int) $value : strtotime((string) $value);
-        if (!$timestamp) {
-            return null;
-        }
+	/**
+	 * Normalize a datetime-ish input (timestamp/int|string) to "Y-m-d H:i:s" GMT or NULL.
+	 *
+	 * @param mixed $value
+	 * @return string|null
+	 */
+	private static function normalize_datetime( $value ): ?string {
+		if ( $value === null || $value === '' ) {
+			return null;
+		}
 
-        return gmdate('Y-m-d H:i:s', $timestamp);
-    }
+		$timestamp = is_numeric( $value ) ? (int) $value : strtotime( (string) $value );
+		if ( ! $timestamp ) {
+			return null;
+		}
 
-    /**
-     * Convenience: record a review result and update scheduling fields.
-     * Implements a light SM-2 style adjustment.
-     *
-     * @param int $id       Card ID.
-     * @param int $quality  0..5 (>=3 counts as correct).
-     * @return bool True if the row was updated.
-     */
-    public function record_review(int $id, int $quality): bool
-    {
-        $id = $this->validate_id($id);
-        $quality = max(0, min(5, $quality));
+		return gmdate( 'Y-m-d H:i:s', $timestamp );
+	}
 
-        $row = $this->read($id);
-        if (!$row) {
-            return false;
-        }
+	/**
+	 * Convenience: record a review result and update scheduling fields.
+	 * Implements a light SM-2 style adjustment.
+	 *
+	 * @param int $id       Card ID.
+	 * @param int $quality  0..5 (>=3 counts as correct).
+	 * @return bool True if the row was updated.
+	 */
+	public function record_review( int $id, int $quality ): bool {
+		$id      = $this->validate_id( $id );
+		$quality = max( 0, min( 5, $quality ) );
 
-        $now_gmt = current_time('mysql', 1);
+		$row = $this->read( $id );
+		if ( ! $row ) {
+			return false;
+		}
 
-        $correct_count   = (int) ($row['correct_count'] ?? 0);
-        $incorrect_count = (int) ($row['incorrect_count'] ?? 0);
-        $streak          = (int) ($row['streak'] ?? 0);
-        $ease_factor     = isset($row['ease_factor']) ? (float) $row['ease_factor'] : 2.50;
+		$now_gmt = current_time( 'mysql', 1 );
 
-        if ($quality >= 3) {
-            $correct_count++;
-            $streak++;
-            // SM-2-ish ease update
-            $ease_factor = max(1.30, $ease_factor + (0.1 - (5 - $quality) * (0.08 + (5 - $quality) * 0.02)));
-        } else {
-            $incorrect_count++;
-            $streak = 0;
-            $ease_factor = max(1.30, $ease_factor - 0.2);
-        }
+		$correct_count   = (int) ( $row['correct_count'] ?? 0 );
+		$incorrect_count = (int) ( $row['incorrect_count'] ?? 0 );
+		$streak          = (int) ( $row['streak'] ?? 0 );
+		$ease_factor     = isset( $row['ease_factor'] ) ? (float) $row['ease_factor'] : 2.50;
 
-        // Simple spacing heuristic (tune later).
-        $days_until = $streak <= 1 ? 1 : ($streak === 2 ? 3 : (int) round(($streak - 1) * $ease_factor));
-        $next_due_gmt = gmdate('Y-m-d H:i:s', time() + $days_until * DAY_IN_SECONDS);
+		if ( $quality >= 3 ) {
+			++$correct_count;
+			++$streak;
+			// SM-2-ish ease update
+			$ease_factor = max( 1.30, $ease_factor + ( 0.1 - ( 5 - $quality ) * ( 0.08 + ( 5 - $quality ) * 0.02 ) ) );
+		} else {
+			++$incorrect_count;
+			$streak      = 0;
+			$ease_factor = max( 1.30, $ease_factor - 0.2 );
+		}
 
-        return $this->update($id, [
-            'last_seen'       => $now_gmt,
-            'next_due'        => $next_due_gmt,
-            'correct_count'   => $correct_count,
-            'incorrect_count' => $incorrect_count,
-            'streak'          => $streak,
-            'ease_factor'     => $ease_factor,
-            'updated_at'      => $now_gmt,
-        ]);
-    }
+		// Simple spacing heuristic (tune later).
+		$days_until   = $streak <= 1 ? 1 : ( $streak === 2 ? 3 : (int) round( ( $streak - 1 ) * $ease_factor ) );
+		$next_due_gmt = gmdate( 'Y-m-d H:i:s', time() + $days_until * DAY_IN_SECONDS );
+
+		return $this->update(
+			$id,
+			array(
+				'last_seen'       => $now_gmt,
+				'next_due'        => $next_due_gmt,
+				'correct_count'   => $correct_count,
+				'incorrect_count' => $incorrect_count,
+				'streak'          => $streak,
+				'ease_factor'     => $ease_factor,
+				'updated_at'      => $now_gmt,
+			)
+		);
+	}
 }

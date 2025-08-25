@@ -4,28 +4,27 @@ namespace WPFlashNotes\DataBase\Schema;
 
 use WPFlashNotes\BaseClasses\BaseTable;
 
-defined('ABSPATH') || exit;
+defined( 'ABSPATH' ) || exit;
 
-final class CardsTable extends BaseTable
-{
-    /**
-     * Table slug without prefix (full name will be {$wpdb->prefix}wpfn_cards).
-     *
-     * @var string|null
-     */
-    protected ?string $slug = 'wpfn_cards';
+final class CardsTable extends BaseTable {
 
-    /**
-     * Returns the CREATE TABLE statement for dbDelta().
-     *
-     * @return string
-     */
-    protected function get_schema(): string
-    {
-        $table  = $this->get_table_name();
-        $engine = 'ENGINE=InnoDB ' . $this->get_charset_collate();
+	/**
+	 * Table slug without prefix (full name will be {$wpdb->prefix}wpfn_cards).
+	 *
+	 * @var string|null
+	 */
+	protected ?string $slug = 'wpfn_cards';
 
-        return "
+	/**
+	 * Returns the CREATE TABLE statement for dbDelta().
+	 *
+	 * @return string
+	 */
+	protected function get_schema(): string {
+		$table  = $this->get_table_name();
+		$engine = 'ENGINE=InnoDB ' . $this->get_charset_collate();
+
+		return "
             CREATE TABLE {$table} (
                 id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
                 block_id VARCHAR(128) DEFAULT NULL,
@@ -53,5 +52,5 @@ final class CardsTable extends BaseTable
                 KEY idx_seen (last_seen),
                 KEY idx_mastered (is_mastered)
             ) {$engine};";
-    }
+	}
 }

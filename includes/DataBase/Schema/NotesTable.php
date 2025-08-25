@@ -4,28 +4,27 @@ namespace WPFlashNotes\DataBase\Schema;
 
 use WPFlashNotes\BaseClasses\BaseTable;
 
-defined('ABSPATH') || exit;
+defined( 'ABSPATH' ) || exit;
 
-final class NotesTable extends BaseTable
-{
-    /**
-     * Table slug without prefix (full name will be {$wpdb->prefix}wpfn_notes).
-     *
-     * @var string|null
-     */
-    protected ?string $slug = 'wpfn_notes';
+final class NotesTable extends BaseTable {
 
-    /**
-     * Returns the CREATE TABLE statement for dbDelta().
-     *
-     * @return string
-     */
-    protected function get_schema(): string
-    {
-        $table  = $this->get_table_name();
-        $engine = 'ENGINE=InnoDB ' . $this->get_charset_collate();
+	/**
+	 * Table slug without prefix (full name will be {$wpdb->prefix}wpfn_notes).
+	 *
+	 * @var string|null
+	 */
+	protected ?string $slug = 'wpfn_notes';
 
-        return "
+	/**
+	 * Returns the CREATE TABLE statement for dbDelta().
+	 *
+	 * @return string
+	 */
+	protected function get_schema(): string {
+		$table  = $this->get_table_name();
+		$engine = 'ENGINE=InnoDB ' . $this->get_charset_collate();
+
+		return "
             CREATE TABLE {$table} (
                 id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
                 title VARCHAR(255) NOT NULL,
@@ -39,5 +38,5 @@ final class NotesTable extends BaseTable
                 UNIQUE KEY uq_block_id (block_id),
                 KEY idx_user_id (user_id)
             ) {$engine};";
-    }
+	}
 }
