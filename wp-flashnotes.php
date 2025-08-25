@@ -1,11 +1,17 @@
 <?php
 /**
- * Plugin Name: WP FlashNotes
- * Description: Manage notes and flashcards, integrated with Gutenberg and the REST API.
- * Version: 1.0.0
- * Author: Your Name
- * License: GPL-2.0-or-later
- * Text Domain: wp-flashnotes
+ * Plugin Name:       WP FlashNotes
+ * Plugin URI:        https://github.com/yourname/wp-flashnotes
+ * Description:       Create, manage, and study flashcards and notes directly in WordPress. Built with custom DB tables and Gutenberg integration.
+ * Version:           0.1.0
+ * Requires at least: 6.0
+ * Requires PHP:      8.0
+ * Author:            Your Name
+ * Author URI:        https://your-portfolio-or-site.com
+ * License:           GPLv2 or later
+ * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
+ * Text Domain:       wp-flashnotes
+ * Domain Path:       /languages
  */
 
 defined( 'ABSPATH' ) || exit;
