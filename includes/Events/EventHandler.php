@@ -1,71 +1,75 @@
-<?php 
+<?php
 
 namespace WPFlashNotes\Events;
 
-use WPFlashNotes\Repos\NotesRepository;
-use WPFlashNotes\Repos\CardsRepository;
-use WPFlashNotes\Repos\SetsRepository;
-use WPFlashNotes\Repos\ObjectUsageRepository;
+defined('ABSPATH') || exit;
+
+use WP_Post;
+use WP_REST_Request;
 use WPFlashNotes\Managers\StudySetManager;
-use WPFlashNotes\Helpers\BlockParser;
 
-class EventHandler {
-
-    protected NotesRepository $notes;
-    protected CardsRepository $cards;
-    protected SetsRepository $sets;
-    protected ObjectUsageRepository $usage;
+class EventHandler
+{
     protected StudySetManager $manager;
-    public function __construct(
-        NotesRepository $notes,
-        CardsRepository $cards,
-        SetsRepository $sets,
-        ObjectUsageRepository $usage,
-        StudySetManager $manager,
-    ) {
-        $this->notes   = $notes;
-        $this->cards   = $cards;
-        $this->sets    = $sets;
-        $this->usage   = $usage;
+
+    public function __construct(StudySetManager $manager)
+    {
         $this->manager = $manager;
     }
 
     /**
      * Handle save_post for normal posts/pages.
-     *
-     * Responsibilities:
-     * - Skip autosaves/revisions.
-     * - Check if the post contains any FlashNotes blocks.
-     * - Ensure a StudySet (CPT + wpfn_sets row) exists for this post.
-     * - Usage tracking (block_id ↔ object_id) is deferred to on_studyset_save.
      */
     public function on_post_save(int $post_id, WP_Post $post, bool $update): void
     {
-        // 1. Skip autosaves and revisions
-        if (wp_is_post_autosave($post_id) || wp_is_post_revision($post_id)) {
+        if ($this->is_autosave_or_revision($post_id)) {
             return;
         }
 
-        // 2. Extract FlashNotes blocks
-        $flashnotesBlocks = BlockParser::from_post_content($post->post_content);
+        $this->manager->handle_post_save($post_id, $post->post_content);
+    }
 
-        if (empty($flashnotesBlocks)) {
-            return; // No FlashNotes blocks → nothing to do
+    /**
+     * Handle save_post for studyset CPT.
+     */
+    public function on_studyset_save(int $post_id, WP_Post $post, bool $update): void
+    {
+        if ($this->is_autosave_or_revision($post_id)) {
+            return;
         }
 
-        // 3. Ensure studyset exists for this post
-        $this->sets->ensure_set_for_post($post_id);
+        $this->manager->sync_studyset($post_id, $post->post_content);
     }
 
-    public function on_studyset_save($set_id, $post_id) {
+    /**
+     * Handle rest_after_insert_studyset.
+     */
+    public function on_studyset_create(WP_Post $post, WP_REST_Request $request, bool $creating): void
+    {
+        if (!$creating) {
+            return;
+        }
 
+        $this->manager->handle_studyset_create($post);
     }
 
-    public function on_studyset_create($set_id, $post_id) {
+    /**
+     * Handle before_update_post for studyset CPT.
+     */
+    public function on_studyset_before_update(int $post_id, WP_Post $post): void
+    {
+        if ($this->is_autosave_or_revision($post_id)) {
+            return;
+        }
 
+        $this->manager->handle_studyset_before_update($post_id, $post);
     }
 
-    public function on_studyset_before_update($set_id) {
-
+    /**
+     * Shared guard: skip autosaves/revisions.
+     */
+    protected function is_autosave_or_revision(int $post_id): bool
+    {
+        return wp_is_post_autosave($post_id) || wp_is_post_revision($post_id);
     }
 }
