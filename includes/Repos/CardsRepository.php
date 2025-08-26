@@ -189,6 +189,53 @@ final class CardsRepository extends BaseRepository {
 			'user_id'            => '%d',
 		);
 	}
+	
+	/**
+	 * Upsert a card row based on a block's attributes.
+	 *
+	 * @param array $block Parsed block array (from BlockParser).
+	 * @return int Card ID (row id in wpfn_cards).
+	 */
+	public function upsert_from_block(array $block): int
+	{
+		$attrs   = $block['attrs'] ?? [];
+		$blockId = $block['block_id'] ?? null;
+
+		if (!$blockId) {
+			throw new \Exception('Card block is missing block_id.');
+		}
+
+		$data = [
+			'block_id'           => $blockId,
+			'question'           => $attrs['question'] ?? '',
+			'answers_json'       => $attrs['answers_json'] ?? '[]',
+			'right_answers_json' => $attrs['right_answers_json'] ?? '[]',
+			'explanation'        => $attrs['explanation'] ?? null,
+			'user_id'            => get_current_user_id(),
+		];
+
+		$existing = $this->get_by_block_id($blockId);
+
+		if ($existing) {
+			$this->update((int) $existing['id'], $data);
+			return (int) $existing['id'];
+		}
+
+		return $this->insert($data);
+	}
+
+	/**
+	 * Lookup a card by block_id.
+	 */
+	public function get_by_block_id(string $block_id): ?array
+	{
+		$sql = $this->wpdb->prepare(
+			"SELECT * FROM {$this->get_table_name()} WHERE block_id = %s LIMIT 1",
+			$block_id
+		);
+		$row = $this->wpdb->get_row($sql, ARRAY_A);
+		return $row ?: null;
+	}
 
 	/**
 	 * Normalize array|string|null into a compact JSON array string (or NULL).

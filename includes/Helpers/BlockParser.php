@@ -26,7 +26,7 @@ class BlockParser {
 		$results = array();
 
 		foreach ( $blocks as $block ) {
-			if ( isset( $block['blockName'] ) && str_starts_with( $block['blockName'], 'wpflashnotes/' ) ) {
+			if ( isset( $block['blockName'] ) && str_starts_with( $block['blockName'], 'wpfn/' ) ) {
 				$results[] = self::normalize_block( $block );
 			}
 
@@ -47,12 +47,12 @@ class BlockParser {
 	 * @return array Normalized block.
 	 */
 	private static function normalize_block( array $block ): array {
-		return array(
+		return [
 			'blockName'   => $block['blockName'] ?? '',
-			'attrs'       => $block['attrs'] ?? array(),
+			'attrs'       => $block['attrs'] ?? [],
 			'block_id'    => $block['attrs']['block_id'] ?? null,
 			'type'        => $block['attrs']['type'] ?? null, // e.g. card subtype
-			'innerBlocks' => $block['innerBlocks'] ?? array(),
-		);
+			'innerBlocks' => $block['innerBlocks'] ?? [],
+		];
 	}
 }

@@ -80,47 +80,61 @@ abstract class BaseRepository {
 		return $row ?: null;
 	}
 
-	public function update( int $id, array $data ): bool {
-		$id        = $this->validate_id( $id );
-		$sanitized = $this->sanitize_data( $data );
-		if ( ! $sanitized ) {
+	public function update(int $id, array $data): bool {
+		$id        = $this->validate_id($id);
+		$sanitized = $this->sanitize_data($data);
+
+		if (!$sanitized) {
 			return false;
 		}
 
-		$table   = $this->get_table_name();
-		$formats = $this->fieldFormats();
-
-		// Build SET list
-		$setParts = array();
-		$values   = array();
-		foreach ( $sanitized as $col => $val ) {
-			$setParts[] = "`{$col}` = " . ( $formats[ $col ] ?? ( is_int( $val ) ? '%d' : '%s' ) );
-			$values[]   = $val;
-		}
-
-		// Build OR diff conditions: skip null-safe issues by using <=> for null equality
-		$diffParts = array();
-		foreach ( $sanitized as $col => $val ) {
-			$diffParts[] = "NOT (`{$col}` <=> " . ( $formats[ $col ] ?? ( is_int( $val ) ? '%d' : '%s' ) ) . ')';
-			$values[]    = $val;
-		}
-
-		$values[] = $id;
-
-		$sql = $this->wpdb->prepare(
-			"UPDATE {$table}
-            SET " . implode( ', ', $setParts ) . '
-            WHERE id = %d
-            AND (' . implode( ' OR ', $diffParts ) . ')',
-			...$values
+		// Fetch current DB row
+		$current = $this->wpdb->get_row(
+			$this->wpdb->prepare("SELECT * FROM {$this->get_table_name()} WHERE id = %d", $id),
+			ARRAY_A
 		);
 
-		$result = $this->wpdb->query( $sql );
-		if ( $result === false ) {
-			throw new Exception(
+		if (!$current) {
+			throw new \Exception("Row with ID {$id} not found in {$this->get_table_name()}");
+		}
+
+		// Detect changes
+		$changed = [];
+		foreach ($sanitized as $col => $val) {
+			$oldVal = array_key_exists($col, $current) ? $current[$col] : null;
+
+			// Normalize to string for comparison (wpdb always stores strings for VARCHAR/TEXT)
+			$newVal = is_null($val) ? null : (string) $val;
+			$oldVal = is_null($oldVal) ? null : (string) $oldVal;
+
+			if ($newVal !== $oldVal) {
+				$changed[$col] = $val;
+			}
+		}
+
+		if (empty($changed)) {
+			error_log("No changes detected for ID {$id}, skipping update");
+			return false; // no update → updated_at stays the same
+		}
+
+		foreach ($changed as $col => $val) {
+			$updateFormats[] = $this->fieldFormats()[$col] ?? '%s';
+		}
+
+		// Run update only with changed fields
+		$result = $this->wpdb->update(
+			$this->get_table_name(),
+			$changed,
+			['id' => $id],
+			$updateFormats,
+			['%d']
+		);
+
+		if ($result === false) {
+			throw new \Exception(
 				sprintf(
 					'Update failed in %s: %s',
-					$table,
+					$this->get_table_name(),
 					$this->wpdb->last_error ?: 'unknown error'
 				)
 			);
@@ -128,7 +142,6 @@ abstract class BaseRepository {
 
 		return $result > 0;
 	}
-
 
 	/**
 	 * Hard delete a row by ID.

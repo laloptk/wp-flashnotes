@@ -39,6 +39,8 @@ function wpflashnotes_bootstrap(): void
     add_action('save_post_studyset', [$eventHandler, 'on_studyset_save'], 10, 3);
     add_action('rest_after_insert_studyset', [$eventHandler, 'on_studyset_create'], 10, 3);
     add_action('before_update_post', [$eventHandler, 'on_studyset_before_update'], 10, 2);
+
+    error_log("Bootstrap is loading");
 }
 
 wpflashnotes_bootstrap();

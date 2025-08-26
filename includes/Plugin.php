@@ -16,7 +16,7 @@ class Plugin {
 
     private function define_constants(): void {
         if ( ! defined( 'WPFN_PLUGIN_FILE' ) ) {
-            define( 'WPFN_PLUGIN_FILE', dirname( __DIR__, 2 ) . '/wp-flashnotes.php' ); // adjust if needed
+            define( 'WPFN_PLUGIN_FILE', dirname( __DIR__ ) . '/wp-flashnotes.php' ); // adjust if needed
         }
         if ( ! defined( 'WPFN_PLUGIN_DIR' ) ) {
             define( 'WPFN_PLUGIN_DIR', plugin_dir_path( WPFN_PLUGIN_FILE ) );

@@ -52,7 +52,7 @@ class EventHandler {
 	/**
 	 * Handle before_update_post for studyset CPT.
 	 */
-	public function on_studyset_before_update( int $post_id, WP_Post $post ): void {
+	public function on_studyset_before_update( int $post_id, array $post ): void {
 		if ( $this->is_autosave_or_revision( $post_id ) ) {
 			return;
 		}
