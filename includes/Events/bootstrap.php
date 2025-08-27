@@ -38,9 +38,12 @@ function wpflashnotes_bootstrap(): void
     add_action('save_post', [$eventHandler, 'on_post_save'], 10, 3);
     add_action('save_post_studyset', [$eventHandler, 'on_studyset_save'], 10, 3);
     add_action('rest_after_insert_studyset', [$eventHandler, 'on_studyset_create'], 10, 3);
-    add_action('before_update_post', [$eventHandler, 'on_studyset_before_update'], 10, 2);
-
-    error_log("Bootstrap is loading");
+    add_action('pre_post_update', [$eventHandler, 'on_studyset_before_update'], 10, 2);
+    add_action('transition_post_status', function($new_status, $old_status, $post) use ($eventHandler) {
+        if ($old_status === 'future' && $new_status === 'publish') {
+            $eventHandler->on_studyset_publish($post->ID, $post);
+        }
+    }, 10, 3);
 }
 
 wpflashnotes_bootstrap();

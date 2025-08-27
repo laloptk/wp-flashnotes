@@ -9,25 +9,24 @@
     "html": false,
     "anchor": true
   },
+  "allowedBlocks": [ "core/paragraph", "core/list", "core/spacer" ],
   "attributes": {
     "noteId": {
       "type": "integer"
     },
     "title": {
       "type": "string",
-      "default": "",
-      "selector": ".wpfn-note__title"
+      "default": ""
     },
-    "contentDraft": {
+    "content": {
       "type": "string",
-      "default": "text",
-      "selector": ".wpfn-note__content"
+      "default": ""
     },
     "hide": {
       "type": "boolean",
-      "default": "false"
+      "default": false
     },
-    "blockId": {
+    "block_id": {
       "type": "string"
     },
     "setIds": {

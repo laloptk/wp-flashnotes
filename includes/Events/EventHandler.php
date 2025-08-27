@@ -53,11 +53,23 @@ class EventHandler {
 	 * Handle before_update_post for studyset CPT.
 	 */
 	public function on_studyset_before_update( int $post_id, array $post ): void {
+		error_log("From handler: " . json_encode($post));
 		if ( $this->is_autosave_or_revision( $post_id ) ) {
 			return;
 		}
 
 		$this->manager->handle_studyset_before_update( $post_id, $post );
+	}
+
+	/**
+	 * Save blocks to DB when scheduled post gets published.
+	 */
+	public function on_studyset_publish(int $post_id, \WP_Post $post): void {
+		if ($this->is_autosave_or_revision($post_id)) {
+			return;
+		}
+
+		$this->manager->sync_studyset($post_id, $post->post_content);
 	}
 
 	/**

@@ -44,6 +44,7 @@ class StudySetManager {
 	 */
 	public function handle_post_save( int $post_id, string $post_content ): void {
 		$blocks = BlockParser::from_post_content( $post_content );
+		//error_log("Blocks are going to handle_post_save()". json_encode($blocks));
 		if ( empty( $blocks ) ) {
 			return;
 		}
@@ -68,9 +69,14 @@ class StudySetManager {
 	/**
 	 * Pre-update hook for studyset: validations, locks, diffs.
 	 */
-	public function handle_studyset_before_update(int $post_id, \WP_Post $post): void
+	public function handle_studyset_before_update(int $post_id, array $data): void
 	{
-		if ($post->post_type !== 'studyset') {
+		// Debug: see what WP gave us
+		error_log('before_update_post data: ' . json_encode($data));
+
+		// Get the full WP_Post so we can safely access post_type and post_content
+		$post_obj = get_post($post_id);
+		if (!$post_obj || $post_obj->post_type !== 'studyset') {
 			return;
 		}
 
@@ -79,8 +85,8 @@ class StudySetManager {
 			throw new \Exception("StudySet {$post_id} is locked and cannot be updated.");
 		}
 
-		// Parse blocks
-		$blocks = BlockParser::from_post_content($post->post_content);
+		// Parse blocks from the current post content
+		$blocks = BlockParser::from_post_content($post_obj->post_content);
 
 		foreach ($blocks as $block) {
 			$blockName = $block['blockName'];
@@ -91,22 +97,19 @@ class StudySetManager {
 			}
 
 			if ($blockName === 'wpfn/note') {
-				// Look up existing row
 				$existing = $this->notes->get_by_block_id($blockId);
 
 				if ($existing) {
-					// Always trust the block for now (simplest strategy)
 					$this->notes->update((int) $existing['id'], [
 						'title'   => $block['attrs']['title'] ?? '',
 						'content' => $block['attrs']['content'] ?? '',
 					]);
 				} else {
-					// Insert new note
 					$this->notes->insert([
 						'block_id' => $blockId,
 						'title'    => $block['attrs']['title'] ?? '',
 						'content'  => $block['attrs']['content'] ?? '',
-						'user_id'  => (int) ($post->post_author ?: get_current_user_id()),
+						'user_id'  => (int) ($post_obj->post_author ?: get_current_user_id()),
 					]);
 				}
 			}
@@ -128,13 +131,12 @@ class StudySetManager {
 						'answers_json'       => $block['attrs']['answers_json'] ?? '[]',
 						'right_answers_json' => $block['attrs']['right_answers_json'] ?? '[]',
 						'explanation'        => $block['attrs']['explanation'] ?? null,
-						'user_id'            => (int) ($post->post_author ?: get_current_user_id()),
+						'user_id'            => (int) ($post_obj->post_author ?: get_current_user_id()),
 					]);
 				}
 			}
 		}
 	}
-
 
 	/**
 	 * Full sync: blocks ↔ DB rows ↔ relations.
