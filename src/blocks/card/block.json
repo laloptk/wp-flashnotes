@@ -1,0 +1,38 @@
+{
+  "apiVersion": 3,
+  "name": "wpfn/card",
+  "title": "FlashNotes: Card",
+  "category": "widgets",
+  "icon": "sticky",
+  "description": "Create or reference a study card and display it.",
+  "supports": {
+    "html": false,
+    "anchor": true
+  },
+  "attributes": {
+    "block_id": {
+      "type": "integer"
+    },
+    "question": {
+      "type": "string",
+      "default": ""
+    },
+    "answers": {
+      "type": "string",
+      "default": ""
+    },
+    "rightAnswers": {
+      "type": "string",
+      "default": ""
+    },
+    "setIds": {
+      "type": "array",
+      "items": {
+        "type": "integer"
+      },
+      "default": []
+    }
+  },
+  "editorScript": "wpfn-blocks",
+  "style": "file:./style.css"
+}

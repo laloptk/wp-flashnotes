@@ -33,7 +33,7 @@ final class CardsTable extends BaseTable {
                 user_id BIGINT UNSIGNED NOT NULL DEFAULT 0,
                 right_answers_json LONGTEXT DEFAULT NULL,
                 explanation LONGTEXT DEFAULT NULL,
-                card_type ENUM('flip','true_false','multiple_choice','multiple_select','fill_in_blank') NOT NULL DEFAULT 'flip',
+                card_type ENUM('flip','true_false','multiple_choice', 'multiple_select','fill_in_blank') NOT NULL DEFAULT 'flip',
                 last_seen DATETIME DEFAULT NULL,
                 next_due DATETIME DEFAULT NULL,
                 correct_count INT UNSIGNED NOT NULL DEFAULT 0,

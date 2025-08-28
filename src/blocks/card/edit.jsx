@@ -7,7 +7,7 @@ import {
 } from '@wordpress/block-editor';
 import { ToggleControl, TextControl } from '@wordpress/components';
 import { v4 as uuidv4 } from 'uuid';
-import { serialize } from '@wordpress/blocks'; // <-- needed to turn innerBlocks into HTML
+import { serialize } from '@wordpress/blocks';
 
 const Edit = ({ clientId, allowedBlocks, attributes, setAttributes }) => {
   const { block_id, title, content, hide } = attributes;
@@ -30,24 +30,9 @@ const Edit = ({ clientId, allowedBlocks, attributes, setAttributes }) => {
   }, [innerBlocks, setAttributes]);
 
   return (
-    <div {...blockProps}>
-      <TextControl
-        label="Title"
-        value={title}
-        onChange={(val) => setAttributes({ title: val })}
-        className="wpfn-note__title"
-      />
+    <>
 
-      <div className="wpfn-note__content">
-        <InnerBlocks allowedBlocks={allowedBlocks} />
-      </div>
-
-      <ToggleControl
-        label="Hide Note In Frontend"
-        checked={hide}
-        onChange={(val) => setAttributes({ hide: val })}
-      />
-    </div>
+    </>
   );
 }
 
