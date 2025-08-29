@@ -23,7 +23,6 @@ if ( file_exists( __DIR__ . '/vendor/autoload.php' ) ) {
     require_once __DIR__ . '/vendor/autoload.php';
 }
 
-// Initialize Plugin class
-add_action( 'plugins_loaded', function () {
+add_action( 'plugins_loaded', function() {
     ( new Plugin() )->init();
 });

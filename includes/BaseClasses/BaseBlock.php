@@ -7,7 +7,7 @@ abstract class BaseBlock {
 
 	abstract protected function get_block_folder_name(): string;
 
-	abstract protected function render( $attributes, $content, $block );
+	abstract public function render( $attributes, $content, $block );
 
 	protected function get_blocks_slug(): string {
 		return 'build/blocks/';
@@ -36,7 +36,7 @@ abstract class BaseBlock {
 		if ( empty( $args ) || ! isset( $args['render_callback'] ) ) {
 			$args['render_callback'] = array( $this, 'render' );
 		}
-
+		
 		$block_filepath = $this->get_block_pathfile();
 
 		register_block_type_from_metadata( $block_filepath, $args );

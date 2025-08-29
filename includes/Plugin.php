@@ -16,7 +16,7 @@ class Plugin {
 
     private function define_constants(): void {
         if ( ! defined( 'WPFN_PLUGIN_FILE' ) ) {
-            define( 'WPFN_PLUGIN_FILE', dirname( __DIR__ ) . '/wp-flashnotes.php' ); // adjust if needed
+            define( 'WPFN_PLUGIN_FILE', dirname( __DIR__ ) . '/wp-flashnotes.php' );
         }
         if ( ! defined( 'WPFN_PLUGIN_DIR' ) ) {
             define( 'WPFN_PLUGIN_DIR', plugin_dir_path( WPFN_PLUGIN_FILE ) );
@@ -42,27 +42,15 @@ class Plugin {
             if ( is_admin() ) {
                 require_once ABSPATH . 'wp-admin/includes/plugin.php';
 
-                add_action(
-                    'admin_notices',
-                    function () use ( $composer ) {
-                        ?>
-                        <div class="notice notice-error">
-                            <p>
-                                <strong>WP FlashNotes</strong> can’t run because the Composer autoloader is missing:<br>
-                                <code><?php echo esc_html( $composer ); ?></code><br>
-                                Please run <code>composer install</code> in the plugin root directory.
-                            </p>
-                        </div>
-                        <?php
-                    }
-                );
+                add_action( 'admin_notices', function () use ( $composer ) {
+                    echo '<div class="notice notice-error"><p><strong>WP FlashNotes</strong> can’t run because the Composer autoloader is missing:<br><code>'
+                         . esc_html( $composer ) .
+                         '</code><br>Please run <code>composer install</code> in the plugin root directory.</p></div>';
+                } );
 
-                add_action(
-                    'admin_init',
-                    function () {
-                        deactivate_plugins( WPFN_PLUGIN_BASENAME );
-                    }
-                );
+                add_action( 'admin_init', function () {
+                    deactivate_plugins( WPFN_PLUGIN_BASENAME );
+                } );
             }
             return;
         }
@@ -80,7 +68,7 @@ class Plugin {
                         '<p><strong>WP FlashNotes</strong> cannot be activated because the Composer autoloader is missing.</p>
                          <p>Run <code>composer install</code> in the plugin directory and try again.</p>',
                         'WP FlashNotes: Missing dependency',
-                        array( 'back_link' => true )
+                        [ 'back_link' => true ]
                     );
                 }
             }
@@ -96,39 +84,31 @@ class Plugin {
     }
 
     private function setup_i18n(): void {
-        add_action(
-            'plugins_loaded',
-            function () {
-                load_plugin_textdomain(
-                    'wp-flashnotes',
-                    false,
-                    dirname( WPFN_PLUGIN_BASENAME ) . '/languages'
-                );
-            }
-        );
+        add_action( 'init', function () {
+            load_plugin_textdomain(
+                'wp-flashnotes',
+                false,
+                dirname( WPFN_PLUGIN_BASENAME ) . '/languages'
+            );
+        } );
     }
 
     private function setup_assets(): void {
-        add_action(
-            'enqueue_block_editor_assets',
-            function () {
-                wp_enqueue_script(
-                    'wpfn-blocks',
-                    plugins_url( 'build/index.js', WPFN_PLUGIN_FILE ),
-                    array( 'wp-blocks', 'wp-element', 'wp-editor' ),
-                    WPFN_VERSION,
-                    true
-                );
+        add_action( 'init', function () {
+            $asset_file = WPFN_PLUGIN_DIR . 'build/index.asset.php';
+            $assets     = file_exists( $asset_file ) ? include $asset_file : [
+                'dependencies' => [ 'wp-blocks', 'wp-element', 'wp-editor' ],
+                'version'      => WPFN_VERSION,
+            ];
 
-                wp_localize_script(
-                    'wpfn-blocks',
-                    'WPFlashNotes',
-                    array(
-                        'apiNamespace' => WPFN_API_NAMESPACE,
-                        'restUrl'      => esc_url_raw( rest_url( WPFN_API_NAMESPACE ) ),
-                    )
-                );
-            }
-        );
+            wp_register_script(
+                'wpfn-blocks',
+                plugins_url( 'build/index.js', WPFN_PLUGIN_FILE ),
+                $assets['dependencies'],
+                $assets['version']
+            );
+
+            wp_set_script_translations( 'wpfn-blocks', 'wp-flashnotes' );
+        } );
     }
 }
