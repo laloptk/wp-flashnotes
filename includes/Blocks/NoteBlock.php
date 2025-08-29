@@ -10,7 +10,7 @@ final class NoteBlock extends BaseBlock {
 		return 'note';
 	}
 
-	protected function render( $attributes, $content, $block ) {
+	public function render( $attributes, $content, $block ) {
 		// Placeholder output — replace with real render later.
 		return '<div class="wpfn-note-placeholder">NotesBlock placeholder</div>';
 	}

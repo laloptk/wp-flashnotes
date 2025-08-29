@@ -4,15 +4,23 @@
  * This file should be required from the main plugin file.
  */
 
+use WPFlashNotes\Blocks\CardBlock;
 use WPFlashNotes\Blocks\NoteBlock;
+use WPFlashNotes\Blocks\SlotBlock;
 
 // Instantiate CPTs
-$note_block = new NoteBlock();
+$blocks_to_register = [
+	new NoteBlock(),
+	new CardBlock(),
+	new SlotBlock(),
+];
 
 // Hook registration
 add_action(
 	'init',
-	function () use ( $note_block ): void {
-		$note_block->register();
+	function () use ( $blocks_to_register ): void {
+		foreach($blocks_to_register as $block) {
+			$block->register();
+		}
 	}
 );

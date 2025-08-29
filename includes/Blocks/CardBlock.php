@@ -10,8 +10,12 @@ final class CardBlock extends BaseBlock {
 		return 'card';
 	}
 
-	protected function render( $attributes, $content, $block ) {
-		// Placeholder output — replace with real render later.
-		return '<div class="wpfn-card-placeholder">CardBlock placeholder</div>';
+	public function render( $attributes, $content, $block ) {
+        $block_id = $attributes['block_id'] ?? '';
+        return sprintf(
+            '<div class="wpfn-card" data-id="%s">%s</div>',
+            esc_attr($block_id),
+            $content // children markup from post_content
+        );
 	}
 }
