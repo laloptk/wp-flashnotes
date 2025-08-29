@@ -1,39 +1,61 @@
 import { useEffect } from '@wordpress/element';
 import { useSelect } from '@wordpress/data';
-import {
-  store as blockEditorStore,
-  useBlockProps,
-  InnerBlocks,
-} from '@wordpress/block-editor';
-import { ToggleControl, TextControl } from '@wordpress/components';
+import { store as blockEditorStore, useBlockProps, InnerBlocks } from '@wordpress/block-editor';
 import { v4 as uuidv4 } from 'uuid';
-import { serialize } from '@wordpress/blocks';
 
-const Edit = ({ clientId, allowedBlocks, attributes, setAttributes }) => {
-  const { block_id, title, content, hide } = attributes;
-  const blockProps = useBlockProps({ className: 'wpfn-note' });
+export default function Edit({ clientId, attributes, setAttributes }) {
+  const { block_id } = attributes;
+  const blockProps = useBlockProps({ className: 'wpfn-card' });
 
-  if (!block_id) {
-    setAttributes({ block_id: uuidv4() });
-  }
+  // Assign UUID once
+  useEffect(() => {
+    if (!block_id) {
+      setAttributes({ block_id: uuidv4() });
+    }
+  }, [block_id, setAttributes]);
 
-  // Observe this block’s direct children
-  const innerBlocks = useSelect(
+  // Observe direct children (slots)
+  const childBlocks = useSelect(
     (select) => select(blockEditorStore).getBlocks(clientId),
     [clientId]
   );
 
-  // Sync inner blocks → `attributes.content` as HTML
+  // Extract question + explanation from slot attributes
   useEffect(() => {
-    const html = serialize(innerBlocks); // produces HTML with comments
-    setAttributes({ content: html });
-  }, [innerBlocks, setAttributes]);
+    if (!childBlocks.length) return;
 
+    let question = '';
+    let explanation = '';
+
+    childBlocks.forEach((child) => {
+      if (child.name === 'wpfn/slot') {
+        if (child.attributes.role === 'question') {
+          question = child.attributes.content;
+        } else if (child.attributes.role === 'explanation') {
+          explanation = child.attributes.content;
+        }
+      }
+    });
+
+    setAttributes((prev) => {
+        if (prev.question !== question || prev.explanation !== explanation) {
+            return { question, explanation };
+        }
+        return prev;
+    });
+  }, [childBlocks, setAttributes]);
+  
   return (
-    <>
-
-    </>
+    <div {...blockProps}>
+      <InnerBlocks
+        template={[
+          [ 'wpfn/slot', { role: 'question' } ],
+          [ 'wpfn/slot', { role: 'explanation' } ]
+        ]}
+        templateLock="all"
+        allowedBlocks={[ 'wpfn/slot' ]}
+      />
+    </div>
   );
 }
 
-export default Edit;

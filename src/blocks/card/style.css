@@ -1,0 +1,5 @@
+.wpfn-card .wp-block-wpfn-slot {
+  min-height: 40px; /* or whatever makes sense */
+  border: 1px dashed #ccc; /* optional for visibility */
+  padding: 6px;
+}

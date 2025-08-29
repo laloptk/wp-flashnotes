@@ -5,5 +5,5 @@ import save from './save';
 
 registerBlockType(metadata.name, {
   edit: Edit,
-  save: save,
+  save: save
 });

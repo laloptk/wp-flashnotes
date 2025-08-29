@@ -17,6 +17,10 @@
       "type": "string",
       "default": ""
     },
+    "explanation": {
+      "type": "string",
+      "default": ""
+    },
     "answers": {
       "type": "string",
       "default": ""
