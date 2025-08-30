@@ -7,20 +7,20 @@ const ALLOWED_MAP = {
 };
 
 export default function Edit({ attributes }) {
-  const { role } = attributes;
+  const { role, templateLock = false } = attributes;
   const blockProps = useBlockProps({ className: `wpfn-slot role-${role}` });
 
   return (
     <div {...blockProps}>
-      <h4>{ role.charAt(0).toUpperCase() + role.slice(1) }</h4>
-      <InnerBlocks
-        allowedBlocks={ ALLOWED_MAP[role] || [] }
-        template={[
-          [ 'core/paragraph', { placeholder: `Enter ${role}…` } ]
-        ]}
-        templateLock={false}
-        renderAppender={ InnerBlocks.DefaultBlockAppender }
-      />
+        <h4>{ role.charAt(0).toUpperCase() + role.slice(1) }</h4>
+        <InnerBlocks
+            allowedBlocks={ ALLOWED_MAP[role] || [] }
+            template={[
+            [ 'core/paragraph', { placeholder: `Enter ${role}…` } ]
+            ]}
+            templateLock={ templateLock }
+            renderAppender={ InnerBlocks.DefaultBlockAppender }
+        />
     </div>
   );
 }

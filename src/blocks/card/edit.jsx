@@ -50,6 +50,7 @@ export default function Edit({ clientId, attributes, setAttributes }) {
       <InnerBlocks
         template={[
           [ 'wpfn/slot', { role: 'question' } ],
+          [ 'wpfn/slot', { role: 'answer', templateLock: 'all' } ],
           [ 'wpfn/slot', { role: 'explanation' } ]
         ]}
         templateLock="all"
