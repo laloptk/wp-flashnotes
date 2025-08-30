@@ -21,11 +21,7 @@
       "type": "string",
       "default": ""
     },
-    "answers": {
-      "type": "string",
-      "default": ""
-    },
-    "rightAnswers": {
+    "answer": {
       "type": "string",
       "default": ""
     },

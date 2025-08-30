@@ -2,9 +2,10 @@ import { useEffect } from '@wordpress/element';
 import { useSelect } from '@wordpress/data';
 import { store as blockEditorStore, useBlockProps, InnerBlocks } from '@wordpress/block-editor';
 import { v4 as uuidv4 } from 'uuid';
+import { normalizeText } from '../../utils';
 
 export default function Edit({ clientId, attributes, setAttributes }) {
-  const { block_id } = attributes;
+  const { block_id, question, answer, explanation  } = attributes;
   const blockProps = useBlockProps({ className: 'wpfn-card' });
 
   // Assign UUID once
@@ -20,31 +21,38 @@ export default function Edit({ clientId, attributes, setAttributes }) {
     [clientId]
   );
 
-  // Extract question + explanation from slot attributes
   useEffect(() => {
     if (!childBlocks.length) return;
 
     let question = '';
+    let answer = '';
     let explanation = '';
 
     childBlocks.forEach((child) => {
       if (child.name === 'wpfn/slot') {
-        if (child.attributes.role === 'question') {
-          question = child.attributes.content;
-        } else if (child.attributes.role === 'explanation') {
-          explanation = child.attributes.content;
+        const role = child.attributes.role;
+
+        // Inspect first inner block of this slot
+        const firstInner = child.innerBlocks[0];
+        const raw = firstInner?.attributes?.content;
+        // Avoids passing an object to the attributes instead of a string
+        const text = normalizeText(raw);
+
+        if (role === 'question') {
+          question = text;
+        } else if (role === 'answer') {
+          answer = text;
+        } else if (role === 'explanation') {
+          explanation = text;
         }
       }
     });
 
-    setAttributes((prev) => {
-        if (prev.question !== question || prev.explanation !== explanation) {
-            return { question, explanation };
-        }
-        return prev;
-    });
+    setAttributes({ question, answer, explanation });
   }, [childBlocks, setAttributes]);
-  
+
+  console.log(attributes);
+
   return (
     <div {...blockProps}>
       <InnerBlocks

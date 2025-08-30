@@ -44,151 +44,93 @@ final class CardsRepository extends BaseRepository {
 	 * @return array Sanitized subset of $data, ready for wpdb insert/update.
 	 * @throws \Exception On invalid field values.
 	 */
-	protected function sanitize_data( array $data ): array {
-		$sanitized_data = array();
+	protected function sanitize_data(array $data): array
+	{
+		$sanitized = [];
 
-		foreach ( $data as $field_name => $field_value ) {
-			switch ( $field_name ) {
-				case 'user_id': // ✅ keep user_id
-					$uid = (int) $field_value;
-					if ( $uid <= 0 ) {
-						$uid = (int) get_current_user_id();
-					}
-					if ( $uid <= 0 ) {
-						throw new \Exception( 'user_id is required.' );
-					}
-					$sanitized_data['user_id'] = $uid;
+		foreach ($data as $field => $value) {
+			error_log(json_encode($value));
+			switch ($field) {
+				case 'block_id':
+					$sanitized['block_id'] = $value === null ? null : sanitize_text_field((string) $value);
 					break;
 
 				case 'question':
-					$question = wp_kses_post( (string) $field_value );
-					if ( $question === '' ) {
-						throw new \Exception( 'Question cannot be empty.' );
+					$question = wp_kses_post((string) $value);
+					if ($question === '') {
+						throw new \Exception('Question cannot be empty.');
 					}
-					$sanitized_data['question'] = $question;
+					$sanitized['question'] = $question;
 					break;
 
 				case 'answers_json':
-					$sanitized_data['answers_json'] = self::normalize_json_field( $field_value );
+					$sanitized['answers_json'] = self::normalize_json_field($value);
 					break;
 
 				case 'right_answers_json':
-					$sanitized_data['right_answers_json'] = self::normalize_json_field( $field_value );
+					$sanitized['right_answers_json'] = self::normalize_json_field($value);
 					break;
 
 				case 'explanation':
-					$sanitized_data['explanation'] = $field_value === null
-						? null
-						: wp_kses_post( (string) $field_value );
+					$sanitized['explanation'] = $value === null ? null : wp_kses_post((string) $value);
+					break;
+
+				case 'user_id':
+					$sanitized['user_id'] = intval($value);
 					break;
 
 				case 'card_type':
-					$card_type = sanitize_key( (string) $field_value );
-					if ( ! in_array( $card_type, self::CARD_TYPES, true ) ) {
-						throw new \Exception( 'Invalid card_type.' );
-					}
-					$sanitized_data['card_type'] = $card_type;
+					$allowed = ['flip','true_false','multiple_choice','multiple_select','fill_in_blank'];
+					$sanitized['card_type'] = in_array($value, $allowed, true) ? $value : 'flip';
 					break;
 
 				case 'last_seen':
 				case 'next_due':
 				case 'deleted_at':
-				case 'created_at':
-				case 'updated_at':
-					$sanitized_data[ $field_name ] = self::normalize_datetime( $field_value );
+					$sanitized[$field] = $value ? gmdate('Y-m-d H:i:s', strtotime((string) $value)) : null;
 					break;
 
 				case 'correct_count':
 				case 'incorrect_count':
 				case 'streak':
-					$integer_value = (int) $field_value;
-					if ( $integer_value < 0 ) {
-						throw new \Exception( "$field_name must be >= 0." );
-					}
-					$sanitized_data[ $field_name ] = $integer_value;
+					$sanitized[$field] = max(0, intval($value));
 					break;
 
 				case 'ease_factor':
-					$ease_factor = (float) $field_value;
-					if ( $ease_factor < 1.30 ) {
-						$ease_factor = 1.30;
-					}
-					if ( $ease_factor > 5.00 ) {
-						$ease_factor = 5.00;
-					}
-					$sanitized_data['ease_factor'] = $ease_factor;
+					$sanitized['ease_factor'] = is_numeric($value) ? number_format((float)$value, 2, '.', '') : 2.50;
 					break;
 
 				case 'is_mastered':
-					$sanitized_data['is_mastered'] = (int) (bool) $field_value;
-					break;
-
-				case 'block_id':
-					$sanitized_data['block_id'] = $field_value === null
-						? null
-						: sanitize_text_field( (string) $field_value );
-					break;
-
-				default:
-					// Ignore unknown fields silently.
+					$sanitized['is_mastered'] = $value ? 1 : 0;
 					break;
 			}
 		}
 
-		// ✅ Fallback: if user_id not provided, use the authenticated user
-		if ( ! isset( $sanitized_data['user_id'] ) ) {
-			$uid = (int) get_current_user_id();
-			if ( $uid <= 0 ) {
-				throw new \Exception( 'user_id is required.' );
-			}
-			$sanitized_data['user_id'] = $uid;
-		}
-
-		// Optional integrity rule (unchanged) …
-		if ( array_key_exists( 'answers_json', $sanitized_data )
-			&& array_key_exists( 'right_answers_json', $sanitized_data )
-		) {
-			$answers_array       = $sanitized_data['answers_json']
-				? json_decode( $sanitized_data['answers_json'], true )
-				: array();
-			$right_answers_array = $sanitized_data['right_answers_json']
-				? json_decode( $sanitized_data['right_answers_json'], true )
-				: array();
-
-			if ( $answers_array && $right_answers_array && array_diff( $right_answers_array, $answers_array ) ) {
-				throw new \Exception( 'right_answers_json must be a subset of answers_json.' );
-			}
-		}
-
-		return $sanitized_data;
+		return $sanitized;
 	}
 
-	/**
-	 * wpdb format map for numeric fields.
-	 *
-	 * @return array<string,string>
-	 */
-	protected function fieldFormats(): array {
-		return array(
-			'block_id'           => '%s',
-			'question'           => '%s',
-			'answers_json'       => '%s',
-			'right_answers_json' => '%s',
-			'explanation'        => '%s',
-			'card_type'          => '%s',
-			'last_seen'          => '%s',
-			'next_due'           => '%s',
-			'correct_count'      => '%d',
-			'incorrect_count'    => '%d',
-			'streak'             => '%d',
-			'ease_factor'        => '%f',
-			'is_mastered'        => '%d',
-			'deleted_at'         => '%s',
-			'created_at'         => '%s',
-			'updated_at'         => '%s',
-			'user_id'            => '%d',
-		);
+
+	protected function fieldFormats(): array
+	{
+		return [
+			'block_id'          => '%s',
+			'question'          => '%s',
+			'answers_json'      => '%s',
+			'user_id'           => '%d',
+			'right_answers_json'=> '%s',
+			'explanation'       => '%s',
+			'card_type'         => '%s',
+			'last_seen'         => '%s',
+			'next_due'          => '%s',
+			'correct_count'     => '%d',
+			'incorrect_count'   => '%d',
+			'streak'            => '%d',
+			'ease_factor'       => '%f',
+			'is_mastered'       => '%d',
+			'deleted_at'        => '%s',
+		];
 	}
+
 	
 	/**
 	 * Upsert a card row based on a block's attributes.

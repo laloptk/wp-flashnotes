@@ -71,9 +71,6 @@ class StudySetManager {
 	 */
 	public function handle_studyset_before_update(int $post_id, array $data): void
 	{
-		// Debug: see what WP gave us
-		error_log('before_update_post data: ' . json_encode($data));
-
 		// Get the full WP_Post so we can safely access post_type and post_content
 		$post_obj = get_post($post_id);
 		if (!$post_obj || $post_obj->post_type !== 'studyset') {

@@ -53,7 +53,6 @@ class EventHandler {
 	 * Handle before_update_post for studyset CPT.
 	 */
 	public function on_studyset_before_update( int $post_id, array $post ): void {
-		error_log("From handler: " . json_encode($post));
 		if ( $this->is_autosave_or_revision( $post_id ) ) {
 			return;
 		}

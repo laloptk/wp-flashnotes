@@ -1,4 +1,4 @@
-import { useBlockProps, InnerBlocks } from '@wordpress/block-editor';
+import { store as blockEditorStore, useBlockProps, InnerBlocks } from '@wordpress/block-editor';
 
 const ALLOWED_MAP = {
   question: [ 'core/paragraph', 'core/heading', 'core/list' ],
