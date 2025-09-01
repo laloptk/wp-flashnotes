@@ -1,7 +1,7 @@
 <?php
 defined( 'ABSPATH' ) || exit;
 
-require_once __DIR__ . '/tasks.php';
+require_once WPFN_PLUGIN_DIR . 'includes/DataBase/Schema/tasks.php';
 
 register_activation_hook(
 	WPFN_PLUGIN_FILE,

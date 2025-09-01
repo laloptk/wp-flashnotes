@@ -31,3 +31,8 @@ wp-content/plugins/wp-flashnotes/build/
 # Backup files
 *.bak
 *.tmp
+
+# PHPUnit / Test artifacts
+/phpunit.xml            # personal overrides, keep phpunit.xml.dist committed
+/.phpunit.result.cache
+/tests/_output/         # if you ever use Codeception or generate logs
