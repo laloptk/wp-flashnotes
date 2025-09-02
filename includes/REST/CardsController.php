@@ -171,9 +171,14 @@ class CardsController extends BaseController {
 	}
 
 	public function get_item( $req ) {
-		$id  = absint( $req['id'] );
+		$id  = absint( $req->get_param('id') );
 		$row = $this->repo->read( $id );
-		return $row ? $this->ok( array( 'item' => $row ) ) : $this->err( 'not_found', 'Card not found.', 404 );
+
+		if ( ! $row ) {
+			return $this->err( 'not_found', 'Card not found.', 404 );
+		}
+
+		return $this->ok( [ 'item' => $row ] );
 	}
 
 	public function create_item( $req ) {
