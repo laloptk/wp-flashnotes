@@ -13,7 +13,7 @@ use WPFlashNotes\BaseClasses\BaseRepository;
  * - Enforces non-empty title (when provided).
  * - Supports partial updates safely.
  */
-final class NotesRepository extends BaseRepository {
+class NotesRepository extends BaseRepository {
 
 	/**
 	 * Fully-qualified table name.

@@ -1,12 +1,27 @@
-<phpunit bootstrap="tests/bootstrap.php"
-         colors="true"
-         verbose="true">
-  <php>
-    <env name="WP_CORE_DIR" value="C:\Users\Lalo\Local Sites\wp-flashnotes\app\public"/>
-  </php>
-  <testsuites>
-    <testsuite name="WPFlashNotes">
-      <directory suffix="Test.php">./tests</directory>
-    </testsuite>
-  </testsuites>
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit
+    bootstrap="tests/bootstrap.php"
+    colors="true"
+    verbose="true"
+    backupGlobals="false"
+    backupStaticAttributes="false"
+    beStrictAboutTestsThatDoNotTestAnything="true"
+    beStrictAboutOutputDuringTests="true"
+    convertNoticesToExceptions="true"
+    convertWarningsToExceptions="true"
+    convertDeprecationsToExceptions="true"
+    stopOnFailure="false"
+>
+    <testsuites>
+        <testsuite name="Plugin Test Suite">
+            <directory suffix="Test.php">./tests</directory>
+        </testsuite>
+    </testsuites>
+
+    <php>
+        <env name="WP_DEBUG" value="1"/>
+        <env name="WP_DEBUG_DISPLAY" value="1"/>
+        <env name="WP_DEBUG_LOG" value="1"/>
+    </php>
 </phpunit>
+

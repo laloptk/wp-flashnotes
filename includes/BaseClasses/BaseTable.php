@@ -47,12 +47,6 @@ abstract class BaseTable {
 		$sql    = $this->get_schema();
 		$result = dbDelta( $sql );
 
-		if ( is_array( $result ) && ! empty( $result ) ) {
-			error_log(
-				'[WPFlashNotes][dbDelta] ' . $table_name . ' -> ' . implode( ' | ', array_values( $result ) )
-			);
-		}
-
 		do_action( 'wpfn_after_table_install', $table_name, $result ?? array() );
 	}
 

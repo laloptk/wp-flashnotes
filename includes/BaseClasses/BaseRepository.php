@@ -113,7 +113,6 @@ abstract class BaseRepository {
 		}
 
 		if (empty($changed)) {
-			error_log("No changes detected for ID {$id}, skipping update");
 			return false; // no update → updated_at stays the same
 		}
 

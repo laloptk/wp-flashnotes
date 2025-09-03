@@ -14,7 +14,7 @@ use WPFlashNotes\BaseClasses\BaseRepository;
  * - Stores answers and right answers as normalized JSON strings (LONGTEXT).
  * - Includes a helper to record review results (simple SM-2-ish).
  */
-final class CardsRepository extends BaseRepository {
+class CardsRepository extends BaseRepository {
 
 	/**
 	 * Allowed card types (must match ENUM in schema).
@@ -49,7 +49,6 @@ final class CardsRepository extends BaseRepository {
 		$sanitized = [];
 
 		foreach ($data as $field => $value) {
-			error_log(json_encode($value));
 			switch ($field) {
 				case 'block_id':
 					$sanitized['block_id'] = $value === null ? null : sanitize_text_field((string) $value);

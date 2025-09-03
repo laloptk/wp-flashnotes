@@ -46,7 +46,15 @@ class SyncManagerTest extends WP_UnitTestCase {
 
 		$manager = $this->make_manager( [ 'sets' => $setsRepo ] );
 
-		$post_id = self::factory()->post->create( [ 'post_title' => 'Origin' ] );
+		$user_id = self::factory()->user->create( [ 'role' => 'administrator' ] );
+        wp_set_current_user( $user_id );
+
+        $post_id = self::factory()->post->create( [
+            'post_title'  => 'Origin Post',
+            'post_author' => $user_id,
+            'post_status' => 'publish',
+        ] );
+        
 		$set_post_id = $manager->ensure_set_for_post( $post_id, 'Some content' );
 
 		$this->assertIsInt( $set_post_id );

@@ -67,8 +67,6 @@ class SyncManager {
 			]
 		);
 
-		error_log("This comes from ensure_set_for_post: " . json_encode(get_post($set_post_id)));
-
 		if ( is_wp_error( $set_post_id ) ) {
 			throw new \RuntimeException( 'Failed to create studyset: ' . $set_post_id->get_error_message() );
 		}
