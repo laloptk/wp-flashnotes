@@ -229,48 +229,4 @@ class SetsRepository extends BaseRepository {
 			)
 		);
 	}
-
-	/**
-	 * Ensure a studyset exists for a given content post (post/page).
-	 *
-	 * If no set exists yet:
-	 *  - Creates a new studyset CPT post.
-	 *  - Inserts row in wpfn_sets linking both.
-	 * Returns the set's id (pk in wpfn_sets).
-	 */
-	public function ensure_set_for_post( int $post_id ): int {
-		$post_id = $this->validate_id( $post_id );
-
-		// 1. Check if a set row already exists for this content post
-		$existing = $this->get_by_post_id( $post_id );
-		if ( ! empty( $existing ) ) {
-			return (int) $existing[0]['id']; // we assume 1:1 mapping
-		}
-
-		// 2. Create a new CPT post for the studyset
-		$title       = get_the_title( $post_id ) ?: 'Untitled';
-		$set_post_id = wp_insert_post(
-			array(
-				'post_title'  => $title,
-				'post_type'   => 'studyset',
-				'post_status' => 'publish',
-			)
-		);
-
-		if ( is_wp_error( $set_post_id ) ) {
-			throw new \Exception( 'Failed to create studyset CPT: ' . $set_post_id->get_error_message() );
-		}
-
-		// 3. Insert row into wpfn_sets
-		$user_id = (int) ( get_post_field( 'post_author', $post_id ) ?: get_current_user_id() );
-
-		return $this->upsert_by_set_post_id(
-			array(
-				'title'       => $title,
-				'post_id'     => $post_id,
-				'set_post_id' => $set_post_id,
-				'user_id'     => $user_id,
-			)
-		);
-	}
 }

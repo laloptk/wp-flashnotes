@@ -1,4 +1,5 @@
 <?php
+
 namespace WPFlashNotes\Helpers;
 
 defined( 'ABSPATH' ) || exit;
@@ -30,10 +31,9 @@ class BlockParser {
 				$results[] = self::normalize_block( $block );
 			}
 
-			// Recurse into children
-			if ( ! empty( $block['innerBlocks'] ) ) {
-				$childResults = self::extract_flashnotes_blocks( $block['innerBlocks'] );
-				$results      = array_merge( $results, $childResults );
+			// Recurse into children only if innerBlocks is a non-empty array
+			if ( isset($block['innerBlocks']) && ! empty( $block['innerBlocks'] ) && is_array( $block['innerBlocks'] ) ) {
+				$results = array_merge( $results, self::extract_flashnotes_blocks( $block['innerBlocks'] ) );
 			}
 		}
 
@@ -52,7 +52,9 @@ class BlockParser {
 			'attrs'       => $block['attrs'] ?? [],
 			'block_id'    => $block['attrs']['block_id'] ?? null,
 			'type'        => $block['attrs']['type'] ?? null, // e.g. card subtype
-			'innerBlocks' => $block['innerBlocks'] ?? [],
+			'innerBlocks' => ( isset( $block['innerBlocks'] ) && is_array( $block['innerBlocks'] ) )
+				? $block['innerBlocks']
+				: [],
 		];
 	}
 }

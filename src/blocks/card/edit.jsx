@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { normalizeText } from '../../utils';
 
 export default function Edit({ clientId, attributes, setAttributes }) {
-  const { block_id, question, answer, explanation  } = attributes;
+  const { block_id } = attributes;
   const blockProps = useBlockProps({ className: 'wpfn-card' });
 
   // Assign UUID once
@@ -48,7 +48,7 @@ export default function Edit({ clientId, attributes, setAttributes }) {
       }
     });
 
-    setAttributes({ question, answer, explanation });
+    setAttributes({ question, answers_json: [answer], explanation });
   }, [childBlocks, setAttributes]);
 
   console.log(attributes);

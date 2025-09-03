@@ -11,7 +11,7 @@
   },
   "attributes": {
     "block_id": {
-      "type": "integer"
+      "type": "string"
     },
     "question": {
       "type": "string",
@@ -21,9 +21,9 @@
       "type": "string",
       "default": ""
     },
-    "answer": {
-      "type": "string",
-      "default": ""
+    "answers_json": {
+      "type": "array",
+      "default": []
     },
     "setIds": {
       "type": "array",
