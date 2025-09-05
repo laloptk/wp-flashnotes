@@ -10,99 +10,86 @@ use wpdb;
 /**
  * ObjectUsageRepository
  *
- * Table: {prefix}wpfn_object_usage
- * Columns / PK:
- *  - object_type ENUM('card','note') NOT NULL
- *  - object_id   BIGINT UNSIGNED NOT NULL
- *  - post_id     BIGINT UNSIGNED NOT NULL
- *  - block_id    VARCHAR(128)    NOT NULL
- *  PRIMARY KEY(object_type, object_id, post_id, block_id)
- * FK: post_id -> {prefix}posts.ID
- *
- * WHY NOT BaseRepository?
- * - BaseRepository assumes a single integer PK column named "id", optional soft-deletes,
- *   and timestamp handling with read/update/delete by that ID.
- * - This table has a COMPOSITE primary key (object_type, object_id, post_id, block_id),
- *   no timestamps/soft-deletes, and requires idempotent attach/detach, listings, and
- *   bulk/sync operations. A purpose-built repo is simpler and avoids forcing abstractions.
+ * Manages object usage records in {prefix}wpfn_object_usage.
+ * Composite PK: (object_type, object_id, post_id, block_id).
  */
 class ObjectUsageRepository {
 
-	/** @var wpdb */
-	protected wpdb $wpdb;
-
-	/** @var string */
+	protected wpdb $db;
 	protected string $table;
 
 	/** @var array<string,bool> */
-	protected array $allowedTypes = array(
-		'card' => true,
-		'note' => true,
-	);
+	protected array $allowed_types = [
+		'card'     => true,
+		'note'     => true,
+		'inserter' => true,
+	];
 
 	public function __construct() {
 		global $wpdb;
-		$this->wpdb  = $wpdb;
+		$this->db    = $wpdb;
 		$this->table = $wpdb->prefix . 'wpfn_object_usage';
 	}
 
-	// ---------------------------------------------------------------------
-	// Core ops
-	// ---------------------------------------------------------------------
-
-	/** Idempotent link: (object_type, object_id) used in (post_id, block_id). */
+	/**
+	 * Attach usage idempotently.
+	 */
 	public function attach( string $object_type, int $object_id, int $post_id, string $block_id ): bool {
 		$object_type = $this->validate_type( $object_type );
 		$object_id   = $this->validate_id( $object_id );
 		$post_id     = $this->validate_id( $post_id );
 		$block_id    = $this->validate_block_id( $block_id );
 
-		$sql = $this->wpdb->prepare(
+		$insert_sql = $this->db->prepare(
 			"INSERT IGNORE INTO {$this->table} (object_type, object_id, post_id, block_id) VALUES (%s, %d, %d, %s)",
 			$object_type,
 			$object_id,
 			$post_id,
 			$block_id
 		);
-        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-		$res = $this->wpdb->query( $sql );
-		if ( $res === false ) {
-			throw new Exception( 'Attach failed: ' . ( $this->wpdb->last_error ?: 'unknown DB error' ) );
+
+		$query_result = $this->db->query( $insert_sql );
+		if ( $query_result === false ) {
+			throw new Exception( 'Attach failed: ' . ( $this->db->last_error ?: 'unknown DB error' ) );
 		}
-		return $res >= 0;
+		return $query_result >= 0;
 	}
 
-	/** Remove one usage link. Returns true if a row was deleted. */
+	/**
+	 * Detach usage.
+	 */
 	public function detach( string $object_type, int $object_id, int $post_id, string $block_id ): bool {
 		$object_type = $this->validate_type( $object_type );
 		$object_id   = $this->validate_id( $object_id );
 		$post_id     = $this->validate_id( $post_id );
 		$block_id    = $this->validate_block_id( $block_id );
 
-		$res = $this->wpdb->delete(
+		$delete_result = $this->db->delete(
 			$this->table,
-			array(
+			[
 				'object_type' => $object_type,
 				'object_id'   => $object_id,
 				'post_id'     => $post_id,
 				'block_id'    => $block_id,
-			),
-			array( '%s', '%d', '%d', '%s' )
+			],
+			[ '%s', '%d', '%d', '%s' ]
 		);
-		if ( $res === false ) {
-			throw new Exception( 'Detach failed: ' . ( $this->wpdb->last_error ?: 'unknown DB error' ) );
+		if ( $delete_result === false ) {
+			throw new Exception( 'Detach failed: ' . ( $this->db->last_error ?: 'unknown DB error' ) );
 		}
-		return $res > 0;
+		return $delete_result > 0;
 	}
 
-	/** Check if a specific usage exists. */
+	/**
+	 * Check if usage exists.
+	 */
 	public function exists( string $object_type, int $object_id, int $post_id, string $block_id ): bool {
 		$object_type = $this->validate_type( $object_type );
 		$object_id   = $this->validate_id( $object_id );
 		$post_id     = $this->validate_id( $post_id );
 		$block_id    = $this->validate_block_id( $block_id );
 
-		$sql = $this->wpdb->prepare(
+		$select_sql = $this->db->prepare(
 			"SELECT 1 FROM {$this->table}
              WHERE object_type = %s AND object_id = %d AND post_id = %d AND block_id = %s
              LIMIT 1",
@@ -111,21 +98,19 @@ class ObjectUsageRepository {
 			$post_id,
 			$block_id
 		);
-        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-		return (bool) $this->wpdb->get_var( $sql );
+
+		return (bool) $this->db->get_var( $select_sql );
 	}
 
-	// ---------------------------------------------------------------------
-	// Listings & counts
-	// ---------------------------------------------------------------------
-
-	/** @return string[] All block IDs where object appears in a given post. */
+	/**
+	 * Get block IDs for an object in a post.
+	 */
 	public function get_block_ids_for_object_in_post( string $object_type, int $object_id, int $post_id ): array {
 		$object_type = $this->validate_type( $object_type );
 		$object_id   = $this->validate_id( $object_id );
 		$post_id     = $this->validate_id( $post_id );
 
-		$sql = $this->wpdb->prepare(
+		$select_sql = $this->db->prepare(
 			"SELECT block_id FROM {$this->table}
              WHERE object_type = %s AND object_id = %d AND post_id = %d
              ORDER BY block_id ASC",
@@ -133,52 +118,57 @@ class ObjectUsageRepository {
 			$object_id,
 			$post_id
 		);
-        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-		$rows = $this->wpdb->get_col( $sql ) ?: array();
-		return array_values( array_map( 'strval', $rows ) );
+
+		$result_rows = $this->db->get_col( $select_sql ) ?: [];
+		return array_values( array_map( 'strval', $result_rows ) );
 	}
 
-	/** @return int[] All post IDs where the object appears. */
+	/**
+	 * Get post IDs where an object is used.
+	 */
 	public function get_post_ids_for_object( string $object_type, int $object_id ): array {
 		$object_type = $this->validate_type( $object_type );
 		$object_id   = $this->validate_id( $object_id );
 
-		$sql = $this->wpdb->prepare(
+		$select_sql = $this->db->prepare(
 			"SELECT DISTINCT post_id FROM {$this->table}
              WHERE object_type = %s AND object_id = %d
              ORDER BY post_id ASC",
 			$object_type,
 			$object_id
 		);
-        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-		$rows = $this->wpdb->get_col( $sql );
-		return array_map( 'intval', $rows ?: array() );
+		$result_rows = $this->db->get_col( $select_sql ) ?: [];
+		return array_map( 'intval', $result_rows );
 	}
 
-	/** @return int[] All object IDs of a type used in a post. */
+	/**
+	 * Get object IDs of a type in a post.
+	 */
 	public function get_object_ids_for_post( string $object_type, int $post_id ): array {
 		$object_type = $this->validate_type( $object_type );
 		$post_id     = $this->validate_id( $post_id );
 
-		$sql = $this->wpdb->prepare(
+		$select_sql = $this->db->prepare(
 			"SELECT DISTINCT object_id FROM {$this->table}
              WHERE object_type = %s AND post_id = %d
              ORDER BY object_id ASC",
 			$object_type,
 			$post_id
 		);
-        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-		$rows = $this->wpdb->get_col( $sql );
-		return array_map( 'intval', $rows ?: array() );
+
+		$result_rows = $this->db->get_col( $select_sql ) ?: [];
+		return array_map( 'intval', $result_rows );
 	}
 
-	/** @return int[] Object IDs of a type used in a specific block. */
+	/**
+	 * Get object IDs in a block.
+	 */
 	public function get_object_ids_for_block( int $post_id, string $block_id, string $object_type ): array {
 		$post_id     = $this->validate_id( $post_id );
 		$block_id    = $this->validate_block_id( $block_id );
 		$object_type = $this->validate_type( $object_type );
 
-		$sql = $this->wpdb->prepare(
+		$select_sql = $this->db->prepare(
 			"SELECT object_id FROM {$this->table}
              WHERE post_id = %d AND block_id = %s AND object_type = %s
              ORDER BY object_id ASC",
@@ -186,92 +176,86 @@ class ObjectUsageRepository {
 			$block_id,
 			$object_type
 		);
-        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-		$rows = $this->wpdb->get_col( $sql );
-		return array_map( 'intval', $rows ?: array() );
+
+		$result_rows = $this->db->get_col( $select_sql ) ?: [];
+		return array_map( 'intval', $result_rows );
 	}
 
+	/**
+	 * Count usages for an object.
+	 */
 	public function count_for_object( string $object_type, int $object_id ): int {
 		$object_type = $this->validate_type( $object_type );
 		$object_id   = $this->validate_id( $object_id );
 
-		$sql = $this->wpdb->prepare(
+		$count_sql = $this->db->prepare(
 			"SELECT COUNT(*) FROM {$this->table} WHERE object_type = %s AND object_id = %d",
 			$object_type,
 			$object_id
 		);
-        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-		return (int) $this->wpdb->get_var( $sql );
+
+		return (int) $this->db->get_var( $count_sql );
 	}
 
+	/**
+	 * Count usages for a post (optionally filter by type).
+	 */
 	public function count_for_post( int $post_id, ?string $object_type = null ): int {
 		$post_id = $this->validate_id( $post_id );
 
 		if ( $object_type !== null ) {
 			$object_type = $this->validate_type( $object_type );
-			$sql         = $this->wpdb->prepare(
+			$count_sql   = $this->db->prepare(
 				"SELECT COUNT(*) FROM {$this->table} WHERE post_id = %d AND object_type = %s",
 				$post_id,
 				$object_type
 			);
 		} else {
-			$sql = $this->wpdb->prepare(
+			$count_sql = $this->db->prepare(
 				"SELECT COUNT(*) FROM {$this->table} WHERE post_id = %d",
 				$post_id
 			);
 		}
 
-        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-		return (int) $this->wpdb->get_var( $sql );
+		return (int) $this->db->get_var( $count_sql );
 	}
 
-	// ---------------------------------------------------------------------
-	// Bulk & sync
-	// ---------------------------------------------------------------------
-
 	/**
-	 * Bulk attach many objects of the same type into a single block.
-	 * Returns number of new rows inserted (duplicates ignored).
-	 *
-	 * @param int    $post_id
-	 * @param string $block_id
-	 * @param string $object_type 'card'|'note'
-	 * @param int[]  $object_ids
+	 * Bulk attach objects to a block.
 	 */
 	public function bulk_attach_objects_to_block( int $post_id, string $block_id, string $object_type, array $object_ids ): int {
 		$post_id     = $this->validate_id( $post_id );
 		$block_id    = $this->validate_block_id( $block_id );
 		$object_type = $this->validate_type( $object_type );
 		$object_ids  = $this->normalize_ids( $object_ids );
+
 		if ( ! $object_ids ) {
 			return 0;
 		}
 
-		$inserted = 0;
-		foreach ( array_chunk( $object_ids, 200 ) as $chunk ) {
-			$vals = array();
-			$ph   = array();
-			foreach ( $chunk as $oid ) {
-				$vals[] = $object_type;
-				$vals[] = $oid;
-				$vals[] = $post_id;
-				$vals[] = $block_id;
-				$ph[]   = '(%s,%d,%d,%s)';
+		$total_inserted = 0;
+		foreach ( array_chunk( $object_ids, 200 ) as $object_chunk ) {
+			$values      = [];
+			$placeholders = [];
+			foreach ( $object_chunk as $object_id ) {
+				$values[] = $object_type;
+				$values[] = $object_id;
+				$values[] = $post_id;
+				$values[] = $block_id;
+				$placeholders[] = '(%s,%d,%d,%s)';
 			}
-			$sql = "INSERT IGNORE INTO {$this->table} (object_type, object_id, post_id, block_id) VALUES " . implode( ',', $ph );
-            // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-			$res = $this->wpdb->query( $this->wpdb->prepare( $sql, ...$vals ) );
-			if ( $res === false ) {
-				throw new Exception( 'Bulk attach failed: ' . ( $this->wpdb->last_error ?: 'unknown DB error' ) );
+			$insert_sql   = "INSERT IGNORE INTO {$this->table} (object_type, object_id, post_id, block_id) VALUES " . implode( ',', $placeholders );
+			$query_result = $this->db->query( $this->db->prepare( $insert_sql, ...$values ) );
+			if ( $query_result === false ) {
+				throw new Exception( 'Bulk attach failed: ' . ( $this->db->last_error ?: 'unknown DB error' ) );
 			}
-			$inserted += (int) $res;
+			$total_inserted += (int) $query_result;
 		}
-		return $inserted;
+		return $total_inserted;
 	}
 
 	/**
-	 * Sync a block to contain exactly the given set of object IDs for a type.
-	 * Returns ['added'=>int,'removed'=>int,'kept'=>int].
+	 * Sync block objects with desired set.
 	 */
 	public function sync_block_objects( int $post_id, string $block_id, string $object_type, array $desired_object_ids ): array {
 		$post_id     = $this->validate_id( $post_id );
@@ -279,141 +263,134 @@ class ObjectUsageRepository {
 		$object_type = $this->validate_type( $object_type );
 		$desired     = $this->normalize_ids( $desired_object_ids );
 
-		$current   = $this->get_object_ids_for_block( $post_id, $block_id, $object_type );
-		$to_add    = array_values( array_diff( $desired, $current ) );
-		$to_remove = array_values( array_diff( $current, $desired ) );
-		$kept      = count( $current ) - count( $to_remove );
+		$current_ids = $this->get_object_ids_for_block( $post_id, $block_id, $object_type );
+		$to_add      = array_values( array_diff( $desired, $current_ids ) );
+		$to_remove   = array_values( array_diff( $current_ids, $desired ) );
+		$kept_count  = count( $current_ids ) - count( $to_remove );
 
-		// Remove: DELETE ... WHERE post_id=? AND block_id=? AND object_type=? AND object_id IN (...)
 		if ( $to_remove ) {
-			foreach ( array_chunk( $to_remove, 500 ) as $chunk ) {
-				$in  = implode( ',', array_fill( 0, count( $chunk ), '%d' ) );
-				$sql = $this->wpdb->prepare(
+			foreach ( array_chunk( $to_remove, 500 ) as $remove_chunk ) {
+				$placeholders = implode( ',', array_fill( 0, count( $remove_chunk ), '%d' ) );
+				$delete_sql   = $this->db->prepare(
 					"DELETE FROM {$this->table}
-                     WHERE post_id = %d AND block_id = %s AND object_type = %s AND object_id IN ($in)",
+                     WHERE post_id = %d AND block_id = %s AND object_type = %s AND object_id IN ($placeholders)",
 					$post_id,
 					$block_id,
 					$object_type,
-					...$chunk
+					...$remove_chunk
 				);
-                // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-				$res = $this->wpdb->query( $sql );
-				if ( $res === false ) {
-					throw new Exception( 'Sync remove failed: ' . ( $this->wpdb->last_error ?: 'unknown DB error' ) );
+				$delete_result = $this->db->query( $delete_sql );
+				if ( $delete_result === false ) {
+					throw new Exception( 'Sync remove failed: ' . ( $this->db->last_error ?: 'unknown DB error' ) );
 				}
 			}
 		}
 
-		// Add
-		$added = $this->bulk_attach_objects_to_block( $post_id, $block_id, $object_type, $to_add );
+		$added_count = $this->bulk_attach_objects_to_block( $post_id, $block_id, $object_type, $to_add );
 
-		return array(
-			'added'   => (int) $added,
+		return [
+			'added'   => (int) $added_count,
 			'removed' => (int) count( $to_remove ),
-			'kept'    => (int) $kept,
-		);
+			'kept'    => (int) $kept_count,
+		];
 	}
 
-	// ---------------------------------------------------------------------
-	// Convenience clears
-	// ---------------------------------------------------------------------
-
-	/** Remove all usages of a given object across all posts/blocks. */
+	/**
+	 * Clear all usages of an object.
+	 */
 	public function clear_object( string $object_type, int $object_id ): int {
 		$object_type = $this->validate_type( $object_type );
 		$object_id   = $this->validate_id( $object_id );
 
-		$res = $this->wpdb->delete(
+		$delete_result = $this->db->delete(
 			$this->table,
-			array(
-				'object_type' => $object_type,
-				'object_id'   => $object_id,
-			),
-			array( '%s', '%d' )
+			[ 'object_type' => $object_type, 'object_id' => $object_id ],
+			[ '%s', '%d' ]
 		);
-		if ( $res === false ) {
-			throw new Exception( 'Clear object failed: ' . ( $this->wpdb->last_error ?: 'unknown DB error' ) );
+		if ( $delete_result === false ) {
+			throw new Exception( 'Clear object failed: ' . ( $this->db->last_error ?: 'unknown DB error' ) );
 		}
-		return (int) $res;
+		return (int) $delete_result;
 	}
 
-	/** Remove all usages within a post (any type / any block). */
+	/**
+	 * Clear all usages for a post.
+	 */
 	public function clear_post( int $post_id ): int {
 		$post_id = $this->validate_id( $post_id );
 
-		$res = $this->wpdb->delete( $this->table, array( 'post_id' => $post_id ), array( '%d' ) );
-		if ( $res === false ) {
-			throw new Exception( 'Clear post failed: ' . ( $this->wpdb->last_error ?: 'unknown DB error' ) );
+		$delete_result = $this->db->delete( $this->table, [ 'post_id' => $post_id ], [ '%d' ] );
+		if ( $delete_result === false ) {
+			throw new Exception( 'Clear post failed: ' . ( $this->db->last_error ?: 'unknown DB error' ) );
 		}
-		return (int) $res;
+		return (int) $delete_result;
 	}
 
-	/** Remove all usages for an object in a single post (any block). */
+	/**
+	 * Detach object usages by post.
+	 */
 	public function detach_by_post( string $object_type, int $object_id, int $post_id ): int {
 		$object_type = $this->validate_type( $object_type );
 		$object_id   = $this->validate_id( $object_id );
 		$post_id     = $this->validate_id( $post_id );
 
-		$res = $this->wpdb->delete(
+		$delete_result = $this->db->delete(
 			$this->table,
-			array(
-				'object_type' => $object_type,
-				'object_id'   => $object_id,
-				'post_id'     => $post_id,
-			),
-			array( '%s', '%d', '%d' )
+			[ 'object_type' => $object_type, 'object_id' => $object_id, 'post_id' => $post_id ],
+			[ '%s', '%d', '%d' ]
 		);
-		if ( $res === false ) {
-			throw new Exception( 'Detach by post failed: ' . ( $this->wpdb->last_error ?: 'unknown DB error' ) );
+		if ( $delete_result === false ) {
+			throw new Exception( 'Detach by post failed: ' . ( $this->db->last_error ?: 'unknown DB error' ) );
 		}
-		return (int) $res;
+		return (int) $delete_result;
 	}
 
-	/** Remove all usages in a specific block (optionally filter by type). */
+	/**
+	 * Detach usages in a block (optionally by type).
+	 */
 	public function detach_block( int $post_id, string $block_id, ?string $object_type = null ): int {
 		$post_id  = $this->validate_id( $post_id );
 		$block_id = $this->validate_block_id( $block_id );
 
-		$where   = array(
-			'post_id'  => $post_id,
-			'block_id' => $block_id,
-		);
-		$formats = array( '%d', '%s' );
+		$where   = [ 'post_id' => $post_id, 'block_id' => $block_id ];
+		$formats = [ '%d', '%s' ];
+
 		if ( $object_type !== null ) {
 			$where['object_type'] = $this->validate_type( $object_type );
 			$formats[]            = '%s';
 		}
 
-		$res = $this->wpdb->delete( $this->table, $where, $formats );
-		if ( $res === false ) {
-			throw new Exception( 'Detach block failed: ' . ( $this->wpdb->last_error ?: 'unknown DB error' ) );
+		$delete_result = $this->db->delete( $this->table, $where, $formats );
+		if ( $delete_result === false ) {
+			throw new Exception( 'Detach block failed: ' . ( $this->db->last_error ?: 'unknown DB error' ) );
 		}
-		return (int) $res;
+		return (int) $delete_result;
 	}
 
-	// ---------------------------------------------------------------------
-	// Helpers
-	// ---------------------------------------------------------------------
-
+	/**
+	 * Validate object_type.
+	 */
 	protected function validate_type( string $type ): string {
 		$type = strtolower( trim( $type ) );
-		if ( ! isset( $this->allowedTypes[ $type ] ) ) {
-			throw new Exception( 'Invalid object_type. Allowed: card, note.' );
+		if ( ! isset( $this->allowed_types[ $type ] ) ) {
+			throw new Exception( 'Invalid object_type.' );
 		}
 		return $type;
 	}
 
+	/**
+	 * Validate ID is positive integer.
+	 */
 	protected function validate_id( int $id ): int {
-		$id = absint( $id );
-		if ( $id <= 0 ) {
-			throw new Exception( 'ID must be a positive integer.' );
+		$validated_id = absint( $id );
+		if ( $validated_id <= 0 ) {
+			throw new Exception( 'ID must be positive.' );
 		}
-		return $id;
+		return $validated_id;
 	}
 
 	/**
-	 * Basic block_id validation to prevent SQL injection & keep data clean.
-	 * Allows letters, numbers, underscore, hyphen. Max 128 chars.
+	 * Validate block_id format.
 	 */
 	protected function validate_block_id( string $block_id ): string {
 		$block_id = trim( $block_id );
@@ -423,17 +400,20 @@ class ObjectUsageRepository {
 		return $block_id;
 	}
 
-	/** unique, positive, sorted */
+	/**
+	 * Normalize ID array.
+	 */
 	protected function normalize_ids( array $ids ): array {
-		$out = array();
-		foreach ( $ids as $v ) {
-			$i = absint( $v );
-			if ( $i > 0 ) {
-				$out[ $i ] = true;
+		$normalized = [];
+		foreach ( $ids as $raw_id ) {
+			$validated_id = absint( $raw_id );
+			if ( $validated_id > 0 ) {
+				$normalized[ $validated_id ] = true;
 			}
 		}
-		$list = array_keys( $out );
+		$list = array_keys( $normalized );
 		sort( $list, SORT_NUMERIC );
 		return $list;
 	}
 }
+
