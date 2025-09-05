@@ -114,7 +114,7 @@ function wpfn_schema_tasks(): array {
 			'run'  => function () use ( $wpdb ) {
 				( new TableBuilder( 'wpfn_object_usage' ) )
 					->set_version( '1.0.0' )
-					->add_column( 'object_type', "ENUM('card','note') NOT NULL" )
+					->add_column( 'object_type', "ENUM('card','note','inserter') NOT NULL" )
 					->add_column( 'object_id', 'BIGINT UNSIGNED NOT NULL' )
 					->add_column( 'post_id', 'BIGINT UNSIGNED NOT NULL' )
 					->add_column( 'block_id', 'VARCHAR(128) NOT NULL' )

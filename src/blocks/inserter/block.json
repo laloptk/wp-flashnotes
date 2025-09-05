@@ -1,0 +1,17 @@
+{
+  "apiVersion": 3,
+  "name": "wpfn/inserter",
+  "title": "FlashNotes: Inserter",
+  "category": "widgets",
+  "icon": "sticky",
+  "description": "Create or reference a study note and display it.",
+  "supports": {
+    "html": false,
+    "anchor": true
+  },
+  "attributes": {
+
+  },
+  "editorScript": "wpfn-blocks",
+  "style": "file:./style.css"
+}

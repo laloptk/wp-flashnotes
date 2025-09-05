@@ -39,7 +39,7 @@ class CardsController extends BaseController {
 						'user'     => array(
 							'type'     => 'string',
 							'required' => false,
-						), // 'me' or numeric string
+						),
 						'per_page' => array(
 							'type'    => 'integer',
 							'minimum' => 1,

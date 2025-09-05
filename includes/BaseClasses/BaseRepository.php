@@ -103,7 +103,7 @@ abstract class BaseRepository {
 		foreach ($sanitized as $col => $val) {
 			$oldVal = array_key_exists($col, $current) ? $current[$col] : null;
 
-			// Normalize to string for comparison (wpdb always stores strings for VARCHAR/TEXT)
+			// Normalize to string for comparison 
 			$newVal = is_null($val) ? null : (string) $val;
 			$oldVal = is_null($oldVal) ? null : (string) $oldVal;
 
@@ -229,7 +229,6 @@ abstract class BaseRepository {
 			}
 		}
 
-        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		return $this->wpdb->get_results( $this->wpdb->prepare( $sql, ...$values ), ARRAY_A ) ?: array();
 	}
 

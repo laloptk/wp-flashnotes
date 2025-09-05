@@ -7,12 +7,14 @@
 use WPFlashNotes\Blocks\CardBlock;
 use WPFlashNotes\Blocks\NoteBlock;
 use WPFlashNotes\Blocks\SlotBlock;
+use WPFlashNotes\Blocks\InserterBlock;
 
 // Instantiate CPTs
 $blocks_to_register = [
 	new NoteBlock(),
 	new CardBlock(),
 	new SlotBlock(),
+	new InserterBlock(),
 ];
 
 // Hook registration
