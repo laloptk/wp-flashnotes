@@ -1,5 +1,5 @@
 import { useEffect } from '@wordpress/element';
-import { useSelect } from '@wordpress/data';
+import { useSelect, useDispatch } from '@wordpress/data';
 import { store as blockEditorStore, useBlockProps, InnerBlocks } from '@wordpress/block-editor';
 import { v4 as uuidv4 } from 'uuid';
 import { normalizeText } from '../../utils';
@@ -20,6 +20,19 @@ export default function Edit({ clientId, attributes, setAttributes }) {
     (select) => select(blockEditorStore).getBlocks(clientId),
     [clientId]
   );
+
+  const fnMessage = useSelect( 
+    (select) => select('wpflashnotes').getMessage(), 
+    [] 
+  );
+
+  console.log(fnMessage);
+
+  const { setMessage } = useDispatch('wpflashnotes');
+
+  setMessage('This message was updated in state');
+
+  console.log(fnMessage);
 
   useEffect(() => {
     if (!childBlocks.length) return;
@@ -50,8 +63,6 @@ export default function Edit({ clientId, attributes, setAttributes }) {
 
     setAttributes({ question, answers_json: [answer], explanation });
   }, [childBlocks, setAttributes]);
-
-  console.log(attributes);
 
   return (
     <div {...blockProps}>
