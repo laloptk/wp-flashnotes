@@ -1,12 +1,14 @@
-import { useEffect } from '@wordpress/element';
-import { useSelect, useDispatch } from '@wordpress/data';
+import { useEffect, useState } from '@wordpress/element';
+import { useSelect } from '@wordpress/data';
 import { store as blockEditorStore, useBlockProps, InnerBlocks } from '@wordpress/block-editor';
 import { v4 as uuidv4 } from 'uuid';
 import { normalizeText } from '../../utils';
+import ResourceAPIService from '../../ResourcesAPIService';
 
 export default function Edit({ clientId, attributes, setAttributes }) {
   const { block_id } = attributes;
   const blockProps = useBlockProps({ className: 'wpfn-card' });
+  const [results, setResults] = useState([]);
 
   // Assign UUID once
   useEffect(() => {
@@ -20,19 +22,15 @@ export default function Edit({ clientId, attributes, setAttributes }) {
     (select) => select(blockEditorStore).getBlocks(clientId),
     [clientId]
   );
-
-  const fnMessage = useSelect( 
-    (select) => select('wpflashnotes').getMessage(), 
-    [] 
-  );
-
-  console.log(fnMessage);
-
-  const { setMessage } = useDispatch('wpflashnotes');
-
-  setMessage('This message was updated in state');
-
-  console.log(fnMessage);
+  useEffect( () => {
+    const data = async () => {
+      const cardsApi = new ResourceAPIService('cards');
+      const cards = await cardsApi.get({ s: 'q', per_page: 10 });
+      setResults(cards);
+    };
+    data();
+  }, []);
+  console.log(results);
 
   useEffect(() => {
     if (!childBlocks.length) return;

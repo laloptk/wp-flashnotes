@@ -97,7 +97,7 @@ class Plugin {
         add_action( 'init', function () {
             $asset_file = WPFN_PLUGIN_DIR . 'build/index.asset.php';
             $assets     = file_exists( $asset_file ) ? include $asset_file : [
-                'dependencies' => [ 'wp-blocks', 'wp-element', 'wp-editor' ],
+                'dependencies' => [ 'wp-blocks', 'wp-element', 'wp-editor', 'wp-api-fetch' ],
                 'version'      => WPFN_VERSION,
             ];
 
@@ -105,10 +105,23 @@ class Plugin {
                 'wpfn-blocks',
                 plugins_url( 'build/index.js', WPFN_PLUGIN_FILE ),
                 $assets['dependencies'],
-                $assets['version']
+                $assets['version'],
+                true
+            );
+
+            // Localize global object for JS
+            wp_localize_script(
+                'wpfn-blocks',
+                'WPFlashNotes',
+                [
+                    'apiNamespace' => WPFN_API_NAMESPACE,
+                    'restUrl'      => esc_url_raw( rest_url() ),
+                    'nonce'        => wp_create_nonce( 'wp_rest' ),
+                ]
             );
 
             wp_set_script_translations( 'wpfn-blocks', 'wp-flashnotes' );
         } );
     }
+
 }

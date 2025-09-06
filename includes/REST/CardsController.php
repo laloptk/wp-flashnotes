@@ -172,7 +172,7 @@ class CardsController extends BaseController {
 			),
 			'search' => array(
 				'question' => $search_query,
-				'answer_json' => $search_query,
+				'answers_json' => $search_query,
 			),
 			'limit' => absint( $req->get_param( 'per_page' ) ) ?: 20,
 			'offset' => absint( $req->get_param( 'offset' ) ) ?: 0,

@@ -6,7 +6,7 @@ export default class ResourceAPIService {
 	constructor(type) {
 		this.type      = type;
 		this.namespace = WPFlashNotes.apiNamespace;
-		this.path      = `${this.namespace} / ${type}`;
+		this.path      = `${this.namespace}/${type}`;
 	}
 
 	request(args = {}) {
@@ -21,10 +21,6 @@ export default class ResourceAPIService {
 		}
 
 		return this.request( args );
-	}
-
-	list() {
-
 	}
 
 	update(item_id, body = {}) {
