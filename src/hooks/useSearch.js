@@ -1,4 +1,4 @@
-import { useEffect, useRef } from '@wordpress/element';
+import { useEffect, useRef, useMemo } from '@wordpress/element';
 import { useSelect, useDispatch } from '@wordpress/data';
 import ResourceAPIService from '../ResourcesAPIService';
 import { addQueryArgs } from '@wordpress/url';
@@ -13,7 +13,6 @@ const useSearch = (args = {}, blockType = 'cards', debounceMs = 300) => {
 		setCacheEntry,
 	} = useDispatch('flashnotes');
 
-    // Build cache key once per render
 	const cacheKey = useMemo (() => {
         addQueryArgs(blockType, args)
     }, [args, blockType]);
@@ -28,7 +27,6 @@ const useSearch = (args = {}, blockType = 'cards', debounceMs = 300) => {
 		};
 	}, [cacheKey]);
 
-	// Refs for debounce + abort
 	const debounceTimer = useRef(null);
 	const abortController = useRef(null);
 
@@ -70,7 +68,6 @@ const useSearch = (args = {}, blockType = 'cards', debounceMs = 300) => {
 				setStatus('success');
 			} catch (e) {
 				if (e.name === 'AbortError') {
-					// Request was aborted → ignore
 					return;
 				}
 				setError(e.message);
