@@ -203,12 +203,22 @@ abstract class BaseRepository {
 	 * @param int|null $offset
 	 * @return array<int, array>
 	 */
-	public function find( array $where = array(), ?int $limit = null, ?int $offset = null ): array {
-		$table = $this->get_table_name();
+	public function find( array $args = array() ): array {
+		$table        = $this->get_table_name();
+		$default_args = array(
+			'where'  => array(),
+			'search' => array(),
+			'limit'  => null,
+			'offset' => null,
+		);
+
+		$args = array_merge( $default_args, $args );
 
 		$clauses = array();
 		$values  = array();
-		foreach ( $where as $col => $val ) {
+
+		// Where clauses
+		foreach ( $args['where'] as $col => $val ) {
 			if ( ! $this->is_valid_identifier( $col ) ) {
 				continue;
 			}
@@ -217,19 +227,35 @@ abstract class BaseRepository {
 			$values[]    = $val;
 		}
 
+		// Search clauses: column => string
+		foreach ( $args['search'] as $col => $str ) {
+			if ( ! $this->is_valid_identifier( $col ) || $str === null ) {
+				continue;
+			}
+			
+			$clauses[] = "`{$col}` LIKE %s";
+			$values[]  = '%' . $this->wpdb->esc_like( $str ) . '%';
+		}
+
+		// Build query
 		$sql = "SELECT * FROM {$table}";
 		if ( $clauses ) {
 			$sql .= ' WHERE ' . implode( ' AND ', $clauses );
 		}
-		if ( $limit !== null ) {
-			$sql .= $this->wpdb->prepare( ' LIMIT %d', $limit );
-			if ( $offset !== null ) {
-				// MySQL LIMIT with OFFSET: LIMIT offset,limit
-				$sql .= $this->wpdb->prepare( ' OFFSET %d', $offset );
+
+		// Pagination
+		if ( $args['limit'] !== null ) {
+			$sql .= $this->wpdb->prepare( ' LIMIT %d', $args['limit'] );
+			if ( $args['offset'] !== null ) {
+				$sql .= $this->wpdb->prepare( ' OFFSET %d', $args['offset'] );
 			}
 		}
 
-		return $this->wpdb->get_results( $this->wpdb->prepare( $sql, ...$values ), ARRAY_A ) ?: array();
+		// Execute
+		return $this->wpdb->get_results(
+			$this->wpdb->prepare( $sql, ...$values ),
+			ARRAY_A
+		) ?: array();
 	}
 
 	/**

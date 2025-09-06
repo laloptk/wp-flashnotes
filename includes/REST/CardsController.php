@@ -37,18 +37,26 @@ class CardsController extends BaseController {
 					'permission_callback' => array( $this, 'require_logged_in' ),
 					'args'                => array(
 						'user'     => array(
-							'type'     => 'string',
-							'required' => false,
+							'type'              => 'string',
+							'required'          => false,
+							'sanitize_callback' => 'sanitize_text_field',
 						),
 						'per_page' => array(
-							'type'    => 'integer',
-							'minimum' => 1,
-							'default' => 20,
+							'type'              => 'integer',
+							'minimum'           => 1,
+							'default'           => 20,
+							'sanitize_callback' => 'absint',
 						),
 						'offset'   => array(
-							'type'    => 'integer',
-							'minimum' => 0,
-							'default' => 0,
+							'type'              => 'integer',
+							'minimum'           => 0,
+							'default'           => 0,
+							'sanitize_callback' => 'absint',
+						),
+						's'        => array(
+							'type'              => 'string',
+							'default'           => '',
+							'sanitize_callback' => 'sanitize_text_field',
 						),
 					),
 				),
@@ -141,15 +149,12 @@ class CardsController extends BaseController {
 	// ---- Handlers ----------------------------------------------------------
 
 	public function list_items( WP_REST_Request $req ) {
-		$per = absint( $req->get_param( 'per_page' ) ) ?: 20;
-		$off = absint( $req->get_param( 'offset' ) ) ?: 0;
-
-		$userParam = $req->get_param( 'user' );
+		$user_param = $req->get_param( 'user' );
 		$user_id   = null;
-		if ( $userParam === 'me' || $userParam === null ) {
+		if ( $user_param === 'me' || $user_param === null ) {
 			$user_id = get_current_user_id();
-		} elseif ( is_numeric( $userParam ) ) {
-			$user_id = absint( $userParam );
+		} elseif ( is_numeric( $user_param ) ) {
+			$user_id = absint( $user_param );
 		}
 		if ( ! $user_id ) {
 			return $this->ok(
@@ -160,8 +165,21 @@ class CardsController extends BaseController {
 			);
 		}
 
-		// Use BaseRepository::find() for portability
-		$rows = $this->repo->find( array( 'user_id' => (int) $user_id ), $per, $off );
+		$search_query = $req->get_param( 's' ) ?: '';
+		$args = array(
+			'where' => array(
+				'user_id' => (int) $user_id,
+			),
+			'search' => array(
+				'question' => $search_query,
+				'answer_json' => $search_query,
+			),
+			'limit' => absint( $req->get_param( 'per_page' ) ) ?: 20,
+			'offset' => absint( $req->get_param( 'offset' ) ) ?: 0,
+		);
+
+		$rows = $this->repo->find( $args );
+		
 		return $this->ok(
 			array(
 				'items' => $rows,
