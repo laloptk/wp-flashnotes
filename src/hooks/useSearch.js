@@ -11,14 +11,14 @@ const useSearch = (args = {}, blockType = 'cards', debounceMs = 300) => {
 		setError,
 		setResults,
 		setCacheEntry,
-	} = useDispatch('flashnotes');
+	} = useDispatch('wpflashnotes');
 
 	const cacheKey = useMemo (() => {
-        addQueryArgs(blockType, args)
+        addQueryArgs(blockType, args);
     }, [args, blockType]);
 
 	const { results, error, status, cacheEntries } = useSelect((select) => {
-		const store = select('flashnotes');
+		const store = select('wpflashnotes');
 		return {
 			results: store.getResults(),
 			error: store.getError(),

@@ -6,7 +6,9 @@ export default class ResourceAPIService {
 	constructor(type) {
 		this.type      = type;
 		this.namespace = WPFlashNotes.apiNamespace;
-		this.path      = `${this.namespace}/${type}`;
+		this.path      = `${this.namespace}/${this.type}`;
+
+		console.log(JSON.stringify(this.type));
 	}
 
 	request(args = {}) {
