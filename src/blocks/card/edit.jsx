@@ -1,4 +1,4 @@
-import { useEffect, useState } from '@wordpress/element';
+import { useEffect } from '@wordpress/element';
 import { useSelect } from '@wordpress/data';
 import { store as blockEditorStore, useBlockProps, InnerBlocks } from '@wordpress/block-editor';
 import { v4 as uuidv4 } from 'uuid';
