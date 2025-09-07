@@ -10,7 +10,22 @@
     "anchor": true
   },
   "attributes": {
-
+    "id": {
+      "type": "number",
+      "default": 0
+    },
+    "title": {
+      "type": "text", 
+      "default": ""
+    },
+    "answers_json": {
+      "type": "array",
+      "default": []
+    },
+    "explanation": {
+      "type": "string",
+      "default": ""
+    }
   },
   "editorScript": "wpfn-blocks",
   "style": "file:./style.css"

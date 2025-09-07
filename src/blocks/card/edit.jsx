@@ -1,8 +1,9 @@
 import { useEffect } from '@wordpress/element';
 import { useSelect } from '@wordpress/data';
-import { store as blockEditorStore, useBlockProps, InnerBlocks } from '@wordpress/block-editor';
+import { store as blockEditorStore, useBlockProps, InnerBlocks, InspectorControls } from '@wordpress/block-editor';
 import { v4 as uuidv4 } from 'uuid';
 import { normalizeText } from '../../utils';
+import { __ } from '@wordpress/i18n';
 
 export default function Edit({ clientId, attributes, setAttributes }) {
   const { block_id } = attributes;
@@ -52,6 +53,7 @@ export default function Edit({ clientId, attributes, setAttributes }) {
   }, [childBlocks, setAttributes]);
 
   return (
+    <>
     <div {...blockProps}>
       <InnerBlocks
         template={[
@@ -63,6 +65,7 @@ export default function Edit({ clientId, attributes, setAttributes }) {
         allowedBlocks={[ 'wpfn/slot' ]}
       />
     </div>
+    </>
   );
 }
 
