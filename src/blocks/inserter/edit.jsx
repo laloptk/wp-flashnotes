@@ -1,11 +1,11 @@
 import CardsNotesSearch from '../../components/cards-notes-search';
-import { InspectorControls } from '@wordpress/block-editor';
+import { InspectorControls, useBlockProps } from '@wordpress/block-editor';
 import { PanelBody } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 
 const Edit = ({ attributes, setAttributes }) => {
 	const { id, title, answer_json, content } = attributes;
-
+  const blockProps = useBlockProps();
 	const handleSearchOnChange = (selectedItem) => {
     //console.log(selectedItem);
 		setAttributes({
@@ -17,7 +17,7 @@ const Edit = ({ attributes, setAttributes }) => {
 	};
 
 	return (
-    <>
+    <div {...blockProps}>
       <InspectorControls>
         <PanelBody
           title={__('Card Controls', 'inspector-control-groups')}
@@ -30,7 +30,7 @@ const Edit = ({ attributes, setAttributes }) => {
         </PanelBody>
       </InspectorControls>
       <div>{'This is one of the most what'}</div>
-    </>
+    </div>
 	);
 };
 

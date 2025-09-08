@@ -215,8 +215,9 @@ abstract class BaseRepository {
 		$args = array_merge( $default_args, $args );
 
 		$clauses = array();
+		$search_clauses = array();
 		$values  = array();
-
+		
 		// Where clauses
 		foreach ( $args['where'] as $col => $val ) {
 			if ( ! $this->is_valid_identifier( $col ) ) {
@@ -226,21 +227,24 @@ abstract class BaseRepository {
 			$clauses[]   = "`{$col}` = {$placeholder}";
 			$values[]    = $val;
 		}
-
+		
 		// Search clauses: column => string
 		foreach ( $args['search'] as $col => $str ) {
 			if ( ! $this->is_valid_identifier( $col ) || $str === null ) {
 				continue;
 			}
 			
-			$clauses[] = "`{$col}` LIKE %s";
+			$search_clauses[] = "`{$col}` LIKE %s";
 			$values[]  = '%' . $this->wpdb->esc_like( $str ) . '%';
 		}
 
 		// Build query
 		$sql = "SELECT * FROM {$table}";
-		if ( $clauses ) {
-			$sql .= ' WHERE ' . implode( ' AND ', $clauses );
+		$clauses_str        = ! empty( $clauses )        ? implode( ' AND ', $clauses ) : '';
+		$search_clauses_str = ! empty( $search_clauses ) ? '(' . implode( ' OR ', $search_clauses ) . ')' : '';
+		$parts = array_filter( [ $clauses_str, $search_clauses_str ] );
+		if ( ! empty( $parts ) ) {
+			$sql .= ' WHERE ' . implode( ' AND ', $parts );
 		}
 
 		// Pagination

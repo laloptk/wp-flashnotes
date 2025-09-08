@@ -1,6 +1,6 @@
 // CardsNotesSearch.js
 import { TextControl } from '@wordpress/components'; 
-import { useState } from '@wordpress/element';
+import { useState, useEffect } from '@wordpress/element';
 import CardsNotesSelect from './cards_notes_select';
 
 const CardsNotesSearch = ({ itemType, onChange }) => {
@@ -9,6 +9,10 @@ const CardsNotesSearch = ({ itemType, onChange }) => {
     const handleSelectChange = (selectedItem) => {
         onChange(selectedItem);
     };
+
+    useEffect(() => {
+        console.log("SearchTerm changed:", searchTerm);
+    }, [searchTerm]);
 
     return (
         <div>
