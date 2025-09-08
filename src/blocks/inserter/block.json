@@ -15,7 +15,7 @@
       "default": 0
     },
     "title": {
-      "type": "text", 
+      "type": "string", 
       "default": ""
     },
     "answers_json": {
@@ -25,7 +25,13 @@
     "explanation": {
       "type": "string",
       "default": ""
-    }
+    },
+    "borderRadius": { "type": "number", "default": 4 },
+    "shadow": { "type": "number", "default": 1 },
+    "borderColor": { "type": "string", "default": "#ddd" },
+    "backgroundColor": { "type": "string", "default": "#fafafa"},
+    "padding": { "type": "number", "default": 16 },
+    "margin": { "type": "number", "default": 8 }
   },
   "editorScript": "wpfn-blocks",
   "style": "file:./style.css"
