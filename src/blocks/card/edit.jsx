@@ -1,71 +1,87 @@
 import { useEffect } from '@wordpress/element';
 import { useSelect } from '@wordpress/data';
-import { store as blockEditorStore, useBlockProps, InnerBlocks, InspectorControls } from '@wordpress/block-editor';
+import {
+	store as blockEditorStore,
+	useBlockProps,
+	InnerBlocks,
+} from '@wordpress/block-editor';
 import { v4 as uuidv4 } from 'uuid';
 import { normalizeText } from '../../utils';
-import { __ } from '@wordpress/i18n';
 
-export default function Edit({ clientId, attributes, setAttributes }) {
-  const { block_id } = attributes;
-  const blockProps = useBlockProps({ className: 'wpfn-card' });
+export default function Edit( { clientId, attributes, setAttributes } ) {
+	const { block_id } = attributes;
+	const blockProps = useBlockProps( { className: 'wpfn-card' } );
 
-  // Assign UUID once
-  useEffect(() => {
-    if (!block_id) {
-      setAttributes({ block_id: uuidv4() });
-    }
-  }, [block_id, setAttributes]);
+	// Assign UUID once
+	useEffect( () => {
+		if ( ! block_id ) {
+			setAttributes( { block_id: uuidv4() } );
+		}
+	}, [ block_id, setAttributes ] );
 
-  // Observe direct children (slots)
-  const childBlocks = useSelect(
-    (select) => select(blockEditorStore).getBlocks(clientId),
-    [clientId]
-  );
+	// Observe direct children (slots)
+	const childBlocks = useSelect(
+		( select ) => select( blockEditorStore ).getBlocks( clientId ),
+		[ clientId ]
+	);
 
-  useEffect(() => {
-    if (!childBlocks.length) return;
+	useEffect( () => {
+		if ( ! childBlocks.length ) {
+			return;
+		}
 
-    let question = '';
-    let answer = '';
-    let explanation = '';
+		let nextQuestion = '';
+		let nextAnswers = [];
+		let nextExplanation = '';
 
-    childBlocks.forEach((child) => {
-      if (child.name === 'wpfn/slot') {
-        const role = child.attributes.role;
+		childBlocks.forEach( ( child ) => {
+			if ( child.name === 'wpfn/slot' ) {
+				const role = child.attributes.role;
+				const raw = child.attributes.content || '';
 
-        // Inspect first inner block of this slot
-        const firstInner = child.innerBlocks[0];
-        const raw = firstInner?.attributes?.content;
-        // Avoids passing an object to the attributes instead of a string
-        const text = normalizeText(raw);
+				if ( role === 'question' ) {
+					// Store plain text only
+					nextQuestion = normalizeText( raw );
+				} else if ( role === 'answer' ) {
+					nextAnswers = raw ? [ normalizeText( raw ) ] : [];
+				} else if ( role === 'explanation' ) {
+					// Keep HTML for explanation
+					nextExplanation = raw;
+				}
+			}
+		} );
 
-        if (role === 'question') {
-          question = text;
-        } else if (role === 'answer') {
-          answer = text;
-        } else if (role === 'explanation') {
-          explanation = text;
-        }
-      }
-    });
+		if (
+			nextQuestion !== attributes.question ||
+			JSON.stringify( nextAnswers ) !==
+				JSON.stringify( attributes.answers_json ) ||
+			nextExplanation !== attributes.explanation
+		) {
+			setAttributes( {
+				question: nextQuestion,
+				answers_json: nextAnswers,
+				explanation: nextExplanation,
+			} );
+		}
+	}, [
+		childBlocks,
+		setAttributes,
+		attributes.question,
+		attributes.answers_json,
+		attributes.explanation,
+	] );
 
-    setAttributes({ question, answers_json: [answer], explanation });
-  }, [childBlocks, setAttributes]);
-
-  return (
-    <>
-    <div {...blockProps}>
-      <InnerBlocks
-        template={[
-          [ 'wpfn/slot', { role: 'question' } ],
-          [ 'wpfn/slot', { role: 'answer', templateLock: 'all' } ],
-          [ 'wpfn/slot', { role: 'explanation' } ]
-        ]}
-        templateLock="all"
-        allowedBlocks={[ 'wpfn/slot' ]}
-      />
-    </div>
-    </>
-  );
+	return (
+		<div { ...blockProps }>
+			<InnerBlocks
+				template={ [
+					[ 'wpfn/slot', { role: 'question' } ],
+					[ 'wpfn/slot', { role: 'answer', templateLock: 'all' } ],
+					[ 'wpfn/slot', { role: 'explanation' } ],
+				] }
+				templateLock="all"
+				allowedBlocks={ [ 'wpfn/slot' ] }
+			/>
+		</div>
+	);
 }
-

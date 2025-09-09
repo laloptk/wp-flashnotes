@@ -1,5 +1,6 @@
 {
   "devDependencies": {
+    "@wordpress/icons": "^10.30.0",
     "@wordpress/scripts": "^30.22.0"
   },
   "scripts": {
@@ -16,5 +17,8 @@
     "start": "wp-scripts start",
     "test:e2e": "wp-scripts test-e2e",
     "test:unit": "wp-scripts test-unit-js"
+  },
+  "dependencies": {
+    "isomorphic-dompurify": "^2.26.0"
   }
 }

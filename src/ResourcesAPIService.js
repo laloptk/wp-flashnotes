@@ -2,56 +2,55 @@ import apiFetch from '@wordpress/api-fetch';
 import { addQueryArgs } from '@wordpress/url';
 
 export default class ResourceAPIService {
-
-	constructor(type) {
-		this.type      = type;
+	constructor( type ) {
+		this.type = type;
 		this.namespace = WPFlashNotes.apiNamespace;
-		this.path      = `${this.namespace}/${this.type}`;
+		this.path = `${ this.namespace }/${ this.type }`;
 	}
 
-	request(args = {}) {
+	request( args = {} ) {
 		return apiFetch( args );
 	}
 
-	get(query_params, { signal } = {}) {
+	get( query_params, { signal } = {} ) {
 		const args = {
 			path: addQueryArgs( this.path, query_params ),
 			method: 'GET',
 			signal,
-		}
+		};
 
 		return this.request( args );
 	}
 
-	update(item_id, body = {}) {
-		if (Object.keys( body ).length === 0) {
+	update( item_id, body = {} ) {
+		if ( Object.keys( body ).length === 0 ) {
 			throw new Error( 'Body cannot be empty' );
 		}
 
 		const args = {
-			path: `${this.path} / ${item_id}`,
+			path: `${ this.path } / ${ item_id }`,
 			method: 'PUT',
 			data: body,
-		}
+		};
 
-		if (this.isValidId( item_id ) && Object.keys( body ).length > 0) {
+		if ( this.isValidId( item_id ) && Object.keys( body ).length > 0 ) {
 			return this.request( args );
 		}
 	}
 
-	remove(item_id) {
+	remove( item_id ) {
 		const args = {
-			path: addQueryArgs( `${this.path} / ${item_id}`, {hard: 1} ),
+			path: addQueryArgs( `${ this.path } / ${ item_id }`, { hard: 1 } ),
 			method: 'DELETE',
-		}
+		};
 
-		if (this.isValidId( item_id )) {
+		if ( this.isValidId( item_id ) ) {
 			return this.request( args );
 		}
 	}
 
-	create(body = {}, { signal } = {}) {
-		if (Object.keys( body ).length === 0) {
+	create( body = {}, { signal } = {} ) {
+		if ( Object.keys( body ).length === 0 ) {
 			throw new Error( 'Body cannot be empty' );
 		}
 
@@ -60,14 +59,14 @@ export default class ResourceAPIService {
 			method: 'POST',
 			data: body,
 			signal,
-		}
+		};
 
 		return this.request( args );
 	}
 
-	isValidId(id) {
+	isValidId( id ) {
 		const check_id = parseInt( id );
-		if (Number.isInteger( check_id ) && check_id > 0) {
+		if ( Number.isInteger( check_id ) && check_id > 0 ) {
 			return true;
 		}
 

@@ -1,17 +1,21 @@
-export const normalizeText = (val) => {
-  if (!val) return '';
-  
-  if (typeof val === 'string') return val;
+export const normalizeText = ( val ) => {
+	if ( ! val ) {
+		return '';
+	}
 
-  if (val instanceof Object) {
-    if (val.text !== undefined) {
-      return val.text;
-    }
-    
-    if (typeof val.toString === 'function') {
-      return val.toString();
-    }
-  }
+	if ( typeof val === 'string' ) {
+		return val;
+	}
 
-  return String(val);
+	if ( val instanceof Object ) {
+		if ( val.text !== undefined ) {
+			return val.text;
+		}
+
+		if ( typeof val.toString === 'function' ) {
+			return val.toString();
+		}
+	}
+
+	return String( val );
 };
