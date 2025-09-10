@@ -6,8 +6,9 @@ import {
 	InnerBlocks,
 } from '@wordpress/block-editor';
 import { ToggleControl, TextControl } from '@wordpress/components';
+import { __ } from '@wordpress/i18n';
 import { v4 as uuidv4 } from 'uuid';
-import { serialize } from '@wordpress/blocks'; // <-- needed to turn innerBlocks into HTML
+import { serialize } from '@wordpress/blocks';
 
 const Edit = ( { clientId, allowedBlocks, attributes, setAttributes } ) => {
 	const { block_id, title, content, hide } = attributes;
@@ -32,7 +33,7 @@ const Edit = ( { clientId, allowedBlocks, attributes, setAttributes } ) => {
 	return (
 		<div { ...blockProps }>
 			<TextControl
-				label="Title"
+				label={ __( 'Title', 'wp-flashnotes' ) }
 				value={ title }
 				onChange={ ( val ) => setAttributes( { title: val } ) }
 				className="wpfn-note__title"
@@ -43,7 +44,7 @@ const Edit = ( { clientId, allowedBlocks, attributes, setAttributes } ) => {
 			</div>
 
 			<ToggleControl
-				label="Hide Note In Frontend"
+				label={ __( 'Hide Note In Frontend', 'wp-flashnotes' ) }
 				checked={ hide }
 				onChange={ ( val ) => setAttributes( { hide: val } ) }
 			/>
