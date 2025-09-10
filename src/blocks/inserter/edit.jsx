@@ -3,6 +3,9 @@ import { InspectorControls, useBlockProps } from '@wordpress/block-editor';
 import { PanelBody, RangeControl, ColorPalette } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 import SafeHTMLContent from '../../components/SafeHTMLContent';
+import VisibilityControls from '../../components/controls/VisibilityControls';
+import SpacingControls from '../../components/controls/SpacingControls';
+import StyleControls from '../../components/controls/StyleControls';
 
 const Edit = ( { attributes, setAttributes } ) => {
 	const {
@@ -10,24 +13,38 @@ const Edit = ( { attributes, setAttributes } ) => {
 		title,
 		answers_json,
 		explanation,
-		borderRadius,
-		shadow,
-		borderColor,
-		backgroundColor,
-		padding,
 		margin,
+		padding,
+		border,
+		backgroundColor,
+		hidden,
 	} = attributes;
 
 	const blockProps = useBlockProps( {
+		className: 'wpfn-inserter',
 		style: {
-			borderRadius: `${ borderRadius }px`,
-			boxShadow: shadow
-				? `0 ${ shadow }px ${ 2 * shadow }px rgba(0,0,0,0.1)`
-				: 'none',
-			border: `1px solid ${ borderColor }`,
+			marginTop: margin?.top,
+			marginRight: margin?.right,
+			marginBottom: margin?.bottom,
+			marginLeft: margin?.left,
+			paddingTop: padding?.top,
+			paddingRight: padding?.right,
+			paddingBottom: padding?.bottom,
+			paddingLeft: padding?.left,
+			borderTop: border?.top?.width
+				? `${ border.top.width } solid ${ border.top.color || '#ddd' }`
+				: undefined,
+			borderRight: border?.right?.width
+				? `${ border.right.width } solid ${ border.right.color || '#ddd' }`
+				: undefined,
+			borderBottom: border?.bottom?.width
+				? `${ border.bottom.width } solid ${ border.bottom.color || '#ddd' }`
+				: undefined,
+			borderLeft: border?.left?.width
+				? `${ border.left.width } solid ${ border.left.color || '#ddd' }`
+				: undefined,
+			borderRadius: border?.radius,
 			backgroundColor,
-			padding: `${ padding }px`,
-			margin: `${ margin }px`,
 		},
 	} );
 
@@ -50,62 +67,10 @@ const Edit = ( { attributes, setAttributes } ) => {
 						onChange={ handleSearchOnChange }
 					/>
 				</PanelBody>
-				<PanelBody
-					title={ __( 'Card Style', 'wp-flashnotes' ) }
-					initialOpen={ true }
-				>
-					<RangeControl
-						label={ __( 'Border Radius', 'wp-flashnotes' ) }
-						value={ borderRadius }
-						onChange={ ( value ) =>
-							setAttributes( { borderRadius: value } )
-						}
-						min={ 0 }
-						max={ 24 }
-					/>
-					<RangeControl
-						label={ __( 'Shadow Strength', 'wp-flashnotes' ) }
-						value={ shadow }
-						onChange={ ( value ) =>
-							setAttributes( { shadow: value } )
-						}
-						min={ 0 }
-						max={ 10 }
-					/>
-					<p>{ __( 'Border Color', 'wp-flashnotes' ) }</p>
-					<ColorPalette
-						value={ borderColor }
-						onChange={ ( value ) =>
-							setAttributes( { borderColor: value } )
-						}
-					/>
-					<p>{ __( 'Background Color', 'wp-flashnotes' ) }</p>
-					<ColorPalette
-						value={ backgroundColor }
-						onChange={ ( value ) =>
-							setAttributes( { backgroundColor: value } )
-						}
-					/>
-					<RangeControl
-						label={ __( 'Padding', 'wp-flashnotes' ) }
-						value={ padding }
-						onChange={ ( value ) =>
-							setAttributes( { padding: value } )
-						}
-						min={ 0 }
-						max={ 64 }
-					/>
-					<RangeControl
-						label={ __( 'Margin', 'wp-flashnotes' ) }
-						value={ margin }
-						onChange={ ( value ) =>
-							setAttributes( { margin: value } )
-						}
-						min={ 0 }
-						max={ 64 }
-					/>
-				</PanelBody>
 			</InspectorControls>
+			<VisibilityControls attributes={attributes} setAttributes={setAttributes} />
+			<SpacingControls attributes={attributes} setAttributes={setAttributes} />
+			<StyleControls attributes={attributes} setAttributes={setAttributes} />
 			<div>
 				{ title && (
 					<SafeHTMLContent

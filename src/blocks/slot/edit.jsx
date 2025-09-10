@@ -6,12 +6,26 @@ import {
 	InnerBlocks,
 } from '@wordpress/block-editor';
 import { serialize } from '@wordpress/blocks';
+import { Icon } from '@wordpress/icons';
+import {
+	help,
+	commentEditLink,
+	quote,
+	check,
+} from '@wordpress/icons'; // pick appropriate icons
 
 const ALLOWED_MAP = {
 	question: [ 'core/paragraph', 'core/heading', 'core/list' ],
 	explanation: [ 'core/paragraph', 'core/list', 'core/image' ],
 	note: [ 'core/paragraph', 'core/heading', 'core/quote' ],
 	answer: [ 'core/paragraph', 'core/list' ],
+};
+
+const ROLE_ICONS = {
+	question: help,
+	answer: check,
+	explanation: commentEditLink,
+	note: quote,
 };
 
 export default function Edit( { clientId, attributes, setAttributes } ) {
@@ -41,7 +55,13 @@ export default function Edit( { clientId, attributes, setAttributes } ) {
 
 	return (
 		<div { ...blockProps }>
-			<h4>{ role.charAt( 0 ).toUpperCase() + role.slice( 1 ) }</h4>
+			<div className="wpfn-slot-header">
+				<Icon
+					icon={ ROLE_ICONS[ role ] }
+					className="wpfn-slot-icon"
+					size={ 42 }
+				/>
+			</div>
 			<InnerBlocks
 				allowedBlocks={ ALLOWED_MAP[ role ] || [] }
 				template={ [

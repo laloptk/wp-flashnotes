@@ -1,0 +1,9 @@
+.wpfn-slot-header {
+	display: flex;
+	align-items: center;
+	margin-bottom: 0.5em;
+}
+
+.wpfn-slot-header svg {
+	color: var(--wp-admin-theme-color, #007cba);
+}

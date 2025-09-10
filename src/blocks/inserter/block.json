@@ -26,12 +26,41 @@
       "type": "string",
       "default": ""
     },
-    "borderRadius": { "type": "number", "default": 4 },
-    "shadow": { "type": "number", "default": 1 },
-    "borderColor": { "type": "string", "default": "#ddd" },
-    "backgroundColor": { "type": "string", "default": "#fafafa"},
-    "padding": { "type": "number", "default": 16 },
-    "margin": { "type": "number", "default": 8 }
+    "margin": {
+      "type": "object",
+      "default": {
+        "top": "0",
+        "right": "0",
+        "bottom": "0",
+        "left": "0"
+      }
+    },
+    "padding": {
+      "type": "object",
+      "default": {
+        "top": "15px",
+        "right": "15px",
+        "bottom": "15px",
+        "left": "15px"
+      }
+    },
+    "border": {
+      "type": "object",
+      "default": {
+        "color": "#ddd",
+        "style": "solid",
+        "width": "1px",
+        "radius": "6px"
+      }
+    },
+    "backgroundColor": {
+      "type": "string",
+      "default": "#fafafa"
+    },
+    "hidden": {
+      "type": "boolean",
+      "default": false
+    }
   },
   "editorScript": "wpfn-blocks",
   "style": "file:./style.css"
