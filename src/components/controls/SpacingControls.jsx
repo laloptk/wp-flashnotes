@@ -1,5 +1,8 @@
 import { InspectorControls } from '@wordpress/block-editor';
-import { PanelBody, __experimentalBoxControl as BoxControl } from '@wordpress/components';
+import {
+	PanelBody,
+	__experimentalBoxControl as BoxControl,
+} from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 
 export default function SpacingControls( { attributes, setAttributes } ) {
@@ -7,7 +10,10 @@ export default function SpacingControls( { attributes, setAttributes } ) {
 
 	return (
 		<InspectorControls>
-			<PanelBody title={ __( 'Spacing', 'wp-flashnotes' ) } initialOpen={ false }>
+			<PanelBody
+				title={ __( 'Spacing', 'wp-flashnotes' ) }
+				initialOpen={ false }
+			>
 				<BoxControl
 					label={ __( 'Margin', 'wp-flashnotes' ) }
 					values={ margin }
@@ -17,7 +23,9 @@ export default function SpacingControls( { attributes, setAttributes } ) {
 				<BoxControl
 					label={ __( 'Padding', 'wp-flashnotes' ) }
 					values={ padding }
-					onChange={ ( value ) => setAttributes( { padding: value } ) }
+					onChange={ ( value ) =>
+						setAttributes( { padding: value } )
+					}
 					__next40pxDefaultSize={ true }
 				/>
 			</PanelBody>

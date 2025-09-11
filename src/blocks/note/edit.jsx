@@ -37,6 +37,7 @@ const Edit = ( { clientId, allowedBlocks, attributes, setAttributes } ) => {
 				value={ title }
 				onChange={ ( val ) => setAttributes( { title: val } ) }
 				className="wpfn-note__title"
+				__nextHasNoMarginBottom
 			/>
 
 			<div className="wpfn-note__content">

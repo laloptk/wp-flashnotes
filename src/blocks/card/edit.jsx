@@ -21,14 +21,8 @@ import StyleControls from '../../components/controls/StyleControls';
 import { __ } from '@wordpress/i18n';
 
 export default function Edit( { clientId, attributes, setAttributes } ) {
-	const {
-		block_id,
-		margin,
-		padding,
-		border,
-		backgroundColor,
-		hidden,
-	} = attributes;
+	const { block_id, margin, padding, border, backgroundColor, hidden } =
+		attributes;
 
 	const blockProps = useBlockProps( {
 		className: 'wpfn-card',
@@ -45,13 +39,19 @@ export default function Edit( { clientId, attributes, setAttributes } ) {
 				? `${ border.top.width } solid ${ border.top.color || '#ddd' }`
 				: undefined,
 			borderRight: border?.right?.width
-				? `${ border.right.width } solid ${ border.right.color || '#ddd' }`
+				? `${ border.right.width } solid ${
+						border.right.color || '#ddd'
+				  }`
 				: undefined,
 			borderBottom: border?.bottom?.width
-				? `${ border.bottom.width } solid ${ border.bottom.color || '#ddd' }`
+				? `${ border.bottom.width } solid ${
+						border.bottom.color || '#ddd'
+				  }`
 				: undefined,
 			borderLeft: border?.left?.width
-				? `${ border.left.width } solid ${ border.left.color || '#ddd' }`
+				? `${ border.left.width } solid ${
+						border.left.color || '#ddd'
+				  }`
 				: undefined,
 			borderRadius: border?.radius,
 			backgroundColor,
@@ -72,7 +72,9 @@ export default function Edit( { clientId, attributes, setAttributes } ) {
 	);
 
 	useEffect( () => {
-		if ( ! childBlocks.length ) return;
+		if ( ! childBlocks.length ) {
+			return;
+		}
 
 		let nextQuestion = '';
 		let nextAnswers = [];
@@ -115,15 +117,27 @@ export default function Edit( { clientId, attributes, setAttributes } ) {
 
 	return (
 		<>
-			<VisibilityControls attributes={attributes} setAttributes={setAttributes} />
-			<SpacingControls attributes={attributes} setAttributes={setAttributes} />
-			<StyleControls attributes={attributes} setAttibutes={setAttributes} />
+			<VisibilityControls
+				attributes={ attributes }
+				setAttributes={ setAttributes }
+			/>
+			<SpacingControls
+				attributes={ attributes }
+				setAttributes={ setAttributes }
+			/>
+			<StyleControls
+				attributes={ attributes }
+				setAttibutes={ setAttributes }
+			/>
 
 			<div { ...blockProps }>
 				<InnerBlocks
 					template={ [
 						[ 'wpfn/slot', { role: 'question' } ],
-						[ 'wpfn/slot', { role: 'answer', templateLock: 'all' } ],
+						[
+							'wpfn/slot',
+							{ role: 'answer', templateLock: 'all' },
+						],
 						[ 'wpfn/slot', { role: 'explanation' } ],
 					] }
 					templateLock="all"

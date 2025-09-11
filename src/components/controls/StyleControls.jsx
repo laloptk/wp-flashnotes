@@ -7,7 +7,10 @@ export default function StyleControls( { attributes, setAttributes } ) {
 
 	return (
 		<InspectorControls>
-			<PanelBody title={ __( 'Styles', 'wp-flashnotes' ) } initialOpen={ false }>
+			<PanelBody
+				title={ __( 'Styles', 'wp-flashnotes' ) }
+				initialOpen={ false }
+			>
 				<BorderBoxControl
 					__next40pxDefaultSize
 					label={ __( 'Border', 'wp-flashnotes' ) }

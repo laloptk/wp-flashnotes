@@ -7,7 +7,10 @@ export default function VisibilityControls( { attributes, setAttributes } ) {
 
 	return (
 		<InspectorControls>
-			<PanelBody title={ __( 'Visibility', 'wp-flashnotes' ) } initialOpen={ true }>
+			<PanelBody
+				title={ __( 'Visibility', 'wp-flashnotes' ) }
+				initialOpen={ true }
+			>
 				<ToggleControl
 					__nextHasNoMarginBottom
 					label={ __( 'Hide on frontend', 'wp-flashnotes' ) }

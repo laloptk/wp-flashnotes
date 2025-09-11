@@ -28,6 +28,7 @@ const CardsNotesSearch = ( { itemType, onChange } ) => {
 				placeholder="Type to search..."
 				autoComplete="off"
 				__next40pxDefaultSize
+				__nextHasNoMarginBottom
 			/>
 			<CardsNotesSelect
 				itemType={ itemType }

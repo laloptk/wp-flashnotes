@@ -7,12 +7,7 @@ import {
 } from '@wordpress/block-editor';
 import { serialize } from '@wordpress/blocks';
 import { Icon } from '@wordpress/icons';
-import {
-	help,
-	commentEditLink,
-	quote,
-	check,
-} from '@wordpress/icons'; // pick appropriate icons
+import { help, commentEditLink, quote, check } from '@wordpress/icons'; // pick appropriate icons
 
 const ALLOWED_MAP = {
 	question: [ 'core/paragraph', 'core/heading', 'core/list' ],
