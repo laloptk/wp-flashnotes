@@ -1,9 +1,5 @@
-const save = () => {
-	return (
-		<div>
-			<h4>Inserter Block</h4>
-		</div>
-	);
-};
+import { useBlockProps, InnerBlocks } from '@wordpress/block-editor';
 
-export default save;
+export default function save() {
+	return <InnerBlocks.Content />;
+}
