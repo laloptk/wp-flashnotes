@@ -13,6 +13,7 @@ class BlockParser {
 	 * @return array Normalized FlashNotes blocks
 	 */
 	public static function from_post_content( string $content ): array {
+		error_log('This is the markup normilized content: ' . json_encode($content));
 		$blocks = \parse_blocks( $content );
 		return self::extract_flashnotes_blocks( $blocks );
 	}

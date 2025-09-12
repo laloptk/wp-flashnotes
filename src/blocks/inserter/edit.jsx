@@ -1,36 +1,20 @@
-import {
-	useBlockProps,
-	useInnerBlocksProps,
-	InspectorControls,
-} from '@wordpress/block-editor';
-import { parse } from '@wordpress/blocks';
-import { PanelBody } from '@wordpress/components';
-import { useEffect } from '@wordpress/element';
-import { useDispatch } from '@wordpress/data';
+import { useState, useEffect } from '@wordpress/element';
+import { useBlockProps, InspectorControls } from '@wordpress/block-editor';
+import { PanelBody, Spinner } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 
 import CardsNotesSearch from '../../components/CardsNotesSearch';
 import VisibilityControls from '../../components/controls/VisibilityControls';
 import SpacingControls from '../../components/controls/SpacingControls';
 import StyleControls from '../../components/controls/StyleControls';
+import SafeHTMLContent from '../../components/SafeHTMLContent';
+import useFetch from '../../hooks/useFetch';
+import {assembleContent} from '../../utils';
 
-const Edit = ( { attributes, setAttributes, clientId } ) => {
-	const {
-		id,
-		title,
-		answers_json,
-		explanation,
-		margin,
-		padding,
-		border,
-		backgroundColor,
-		hidden,
-	} = attributes;
+const Edit = ({ attributes, setAttributes, clientId }) => {
+	const { id, block_id, margin, padding, border, backgroundColor, hidden } = attributes;
 
-	// Get the replaceInnerBlocks function from dispatch
-	const { replaceInnerBlocks } = useDispatch( 'core/block-editor' );
-
-	const blockProps = useBlockProps( {
+	const blockProps = useBlockProps({
 		className: 'wpfn-inserter',
 		style: {
 			marginTop: margin?.top,
@@ -42,139 +26,70 @@ const Edit = ( { attributes, setAttributes, clientId } ) => {
 			paddingBottom: padding?.bottom,
 			paddingLeft: padding?.left,
 			borderTop: border?.top?.width
-				? `${ border.top.width } solid ${ border.top.color || '#ddd' }`
+				? `${border.top.width} solid ${border.top.color || '#ddd'}`
 				: undefined,
 			borderRight: border?.right?.width
-				? `${ border.right.width } solid ${
-						border.right.color || '#ddd'
-				  }`
+				? `${border.right.width} solid ${border.right.color || '#ddd'}`
 				: undefined,
 			borderBottom: border?.bottom?.width
-				? `${ border.bottom.width } solid ${
-						border.bottom.color || '#ddd'
-				  }`
+				? `${border.bottom.width} solid ${border.bottom.color || '#ddd'}`
 				: undefined,
 			borderLeft: border?.left?.width
-				? `${ border.left.width } solid ${
-						border.left.color || '#ddd'
-				  }`
+				? `${border.left.width} solid ${border.left.color || '#ddd'}`
 				: undefined,
 			borderRadius: border?.radius,
 			backgroundColor,
+			display: hidden ? 'none' : undefined,
 		},
-	} );
+	});
 
-	// Function to safely parse block content
-	const parseBlockContent = ( content ) => {
-		if ( ! content || typeof content !== 'string' ) {
-			return [];
+	// Set persistent block_id once
+	useEffect(() => {
+		if (!block_id) setAttributes({ block_id: clientId });
+	}, [block_id, clientId, setAttributes]);
+
+	const [content, setContent] = useState('');
+
+	// Rehydrate from API when id is present (editor reload)
+	const { data, loading, error } = useFetch('cards', { id });
+
+	useEffect(() => {
+		if (!data?.items) return;
+
+		const selected = Object.values(data.items).find(
+			(item) => String(item.id) === String(id)
+		);
+
+		if (!selected) return;
+
+		if (!content || String(selected.id) === String(id)) {
+			setContent(assembleContent(selected));
 		}
-		
-		try {
-			// Parse the Gutenberg markup into blocks
-			return parse( content );
-		} catch ( error ) {
-			console.error( 'Error parsing block content:', error );
-			return [];
-		}
-	};
+	}, [data, id]);
 
-	// Function to create all blocks from attributes
-	const createBlocksFromAttributes = () => {
-		const allBlocks = [];
-
-		// Parse title blocks
-		if ( title ) {
-			const titleBlocks = parseBlockContent( title );
-			allBlocks.push( ...titleBlocks );
-		}
-
-		// Parse answer blocks
-		if ( answers_json && Array.isArray( answers_json ) ) {
-			answers_json.forEach( ( answer ) => {
-				if ( answer && typeof answer === 'string' ) {
-					const answerBlocks = parseBlockContent( answer );
-					allBlocks.push( ...answerBlocks );
-				}
-			} );
-		}
-
-		// Parse explanation blocks
-		if ( explanation ) {
-			const explanationBlocks = parseBlockContent( explanation );
-			allBlocks.push( ...explanationBlocks );
-		}
-
-		// If no blocks were parsed, add a default placeholder
-		if ( allBlocks.length === 0 ) {
-			allBlocks.push( ...parse( '<!-- wp:paragraph --><p>Insert note or card here</p><!-- /wp:paragraph -->' ) );
-		}
-
-		return allBlocks;
-	};
-
-	// Replace inner blocks when attributes change
-	useEffect( () => {
-		const newBlocks = createBlocksFromAttributes();
-		
-		if ( newBlocks.length > 0 ) {
-			replaceInnerBlocks( clientId, newBlocks );
-		}
-	}, [ title, answers_json, explanation, clientId, replaceInnerBlocks ] );
-
-	const { children, ...innerBlocksProps } = useInnerBlocksProps(
-		{ className: 'wpfn-inserter' }, 
-		{
-			// No template needed since we're replacing blocks programmatically
-			templateLock: 'all',
-		}
-	);
-
-	const handleSearchOnChange = ( selectedItem ) => {
-		// Here answers_json should contain block markup strings
-		let answers = [];
-		try {
-			if ( selectedItem?.answers_json ) {
-				answers = JSON.parse( selectedItem.answers_json );
-			}
-		} catch (e) {
-			console.error('Error parsing answers_json:', e);
-			answers = [];
-		}
-
-		setAttributes( {
-			id: selectedItem?.id ?? '',
-			title: selectedItem?.question ?? selectedItem?.title ?? '',
-			answers_json: answers,
-			explanation: selectedItem?.explanation ?? '',
-		} );
+	// Immediate hydration on selection
+	const handleSearchOnChange = (selectedItem) => {
+		if (!selectedItem) return;
+		setAttributes({ id: selectedItem.id });
+		setContent(assembleContent(selectedItem));
 	};
 
 	return (
-		<div { ...blockProps }>
+		<div {...blockProps}>
 			<InspectorControls>
-				<PanelBody title={ __( 'Card Controls', 'wp-flashnotes' ) }>
-					<CardsNotesSearch
-						itemType="cards"
-						onChange={ handleSearchOnChange }
-					/>
+				<PanelBody title={__('Search Controls', 'wp-flashnotes')}>
+					<CardsNotesSearch itemType="cards" onChange={handleSearchOnChange} />
 				</PanelBody>
-				<VisibilityControls
-					attributes={ attributes }
-					setAttributes={ setAttributes }
-				/>
-				<SpacingControls
-					attributes={ attributes }
-					setAttributes={ setAttributes }
-				/>
-				<StyleControls
-					attributes={ attributes }
-					setAttributes={ setAttributes }
-				/>
+				<VisibilityControls attributes={attributes} setAttributes={setAttributes} />
+				<SpacingControls attributes={attributes} setAttributes={setAttributes} />
+				<StyleControls attributes={attributes} setAttributes={setAttributes} />
 			</InspectorControls>
 
-			<div { ...innerBlocksProps }>
-				{ children }
+			<div className="wpfn-rendered-card">
+				{!id && <p>{__('Select a card…', 'wp-flashnotes')}</p>}
+				{id && loading && !content && <Spinner />}
+				{error && <p className="error">{String(error)}</p>}
+				{content && <SafeHTMLContent content={content} classes="wpfn-card-html" />}
 			</div>
 		</div>
 	);

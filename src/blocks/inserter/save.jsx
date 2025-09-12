@@ -1,5 +1,13 @@
-import { useBlockProps, InnerBlocks } from '@wordpress/block-editor';
+import { useBlockProps } from '@wordpress/block-editor';
 
-export default function save() {
-	return <InnerBlocks.Content />;
+export default function save( { attributes } ) {
+	const { id, block_id } = attributes;
+
+	return (
+		<div
+			{ ...useBlockProps.save() }
+			data-id={ id || '' }
+			data-block-id={ block_id || '' }
+		/>
+	);
 }
