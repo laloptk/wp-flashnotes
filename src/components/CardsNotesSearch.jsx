@@ -10,7 +10,7 @@ const CardsNotesSearch = ( { itemType, onChange } ) => {
 		onChange( selectedItem );
 		setIsOpen( false ); // close popover when an item is chosen
 	};
-
+	
 	return (
 		<div>
 			<TextControl

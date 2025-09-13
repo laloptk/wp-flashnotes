@@ -2,55 +2,44 @@ import { useState, useEffect } from '@wordpress/element';
 import { useBlockProps, InspectorControls } from '@wordpress/block-editor';
 import { PanelBody, Spinner } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
-
-import CardsNotesSearch from '../../components/CardsNotesSearch';
-import VisibilityControls from '../../components/controls/VisibilityControls';
-import SpacingControls from '../../components/controls/SpacingControls';
-import StyleControls from '../../components/controls/StyleControls';
-import SafeHTMLContent from '../../components/SafeHTMLContent';
+import { normalizeStyle } from '@wpfn/styles';
+import {
+	CardsNotesSearch,
+	VisibilityControls,
+	SpacingControls,
+	StyleControls,
+	SafeHTMLContent
+} from '@wpfn/components';
 import useFetch from '../../hooks/useFetch';
 import {assembleContent} from '../../utils';
 
 const Edit = ({ attributes, setAttributes, clientId }) => {
-	const { id, block_id, margin, padding, border, backgroundColor, hidden } = attributes;
+	const { id, block_id, margin, padding, border, borderRadius, backgroundColor, hidden } = attributes;
+	
+	const borders = normalizeStyle('border', border);
+	const margins = normalizeStyle('margin', margin);
+	const paddings = normalizeStyle('padding', padding);
+	const borderRadiuses = normalizeStyle('borderRadius', borderRadius);
+	
+	const style = {
+		...(backgroundColor && { backgroundColor }),
+		...(normalizeStyle('border', border) || {}),
+		...(normalizeStyle('margin', margin) || {}),
+		...(normalizeStyle('padding', padding) || {}),
+		...(normalizeStyle('borderRadius', borderRadius) || {}),
+	};
 
 	const blockProps = useBlockProps({
 		className: 'wpfn-inserter',
-		style: {
-			marginTop: margin?.top,
-			marginRight: margin?.right,
-			marginBottom: margin?.bottom,
-			marginLeft: margin?.left,
-			paddingTop: padding?.top,
-			paddingRight: padding?.right,
-			paddingBottom: padding?.bottom,
-			paddingLeft: padding?.left,
-			borderTop: border?.top?.width
-				? `${border.top.width} solid ${border.top.color || '#ddd'}`
-				: undefined,
-			borderRight: border?.right?.width
-				? `${border.right.width} solid ${border.right.color || '#ddd'}`
-				: undefined,
-			borderBottom: border?.bottom?.width
-				? `${border.bottom.width} solid ${border.bottom.color || '#ddd'}`
-				: undefined,
-			borderLeft: border?.left?.width
-				? `${border.left.width} solid ${border.left.color || '#ddd'}`
-				: undefined,
-			borderRadius: border?.radius,
-			backgroundColor,
-			display: hidden ? 'none' : undefined,
-		},
+		style
 	});
 
-	// Set persistent block_id once
 	useEffect(() => {
 		if (!block_id) setAttributes({ block_id: clientId });
 	}, [block_id, clientId, setAttributes]);
 
 	const [content, setContent] = useState('');
 
-	// Rehydrate from API when id is present (editor reload)
 	const { data, loading, error } = useFetch('cards', { id });
 
 	useEffect(() => {
@@ -67,7 +56,6 @@ const Edit = ({ attributes, setAttributes, clientId }) => {
 		}
 	}, [data, id]);
 
-	// Immediate hydration on selection
 	const handleSearchOnChange = (selectedItem) => {
 		if (!selectedItem) return;
 		setAttributes({ id: selectedItem.id });

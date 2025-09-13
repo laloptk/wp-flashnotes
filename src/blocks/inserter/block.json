@@ -19,15 +19,33 @@
     },
     "padding": {
       "type": "object",
-      "default": {}
+      "default": {
+        "top": "15px",
+        "right": "15px",
+        "bottom": "15px",
+        "left": "15px"
+      }
     },
     "border": {
       "type": "object",
-      "default": {}
+      "default": {
+        "color": "#aaa",
+        "style": "solid",
+        "width": "1px"
+      }
     },
     "backgroundColor": {
       "type": "string",
-      "default": ""
+      "default": "#ddd"
+    },
+    "borderRadius": {
+      "type": "object",
+      "default": {
+        "top": "25px",
+        "right": "25px",
+        "bottom": "25px",
+        "left": "25px"
+      }
     },
     "hidden": {
       "type": "boolean",
