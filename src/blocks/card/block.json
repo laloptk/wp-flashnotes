@@ -55,8 +55,7 @@
       "default": {
         "color": "#ddd",
         "style": "solid",
-        "width": "1px",
-        "radius": "6px"
+        "width": "1px"
       }
     },
     "backgroundColor": {

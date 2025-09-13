@@ -1,62 +1,41 @@
-import { useEffect } from '@wordpress/element';
+import { useEffect, useState } from '@wordpress/element';
 import { useSelect } from '@wordpress/data';
 import {
 	store as blockEditorStore,
 	useBlockProps,
 	InnerBlocks,
-	InspectorControls,
-	PanelColorSettings,
 } from '@wordpress/block-editor';
-import {
-	PanelBody,
-	ToggleControl,
-	__experimentalBoxControl as BoxControl,
-	BorderBoxControl,
-} from '@wordpress/components';
+import { normalizeStyle } from '@wpfn/styles';
+import { Button } from '@wordpress/components';
 import { v4 as uuidv4 } from 'uuid';
 import { normalizeText } from '../../utils';
-import VisibilityControls from '../../components/controls/VisibilityControls';
-import SpacingControls from '../../components/controls/SpacingControls';
-import StyleControls from '../../components/controls/StyleControls';
+import {
+	VisibilityControls,
+	SpacingControls,
+	StyleControls
+} from '@wpfn/components';
 import { __ } from '@wordpress/i18n';
 
 export default function Edit( { clientId, attributes, setAttributes } ) {
-	const { block_id, margin, padding, border, backgroundColor, hidden } =
-		attributes;
+	const { block_id, margin, padding, border, backgroundColor, hidden } = attributes;
 
-	const blockProps = useBlockProps( {
+	const borders = normalizeStyle('border', border);
+	const margins = normalizeStyle('margin', margin);
+	const paddings = normalizeStyle('padding', padding);
+	const borderRadiuses = normalizeStyle('borderRadius', borderRadius);
+	
+	const style = {
+		...(backgroundColor && { backgroundColor }),
+		...(normalizeStyle('border', border) || {}),
+		...(normalizeStyle('margin', margin) || {}),
+		...(normalizeStyle('padding', padding) || {}),
+		...(normalizeStyle('borderRadius', borderRadius) || {}),
+	};
+
+	const blockProps = useBlockProps({
 		className: 'wpfn-card',
-		style: {
-			marginTop: margin?.top,
-			marginRight: margin?.right,
-			marginBottom: margin?.bottom,
-			marginLeft: margin?.left,
-			paddingTop: padding?.top,
-			paddingRight: padding?.right,
-			paddingBottom: padding?.bottom,
-			paddingLeft: padding?.left,
-			borderTop: border?.top?.width
-				? `${ border.top.width } solid ${ border.top.color || '#ddd' }`
-				: undefined,
-			borderRight: border?.right?.width
-				? `${ border.right.width } solid ${
-						border.right.color || '#ddd'
-				  }`
-				: undefined,
-			borderBottom: border?.bottom?.width
-				? `${ border.bottom.width } solid ${
-						border.bottom.color || '#ddd'
-				  }`
-				: undefined,
-			borderLeft: border?.left?.width
-				? `${ border.left.width } solid ${
-						border.left.color || '#ddd'
-				  }`
-				: undefined,
-			borderRadius: border?.radius,
-			backgroundColor,
-		},
-	} );
+		style
+	});
 
 	// Assign UUID once
 	useEffect( () => {
