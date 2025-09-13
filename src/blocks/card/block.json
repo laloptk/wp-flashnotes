@@ -58,6 +58,15 @@
         "width": "1px"
       }
     },
+    "borderRadius": {
+      "type": "object",
+      "default": {
+        "top": "25px",
+        "right": "25px",
+        "bottom": "25px",
+        "left": "25px"
+      }
+    },
     "backgroundColor": {
       "type": "string",
       "default": "#fafafa"
@@ -68,5 +77,6 @@
     }
   },
   "editorScript": "wpfn-blocks",
-  "style": "file:./style.css"
+  "style": "file:../../style-index.css",
+  "editorStyle": "file:../../index.css"
 }

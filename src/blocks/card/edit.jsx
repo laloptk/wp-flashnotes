@@ -17,12 +17,9 @@ import {
 import { __ } from '@wordpress/i18n';
 
 export default function Edit( { clientId, attributes, setAttributes } ) {
-	const { block_id, margin, padding, border, backgroundColor, hidden } = attributes;
-
-	const borders = normalizeStyle('border', border);
-	const margins = normalizeStyle('margin', margin);
-	const paddings = normalizeStyle('padding', padding);
-	const borderRadiuses = normalizeStyle('borderRadius', borderRadius);
+	const { block_id, margin, padding, border, borderRadius, backgroundColor, hidden } = attributes;
+	const [ stage, setStage ] = useState( 0 );
+	const nextStage = () => setStage( ( stage + 1 ) % 3 );
 	
 	const style = {
 		...(backgroundColor && { backgroundColor }),
@@ -106,22 +103,22 @@ export default function Edit( { clientId, attributes, setAttributes } ) {
 			/>
 			<StyleControls
 				attributes={ attributes }
-				setAttibutes={ setAttributes }
+				setAttributes={ setAttributes }
 			/>
 
-			<div { ...blockProps }>
+			<div { ...blockProps } data-stage={ stage }>
 				<InnerBlocks
 					template={ [
 						[ 'wpfn/slot', { role: 'question' } ],
-						[
-							'wpfn/slot',
-							{ role: 'answer', templateLock: 'all' },
-						],
+						[ 'wpfn/slot', { role: 'answer' } ],
 						[ 'wpfn/slot', { role: 'explanation' } ],
 					] }
-					templateLock="all"
 					allowedBlocks={ [ 'wpfn/slot' ] }
+					templateLock="all"
 				/>
+				<Button onClick={ nextStage }>
+					{ stage === 0 ? 'Show Answer' : stage === 1 ? 'Show Explanation' : 'Back to Question' }
+				</Button>
 			</div>
 		</>
 	);

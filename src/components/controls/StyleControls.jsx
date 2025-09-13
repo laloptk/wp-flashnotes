@@ -19,7 +19,7 @@ const StyleControls = ( { attributes, setAttributes } ) => {
 					__next40pxDefaultSize
 					label={ __( 'Border', 'wp-flashnotes' ) }
 					onChange={ ( val ) =>
-						setAttributes( { border: { ...val } } )
+						setAttributes( { border: val } )
 					}
 					value={ border }
 					enableStyle={ false }
@@ -28,7 +28,7 @@ const StyleControls = ( { attributes, setAttributes } ) => {
 					__next40pxDefaultSize
 					label={ __( 'Border Radius', 'wp-flashnotes' ) }
 					onChange={ ( val ) =>
-						setAttributes( { borderRadius: { ...val } } )
+						setAttributes( { borderRadius: val } )
 					}
 					value={ borderRadius }
 					enableStyle={ false }

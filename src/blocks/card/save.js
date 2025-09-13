@@ -1,5 +1,35 @@
 import { useBlockProps, InnerBlocks } from '@wordpress/block-editor';
+import { normalizeStyle } from '@wpfn/styles';
 
 export default function save( { attributes } ) {
-	return <InnerBlocks.Content />;
+	const { block_id, stage, border, margin, padding, borderRadius, backgroundColor } = attributes;
+
+	const style = {
+		...(backgroundColor && { backgroundColor }),
+		...(normalizeStyle('border', border) || {}),
+		...(normalizeStyle('margin', margin) || {}),
+		...(normalizeStyle('padding', padding) || {}),
+		...(normalizeStyle('borderRadius', borderRadius) || {}),
+	};
+	
+	const blockProps = useBlockProps.save( {
+		className: 'wpfn-card',
+		'data-id': block_id,
+		'data-stage': stage,
+		style
+	} );
+
+	return (
+		<div { ...blockProps }>
+			<div className="wpfn-slot role-question">
+				<InnerBlocks.Content />
+			</div>
+			<div className="wpfn-slot role-answer">
+				{/* answer InnerBlocks */}
+			</div>
+			<div className="wpfn-slot role-explanation">
+				{/* explanation InnerBlocks */}
+			</div>
+		</div>
+	);
 }

@@ -1,0 +1,28 @@
+.wpfn-card {
+	.wpfn-slot {
+		// Shared default styling
+		position: relative;
+		transition: opacity 0.3s ease-in-out;
+	}
+
+	&[data-stage="0"] {
+		.wpfn-slot.role-answer,
+		.wpfn-slot.role-explanation {
+			display: none;
+		}
+	}
+
+	&[data-stage="1"] {
+		.wpfn-slot.role-question,
+		.wpfn-slot.role-explanation {
+			display: none;
+		}
+	}
+
+	&[data-stage="2"] {
+		.wpfn-slot.role-question,
+		.wpfn-slot.role-answer {
+			display: none;
+		}
+	}
+}

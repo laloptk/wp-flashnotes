@@ -11,11 +11,12 @@ final class CardBlock extends BaseBlock {
 	}
 
 	public function render( $attributes, $content, $block ) {
-        $block_id = $attributes['block_id'] ?? '';
-        return sprintf(
-            '<div class="wpfn-card" data-id="%s">%s</div>',
-            esc_attr($block_id),
-            $content // children markup from post_content
-        );
+        return array();
 	}
+
+    protected function get_args(): array {
+        return array(
+            'render_callback' => null
+        );
+    }
 }

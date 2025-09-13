@@ -33,7 +33,7 @@ abstract class BaseBlock {
 	public function register(): void {
 		$args = $this->get_args();
 
-		if ( empty( $args ) || ! isset( $args['render_callback'] ) ) {
+		if ( empty( $args ) || ! array_key_exists( 'render_callback', $args ) ) {
 			$args['render_callback'] = array( $this, 'render' );
 		}
 		

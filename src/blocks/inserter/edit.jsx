@@ -16,11 +16,6 @@ import {assembleContent} from '../../utils';
 const Edit = ({ attributes, setAttributes, clientId }) => {
 	const { id, block_id, margin, padding, border, borderRadius, backgroundColor, hidden } = attributes;
 	
-	const borders = normalizeStyle('border', border);
-	const margins = normalizeStyle('margin', margin);
-	const paddings = normalizeStyle('padding', padding);
-	const borderRadiuses = normalizeStyle('borderRadius', borderRadius);
-	
 	const style = {
 		...(backgroundColor && { backgroundColor }),
 		...(normalizeStyle('border', border) || {}),
