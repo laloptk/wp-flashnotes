@@ -7,13 +7,13 @@ import {
 } from '@wordpress/block-editor';
 import { serialize } from '@wordpress/blocks';
 import { Icon } from '@wordpress/icons';
-import { help, commentEditLink, quote, check } from '@wordpress/icons'; // pick appropriate icons
+import { help, commentEditLink, quote, check } from '@wordpress/icons';
 
 const ALLOWED_MAP = {
-	question: [ 'core/paragraph', 'core/heading', 'core/list' ],
-	explanation: [ 'core/paragraph', 'core/list', 'core/image' ],
-	note: [ 'core/paragraph', 'core/heading', 'core/quote' ],
-	answer: [ 'core/paragraph', 'core/list' ],
+	question: [ 'core/paragraph', 'core/heading', 'core/list', 'core/quote' ],
+	explanation: [ 'core/paragraph', 'core/list', 'core/image', 'core/heading', 'core/quote' ],
+	answer: [ 'core/paragraph' ],
+	note: [ 'core/paragraph', 'core/heading', 'core/quote', 'core/list' ],
 };
 
 const ROLE_ICONS = {

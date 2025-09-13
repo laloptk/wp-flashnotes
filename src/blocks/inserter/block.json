@@ -1,39 +1,21 @@
 {
+  "$schema": "https://schemas.wp.org/trunk/block.json",
   "apiVersion": 3,
   "name": "wpfn/inserter",
-  "title": "FlashNotes: Inserter",
+  "title": "FlashNotes Inserter",
   "category": "widgets",
-  "icon": "sticky",
-  "description": "Create or reference a study note and display it.",
-  "supports": {
-    "html": false,
-    "anchor": true
-  },
+  "icon": "index-card",
+  "description": "Insert a FlashNotes card into a post.",
   "attributes": {
     "id": {
-      "type": "number",
-      "default": 0
+      "type": "string"
     },
-    "title": {
-      "type": "string", 
-      "default": ""
-    },
-    "answers_json": {
-      "type": "array",
-      "default": []
-    },
-    "explanation": {
-      "type": "string",
-      "default": ""
+    "block_id": {
+      "type": "string"
     },
     "margin": {
       "type": "object",
-      "default": {
-        "top": "0",
-        "right": "0",
-        "bottom": "0",
-        "left": "0"
-      }
+      "default": {}
     },
     "padding": {
       "type": "object",
@@ -47,21 +29,31 @@
     "border": {
       "type": "object",
       "default": {
-        "color": "#ddd",
+        "color": "#aaa",
         "style": "solid",
-        "width": "1px",
-        "radius": "6px"
+        "width": "1px"
       }
     },
     "backgroundColor": {
       "type": "string",
-      "default": "#fafafa"
+      "default": "#ddd"
+    },
+    "borderRadius": {
+      "type": "object",
+      "default": {
+        "top": "25px",
+        "right": "25px",
+        "bottom": "25px",
+        "left": "25px"
+      }
     },
     "hidden": {
       "type": "boolean",
       "default": false
     }
   },
-  "editorScript": "wpfn-blocks",
-  "style": "file:./style.css"
+  "supports": {
+    "html": false
+  },
+  "editorScript": "file:./index.js"
 }

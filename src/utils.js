@@ -1,3 +1,5 @@
+import { parse } from '@wordpress/blocks';
+
 export const normalizeText = ( val ) => {
 	if ( ! val ) {
 		return '';
@@ -18,4 +20,17 @@ export const normalizeText = ( val ) => {
 	}
 
 	return String( val );
+};
+
+export const assembleContent = (item) => {
+	if (!item) return '';
+	let out = item.question || '';
+	try {
+		const answers = JSON.parse(item.answers_json || '[]');
+		for (const ans of answers) out += ans || '';
+	} catch {
+		/* ignore */
+	}
+	out += item.explanation || '';
+	return out;
 };
