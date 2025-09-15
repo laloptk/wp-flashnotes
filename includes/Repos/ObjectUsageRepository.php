@@ -81,143 +81,40 @@ class ObjectUsageRepository {
 	}
 
 	/**
-	 * Check if usage exists.
+	 * Get relationships for an object type in a post (optionally within a block).
+	 *
+	 * @param string      $object_type  Object type (card|note).
+	 * @param int         $post_id      Post ID.
+	 * @param string|null $block_id     Optional block ID to filter.
+	 * @return int[]                   List of object IDs.
+	 * @throws Exception
 	 */
-	public function exists( string $object_type, int $object_id, int $post_id, string $block_id ): bool {
-		$object_type = $this->validate_type( $object_type );
-		$object_id   = $this->validate_id( $object_id );
-		$post_id     = $this->validate_id( $post_id );
-		$block_id    = $this->validate_block_id( $block_id );
-
-		$select_sql = $this->db->prepare(
-			"SELECT 1 FROM {$this->table}
-             WHERE object_type = %s AND object_id = %d AND post_id = %d AND block_id = %s
-             LIMIT 1",
-			$object_type,
-			$object_id,
-			$post_id,
-			$block_id
-		);
-
-		return (bool) $this->db->get_var( $select_sql );
-	}
-
-	/**
-	 * Get block IDs for an object in a post.
-	 */
-	public function get_block_ids_for_object_in_post( string $object_type, int $object_id, int $post_id ): array {
-		$object_type = $this->validate_type( $object_type );
-		$object_id   = $this->validate_id( $object_id );
-		$post_id     = $this->validate_id( $post_id );
-
-		$select_sql = $this->db->prepare(
-			"SELECT block_id FROM {$this->table}
-             WHERE object_type = %s AND object_id = %d AND post_id = %d
-             ORDER BY block_id ASC",
-			$object_type,
-			$object_id,
-			$post_id
-		);
-
-		$result_rows = $this->db->get_col( $select_sql ) ?: [];
-		return array_values( array_map( 'strval', $result_rows ) );
-	}
-
-	/**
-	 * Get post IDs where an object is used.
-	 */
-	public function get_post_ids_for_object( string $object_type, int $object_id ): array {
-		$object_type = $this->validate_type( $object_type );
-		$object_id   = $this->validate_id( $object_id );
-
-		$select_sql = $this->db->prepare(
-			"SELECT DISTINCT post_id FROM {$this->table}
-             WHERE object_type = %s AND object_id = %d
-             ORDER BY post_id ASC",
-			$object_type,
-			$object_id
-		);
-		$result_rows = $this->db->get_col( $select_sql ) ?: [];
-		return array_map( 'intval', $result_rows );
-	}
-
-	/**
-	 * Get object IDs of a type in a post.
-	 */
-	public function get_object_ids_for_post( string $object_type, int $post_id ): array {
+	public function get_relationships( string $object_type, int $post_id, ?string $block_id = null ): array {
 		$object_type = $this->validate_type( $object_type );
 		$post_id     = $this->validate_id( $post_id );
 
-		$select_sql = $this->db->prepare(
-			"SELECT DISTINCT object_id FROM {$this->table}
-             WHERE object_type = %s AND post_id = %d
-             ORDER BY object_id ASC",
-			$object_type,
-			$post_id
-		);
-
-		$result_rows = $this->db->get_col( $select_sql ) ?: [];
-		return array_map( 'intval', $result_rows );
-	}
-
-	/**
-	 * Get object IDs in a block.
-	 */
-	public function get_object_ids_for_block( int $post_id, string $block_id, string $object_type ): array {
-		$post_id     = $this->validate_id( $post_id );
-		$block_id    = $this->validate_block_id( $block_id );
-		$object_type = $this->validate_type( $object_type );
-
-		$select_sql = $this->db->prepare(
-			"SELECT object_id FROM {$this->table}
-             WHERE post_id = %d AND block_id = %s AND object_type = %s
-             ORDER BY object_id ASC",
-			$post_id,
-			$block_id,
-			$object_type
-		);
-
-		$result_rows = $this->db->get_col( $select_sql ) ?: [];
-		return array_map( 'intval', $result_rows );
-	}
-
-	/**
-	 * Count usages for an object.
-	 */
-	public function count_for_object( string $object_type, int $object_id ): int {
-		$object_type = $this->validate_type( $object_type );
-		$object_id   = $this->validate_id( $object_id );
-
-		$count_sql = $this->db->prepare(
-			"SELECT COUNT(*) FROM {$this->table} WHERE object_type = %s AND object_id = %d",
-			$object_type,
-			$object_id
-		);
-
-		return (int) $this->db->get_var( $count_sql );
-	}
-
-	/**
-	 * Count usages for a post (optionally filter by type).
-	 */
-	public function count_for_post( int $post_id, ?string $object_type = null ): int {
-		$post_id = $this->validate_id( $post_id );
-
-		if ( $object_type !== null ) {
-			$object_type = $this->validate_type( $object_type );
-			$count_sql   = $this->db->prepare(
-				"SELECT COUNT(*) FROM {$this->table} WHERE post_id = %d AND object_type = %s",
+		if ( $block_id !== null ) {
+			$block_id = $this->validate_block_id( $block_id );
+			$sql      = $this->db->prepare(
+				"SELECT object_id FROM {$this->table}
+				WHERE object_type = %s AND post_id = %d AND block_id = %s
+				ORDER BY object_id ASC",
+				$object_type,
 				$post_id,
-				$object_type
+				$block_id
 			);
 		} else {
-			$count_sql = $this->db->prepare(
-				"SELECT COUNT(*) FROM {$this->table} WHERE post_id = %d",
+			$sql = $this->db->prepare(
+				"SELECT DISTINCT object_id FROM {$this->table}
+				WHERE object_type = %s AND post_id = %d
+				ORDER BY object_id ASC",
+				$object_type,
 				$post_id
 			);
 		}
 
-		return (int) $this->db->get_var( $count_sql );
+		$result_rows = $this->db->get_col( $sql ) ?: [];
+		return array_map( 'intval', $result_rows );
 	}
 
 	/**
@@ -235,13 +132,13 @@ class ObjectUsageRepository {
 
 		$total_inserted = 0;
 		foreach ( array_chunk( $object_ids, 200 ) as $object_chunk ) {
-			$values      = [];
+			$values       = [];
 			$placeholders = [];
 			foreach ( $object_chunk as $object_id ) {
-				$values[] = $object_type;
-				$values[] = $object_id;
-				$values[] = $post_id;
-				$values[] = $block_id;
+				$values[]       = $object_type;
+				$values[]       = $object_id;
+				$values[]       = $post_id;
+				$values[]       = $block_id;
 				$placeholders[] = '(%s,%d,%d,%s)';
 			}
 			$insert_sql   = "INSERT IGNORE INTO {$this->table} (object_type, object_id, post_id, block_id) VALUES " . implode( ',', $placeholders );
@@ -263,17 +160,19 @@ class ObjectUsageRepository {
 		$object_type = $this->validate_type( $object_type );
 		$desired     = $this->normalize_ids( $desired_object_ids );
 
-		$current_ids = $this->get_object_ids_for_block( $post_id, $block_id, $object_type );
-		$to_add      = array_values( array_diff( $desired, $current_ids ) );
-		$to_remove   = array_values( array_diff( $current_ids, $desired ) );
-		$kept_count  = count( $current_ids ) - count( $to_remove );
+		// Use unified relationships method
+		$current_ids = $this->get_relationships( $object_type, $post_id, $block_id );
+
+		$to_add     = array_values( array_diff( $desired, $current_ids ) );
+		$to_remove  = array_values( array_diff( $current_ids, $desired ) );
+		$kept_count = count( $current_ids ) - count( $to_remove );
 
 		if ( $to_remove ) {
 			foreach ( array_chunk( $to_remove, 500 ) as $remove_chunk ) {
 				$placeholders = implode( ',', array_fill( 0, count( $remove_chunk ), '%d' ) );
 				$delete_sql   = $this->db->prepare(
 					"DELETE FROM {$this->table}
-                     WHERE post_id = %d AND block_id = %s AND object_type = %s AND object_id IN ($placeholders)",
+					WHERE post_id = %d AND block_id = %s AND object_type = %s AND object_id IN ($placeholders)",
 					$post_id,
 					$block_id,
 					$object_type,
@@ -293,78 +192,6 @@ class ObjectUsageRepository {
 			'removed' => (int) count( $to_remove ),
 			'kept'    => (int) $kept_count,
 		];
-	}
-
-	/**
-	 * Clear all usages of an object.
-	 */
-	public function clear_object( string $object_type, int $object_id ): int {
-		$object_type = $this->validate_type( $object_type );
-		$object_id   = $this->validate_id( $object_id );
-
-		$delete_result = $this->db->delete(
-			$this->table,
-			[ 'object_type' => $object_type, 'object_id' => $object_id ],
-			[ '%s', '%d' ]
-		);
-		if ( $delete_result === false ) {
-			throw new Exception( 'Clear object failed: ' . ( $this->db->last_error ?: 'unknown DB error' ) );
-		}
-		return (int) $delete_result;
-	}
-
-	/**
-	 * Clear all usages for a post.
-	 */
-	public function clear_post( int $post_id ): int {
-		$post_id = $this->validate_id( $post_id );
-
-		$delete_result = $this->db->delete( $this->table, [ 'post_id' => $post_id ], [ '%d' ] );
-		if ( $delete_result === false ) {
-			throw new Exception( 'Clear post failed: ' . ( $this->db->last_error ?: 'unknown DB error' ) );
-		}
-		return (int) $delete_result;
-	}
-
-	/**
-	 * Detach object usages by post.
-	 */
-	public function detach_by_post( string $object_type, int $object_id, int $post_id ): int {
-		$object_type = $this->validate_type( $object_type );
-		$object_id   = $this->validate_id( $object_id );
-		$post_id     = $this->validate_id( $post_id );
-
-		$delete_result = $this->db->delete(
-			$this->table,
-			[ 'object_type' => $object_type, 'object_id' => $object_id, 'post_id' => $post_id ],
-			[ '%s', '%d', '%d' ]
-		);
-		if ( $delete_result === false ) {
-			throw new Exception( 'Detach by post failed: ' . ( $this->db->last_error ?: 'unknown DB error' ) );
-		}
-		return (int) $delete_result;
-	}
-
-	/**
-	 * Detach usages in a block (optionally by type).
-	 */
-	public function detach_block( int $post_id, string $block_id, ?string $object_type = null ): int {
-		$post_id  = $this->validate_id( $post_id );
-		$block_id = $this->validate_block_id( $block_id );
-
-		$where   = [ 'post_id' => $post_id, 'block_id' => $block_id ];
-		$formats = [ '%d', '%s' ];
-
-		if ( $object_type !== null ) {
-			$where['object_type'] = $this->validate_type( $object_type );
-			$formats[]            = '%s';
-		}
-
-		$delete_result = $this->db->delete( $this->table, $where, $formats );
-		if ( $delete_result === false ) {
-			throw new Exception( 'Detach block failed: ' . ( $this->db->last_error ?: 'unknown DB error' ) );
-		}
-		return (int) $delete_result;
 	}
 
 	/**
@@ -416,4 +243,3 @@ class ObjectUsageRepository {
 		return $list;
 	}
 }
-

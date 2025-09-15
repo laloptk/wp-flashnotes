@@ -197,19 +197,21 @@ class ObjectUsageController extends BaseController {
 		$pid  = absint( $req['post_id'] );
 		$type = $req->get_param( 'object_type' );
 
-		$out = array(
+		$out = [
 			'post_id' => $pid,
-			'cards'   => array(),
-			'notes'   => array(),
-		);
+			'cards'   => [],
+			'notes'   => [],
+		];
+
 		if ( $type === 'card' ) {
-			$out['cards'] = $this->repo->get_object_ids_for_post( 'card', $pid );
+			$out['cards'] = $this->repo->get_relationships( 'card', $pid );
 		} elseif ( $type === 'note' ) {
-			$out['notes'] = $this->repo->get_object_ids_for_post( 'note', $pid );
+			$out['notes'] = $this->repo->get_relationships( 'note', $pid );
 		} else {
-			$out['cards'] = $this->repo->get_object_ids_for_post( 'card', $pid );
-			$out['notes'] = $this->repo->get_object_ids_for_post( 'note', $pid );
+			$out['cards'] = $this->repo->get_relationships( 'card', $pid );
+			$out['notes'] = $this->repo->get_relationships( 'note', $pid );
 		}
+
 		return $this->ok( $out );
 	}
 

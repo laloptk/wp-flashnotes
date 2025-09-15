@@ -17,20 +17,24 @@ class EventHandler {
 			return;
 		}
 
+		// Case 1: Saving a studyset directly
 		if ( $post->post_type === 'studyset' ) {
-			$this->sync->sync_studyset( $post_id, $post->post_content );
+			$ids = [
+				'set_post_id'    => $post_id,
+				'origin_post_id' => $post_id,
+			];
+			$this->sync->sync_studyset( $ids, $post->post_content );
 			return;
 		}
 
-		// Create or update the studyset itself
-		$set_post_id = $this->sync->ensure_set_for_post( $post_id, $post->post_content );
+		// Case 2: Saving a regular post/page/CPT
+		$ids = $this->sync->ensure_set_for_post( $post_id, $post->post_content );
 
-		// Normalize/update its status after save_post is done
-		$this->update_studyset_status( $set_post_id, $post );
+		$this->update_studyset_status( $ids['set_post_id'], $post );
 
-		// Sync data into custom DB tables
-		$this->sync->sync_studyset( $set_post_id, $post->post_content );
+		$this->sync->sync_studyset( $ids, $post->post_content );
 	}
+
 
 	/**
 	 * Ensure the studyset has a valid post_status (draft or publish).
