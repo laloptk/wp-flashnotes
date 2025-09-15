@@ -8,7 +8,6 @@ class Plugin {
     public function init(): void {
         $this->define_constants();
         $this->check_composer_autoload();
-        $this->register_activation_hook();
         $this->bootstrap_components();
         $this->setup_i18n();
         $this->setup_assets();
@@ -58,25 +57,7 @@ class Plugin {
         require_once $composer;
     }
 
-    private function register_activation_hook(): void {
-        register_activation_hook(
-            WPFN_PLUGIN_FILE,
-            function () {
-                $composer = WPFN_PLUGIN_DIR . 'vendor/autoload.php';
-                if ( ! file_exists( $composer ) ) {
-                    wp_die(
-                        '<p><strong>WP FlashNotes</strong> cannot be activated because the Composer autoloader is missing.</p>
-                         <p>Run <code>composer install</code> in the plugin directory and try again.</p>',
-                        'WP FlashNotes: Missing dependency',
-                        [ 'back_link' => true ]
-                    );
-                }
-            }
-        );
-    }
-
     private function bootstrap_components(): void {
-        require_once WPFN_PLUGIN_DIR . 'includes/DataBase/Schema/bootstrap.php';
         require_once WPFN_PLUGIN_DIR . 'includes/REST/bootstrap.php';
         require_once WPFN_PLUGIN_DIR . 'includes/CPT/bootstrap.php';
         require_once WPFN_PLUGIN_DIR . 'includes/Blocks/bootstrap.php';
@@ -123,5 +104,4 @@ class Plugin {
             wp_set_script_translations( 'wpfn-blocks', 'wp-flashnotes' );
         } );
     }
-
 }
