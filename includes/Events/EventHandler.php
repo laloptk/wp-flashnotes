@@ -13,7 +13,7 @@ class EventHandler {
 	}
 
 	public function on_post_save( int $post_id, WP_Post $post, bool $update ): void {
-		if ( $this->is_autosave_or_revision( $post_id ) ) {
+		if ( $this->is_autosave_or_revision( $post_id ) || $post->post_status === 'auto-draft' ) {
 			return;
 		}
 
