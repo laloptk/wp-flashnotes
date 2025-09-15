@@ -95,9 +95,15 @@ class SyncManager {
 
 		// Resolve set row once
 		$set_row = $this->sets->get_by_set_post_id( $set_post_id );
+		
 		if ( ! $set_row ) {
-			throw new \RuntimeException( "No wpfn_sets row found for set_post_id {$set_post_id}" );
+			// Graceful fallback: don't throw in editor context
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( "WP FlashNotes: No wpfn_sets row found for set_post_id {$set_post_id}" );
+			}
+			return; // simply skip syncing
 		}
+
 		$set_id = (int) $set_row['id'];
 
 		// Map block names to their handlers
@@ -112,6 +118,11 @@ class SyncManager {
 				'relation'   => $this->card_relations,
 				'usage_type' => 'card',
 			],
+			'wpfn/inserter' => [
+				'repository' => null, // no DB table for inserters
+				'relation'   => null, // no pivot relation
+				'usage_type' => 'inserter',
+			],
 		];
 
 		foreach ( $blocks as $block ) {
@@ -124,14 +135,31 @@ class SyncManager {
 
 			$handler = $handlers[ $block_name ];
 
-			// Upsert into notes/cards table
-			$row_id = $handler['repository']->upsert_from_block( $block );
+			if( ! empty( $handler['repository'] ) ) {
+				$row_id = $handler['repository']->upsert_from_block( $block );
+			}
 
-			// Attach relation to set
-			$handler['relation']->attach( $row_id, $set_id );
+			if( ! empty( $handler['relation'] ) ) {
+				$handler['relation']->attach( $row_id, $set_id );
+			}
 
-			// Track usage by WP post ID
-			$this->usage->attach( $handler['usage_type'], $row_id, $set_post_id, $block_id );
+			if( ! empty( $handler['usage_type'] ) ) {
+				if($block_name === 'wpfn/inserter') {
+					$row_id = $block['attrs']['id'];
+				}
+
+				$this->usage->attach( $handler['usage_type'], $row_id, $set_post_id, $block_id );
+			}
 		}
+	}
+
+	public function sync_post_objects($post_id, $parsed_objects) {
+		// Get block id's from $parsed_objects (Only parent block ids)
+		// Get block id's by $post_id from the usage table
+		// Get id's that are not in the post, but they are in the DB
+		// Delete the object usage for every result (from the comparision)
+		// Check if there is other relationships for that block_id in object_usage
+			// If the result is > 1, leave it as it is
+			// Else tag the object as orphaned
 	}
 }
