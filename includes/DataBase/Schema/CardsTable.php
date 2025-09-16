@@ -21,10 +21,10 @@ final class CardsTable extends BaseTable {
 	 * @return string
 	 */
 	protected function get_schema(): string {
-        $table  = $this->get_table_name();
-        $engine = 'ENGINE=InnoDB ' . $this->get_charset_collate();
+		$table  = $this->get_table_name();
+		$engine = 'ENGINE=InnoDB ' . $this->get_charset_collate();
 
-        return "
+		return "
             CREATE TABLE {$table} (
                 id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
                 block_id VARCHAR(128) DEFAULT NULL,
@@ -34,6 +34,7 @@ final class CardsTable extends BaseTable {
                 right_answers_json TEXT DEFAULT NULL,
                 explanation TEXT DEFAULT NULL,
                 card_type ENUM('flip','true_false','multiple_choice','multiple_select','fill_in_blank') NOT NULL DEFAULT 'flip',
+                status ENUM('active', 'orphan') NOT NULL DEFAULT 'active',
                 last_seen DATETIME DEFAULT NULL,
                 next_due DATETIME DEFAULT NULL,
                 correct_count INT UNSIGNED NOT NULL DEFAULT 0,
@@ -52,5 +53,5 @@ final class CardsTable extends BaseTable {
                 KEY idx_seen (last_seen),
                 KEY idx_mastered (is_mastered)
             ) {$engine};";
-    }
+	}
 }

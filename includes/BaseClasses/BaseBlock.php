@@ -36,7 +36,7 @@ abstract class BaseBlock {
 		if ( empty( $args ) || ! array_key_exists( 'render_callback', $args ) ) {
 			$args['render_callback'] = array( $this, 'render' );
 		}
-		
+
 		$block_filepath = $this->get_block_pathfile();
 
 		register_block_type_from_metadata( $block_filepath, $args );

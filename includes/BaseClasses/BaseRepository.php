@@ -80,56 +80,56 @@ abstract class BaseRepository {
 		return $row ?: null;
 	}
 
-	public function update(int $id, array $data): bool {
-		$id        = $this->validate_id($id);
-		$sanitized = $this->sanitize_data($data);
+	public function update( int $id, array $data ): bool {
+		$id        = $this->validate_id( $id );
+		$sanitized = $this->sanitize_data( $data );
 
-		if (!$sanitized) {
+		if ( ! $sanitized ) {
 			return false;
 		}
 
 		// Fetch current DB row
 		$current = $this->wpdb->get_row(
-			$this->wpdb->prepare("SELECT * FROM {$this->get_table_name()} WHERE id = %d", $id),
+			$this->wpdb->prepare( "SELECT * FROM {$this->get_table_name()} WHERE id = %d", $id ),
 			ARRAY_A
 		);
 
-		if (!$current) {
-			throw new \Exception("Row with ID {$id} not found in {$this->get_table_name()}");
+		if ( ! $current ) {
+			throw new \Exception( "Row with ID {$id} not found in {$this->get_table_name()}" );
 		}
 
 		// Detect changes
-		$changed = [];
-		foreach ($sanitized as $col => $val) {
-			$oldVal = array_key_exists($col, $current) ? $current[$col] : null;
+		$changed = array();
+		foreach ( $sanitized as $col => $val ) {
+			$oldVal = array_key_exists( $col, $current ) ? $current[ $col ] : null;
 
-			// Normalize to string for comparison 
-			$newVal = is_null($val) ? null : (string) $val;
-			$oldVal = is_null($oldVal) ? null : (string) $oldVal;
+			// Normalize to string for comparison
+			$newVal = is_null( $val ) ? null : (string) $val;
+			$oldVal = is_null( $oldVal ) ? null : (string) $oldVal;
 
-			if ($newVal !== $oldVal) {
-				$changed[$col] = $val;
+			if ( $newVal !== $oldVal ) {
+				$changed[ $col ] = $val;
 			}
 		}
 
-		if (empty($changed)) {
+		if ( empty( $changed ) ) {
 			return false; // no update → updated_at stays the same
 		}
 
-		foreach ($changed as $col => $val) {
-			$updateFormats[] = $this->fieldFormats()[$col] ?? '%s';
+		foreach ( $changed as $col => $val ) {
+			$updateFormats[] = $this->fieldFormats()[ $col ] ?? '%s';
 		}
 
 		// Run update only with changed fields
 		$result = $this->wpdb->update(
 			$this->get_table_name(),
 			$changed,
-			['id' => $id],
+			array( 'id' => $id ),
 			$updateFormats,
-			['%d']
+			array( '%d' )
 		);
 
-		if ($result === false) {
+		if ( $result === false ) {
 			throw new \Exception(
 				sprintf(
 					'Update failed in %s: %s',
@@ -214,10 +214,10 @@ abstract class BaseRepository {
 
 		$args = array_merge( $default_args, $args );
 
-		$clauses = array();
+		$clauses        = array();
 		$search_clauses = array();
-		$values  = array();
-		
+		$values         = array();
+
 		// Where clauses
 		foreach ( $args['where'] as $col => $val ) {
 			if ( ! $this->is_valid_identifier( $col ) ) {
@@ -227,22 +227,22 @@ abstract class BaseRepository {
 			$clauses[]   = "`{$col}` = {$placeholder}";
 			$values[]    = $val;
 		}
-		
+
 		// Search clauses: column => string
 		foreach ( $args['search'] as $col => $str ) {
 			if ( ! $this->is_valid_identifier( $col ) || $str === null ) {
 				continue;
 			}
-			
+
 			$search_clauses[] = "`{$col}` LIKE %s";
-			$values[]  = '%' . $this->wpdb->esc_like( $str ) . '%';
+			$values[]         = '%' . $this->wpdb->esc_like( $str ) . '%';
 		}
 
 		// Build query
-		$sql = "SELECT * FROM {$table}";
-		$clauses_str        = ! empty( $clauses )        ? implode( ' AND ', $clauses ) : '';
+		$sql                = "SELECT * FROM {$table}";
+		$clauses_str        = ! empty( $clauses ) ? implode( ' AND ', $clauses ) : '';
 		$search_clauses_str = ! empty( $search_clauses ) ? '(' . implode( ' OR ', $search_clauses ) . ')' : '';
-		$parts = array_filter( [ $clauses_str, $search_clauses_str ] );
+		$parts              = array_filter( array( $clauses_str, $search_clauses_str ) );
 		if ( ! empty( $parts ) ) {
 			$sql .= ' WHERE ' . implode( ' AND ', $parts );
 		}

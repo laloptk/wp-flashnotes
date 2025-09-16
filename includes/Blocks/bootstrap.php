@@ -10,18 +10,18 @@ use WPFlashNotes\Blocks\SlotBlock;
 use WPFlashNotes\Blocks\InserterBlock;
 
 // Instantiate CPTs
-$blocks_to_register = [
+$blocks_to_register = array(
 	new NoteBlock(),
 	new CardBlock(),
 	new SlotBlock(),
 	new InserterBlock(),
-];
+);
 
 // Hook registration
 add_action(
 	'init',
 	function () use ( $blocks_to_register ): void {
-		foreach($blocks_to_register as $block) {
+		foreach ( $blocks_to_register as $block ) {
 			$block->register();
 		}
 	}

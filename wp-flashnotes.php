@@ -18,6 +18,9 @@ defined( 'ABSPATH' ) || exit;
 
 use WPFlashNotes\Plugin;
 
+// Delete me, this is only for development
+add_filter( 'wp_is_application_passwords_available', '__return_true' );
+
 // Load Composer autoloader first if present.
 if ( file_exists( __DIR__ . '/vendor/autoload.php' ) ) {
     require_once __DIR__ . '/vendor/autoload.php';

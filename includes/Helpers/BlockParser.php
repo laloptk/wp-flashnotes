@@ -32,7 +32,7 @@ class BlockParser {
 			}
 
 			// Recurse into children only if innerBlocks is a non-empty array
-			if ( isset($block['innerBlocks']) && ! empty( $block['innerBlocks'] ) && is_array( $block['innerBlocks'] ) ) {
+			if ( isset( $block['innerBlocks'] ) && ! empty( $block['innerBlocks'] ) && is_array( $block['innerBlocks'] ) ) {
 				$results = array_merge( $results, self::extract_flashnotes_blocks( $block['innerBlocks'] ) );
 			}
 		}
@@ -47,14 +47,14 @@ class BlockParser {
 	 * @return array Normalized block.
 	 */
 	private static function normalize_block( array $block ): array {
-		return [
+		return array(
 			'blockName'   => $block['blockName'] ?? '',
-			'attrs'       => $block['attrs'] ?? [],
+			'attrs'       => $block['attrs'] ?? array(),
 			'block_id'    => $block['attrs']['block_id'] ?? null,
 			'type'        => $block['attrs']['type'] ?? null, // e.g. card subtype
 			'innerBlocks' => ( isset( $block['innerBlocks'] ) && is_array( $block['innerBlocks'] ) )
 				? $block['innerBlocks']
-				: [],
-		];
+				: array(),
+		);
 	}
 }

@@ -5,12 +5,12 @@ require_once __DIR__ . '/tasks.php';
 function run_schema_bootstrap() {
 	$schema_tasks = wpfn_schema_tasks();
 
-	$tasks_by_slug = [];
+	$tasks_by_slug = array();
 	foreach ( $schema_tasks as $task ) {
 		$tasks_by_slug[ $task['slug'] ] = $task;
 	}
 
-	$completed_tasks = [];
+	$completed_tasks = array();
 
 	$execute_task = function ( $slug ) use ( &$execute_task, &$completed_tasks, $tasks_by_slug ) {
 		if ( in_array( $slug, $completed_tasks, true ) ) {

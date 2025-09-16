@@ -27,12 +27,12 @@ class SyncManager {
 		CardSetRelationsRepository $card_relations,
 		ObjectUsageRepository $usage
 	) {
-		$this->notes         = $notes;
-		$this->cards         = $cards;
-		$this->sets          = $sets;
+		$this->notes          = $notes;
+		$this->cards          = $cards;
+		$this->sets           = $sets;
 		$this->note_relations = $note_relations;
 		$this->card_relations = $card_relations;
-		$this->usage         = $usage;
+		$this->usage          = $usage;
 	}
 
 	/**
@@ -51,27 +51,27 @@ class SyncManager {
 			$set_post_id = (int) $existing[0]['set_post_id'];
 
 			wp_update_post(
-				[
+				array(
 					'ID'           => $set_post_id,
 					'post_title'   => $title,
 					'post_content' => $content,
-				]
+				)
 			);
 
-			return [
+			return array(
 				'set_post_id'    => $set_post_id,
 				'origin_post_id' => $origin_post_id,
-			];
+			);
 		}
 
 		$set_post_id = wp_insert_post(
-			[
+			array(
 				'post_title'   => $title,
 				'post_type'    => 'studyset',
 				'post_status'  => get_post_status( $origin_post_id ),
 				'post_content' => $content,
 				'post_author'  => $author,
-			]
+			)
 		);
 
 		if ( is_wp_error( $set_post_id ) ) {
@@ -79,34 +79,31 @@ class SyncManager {
 		}
 
 		$this->sets->upsert_by_set_post_id(
-			[
+			array(
 				'title'       => $title,
 				'post_id'     => $origin_post_id,
 				'set_post_id' => $set_post_id,
 				'user_id'     => $author,
-			]
+			)
 		);
 
-		return [
+		return array(
 			'set_post_id'    => (int) $set_post_id,
 			'origin_post_id' => $origin_post_id,
-		];
+		);
 	}
 
 	/**
 	 * Sync cards and notes for a given studyset + origin post, with change detection.
 	 *
 	 * @param array{set_post_id:int, origin_post_id:int} $ids    IDs bundle.
-	 * @param string                                    $content Post content (block JSON).
+	 * @param string                                     $content Post content (block JSON).
 	 */
 	public function sync_studyset( array $ids, string $content ): void {
 		$set_post_id    = $ids['set_post_id'];
 		$origin_post_id = $ids['origin_post_id'];
 
 		$blocks = BlockParser::from_post_content( $content );
-
-		// Optional debug cleanup
-		$this->sync_post_objects( $origin_post_id, $blocks );
 
 		if ( empty( $blocks ) ) {
 			return;
@@ -125,23 +122,23 @@ class SyncManager {
 		$set_id = (int) $set_row['id'];
 
 		// Map block names to their handlers
-		$handlers = [
-			'wpfn/note' => [
+		$handlers = array(
+			'wpfn/note'     => array(
 				'repository' => $this->notes,
 				'relation'   => $this->note_relations,
 				'usage_type' => 'note',
-			],
-			'wpfn/card' => [
+			),
+			'wpfn/card'     => array(
 				'repository' => $this->cards,
 				'relation'   => $this->card_relations,
 				'usage_type' => 'card',
-			],
-			'wpfn/inserter' => [
+			),
+			'wpfn/inserter' => array(
 				'repository' => null,
 				'relation'   => null,
 				'usage_type' => 'inserter',
-			],
-		];
+			),
+		);
 
 		foreach ( $blocks as $block ) {
 			$block_id   = $block['block_id'] ?? null;
@@ -175,21 +172,51 @@ class SyncManager {
 				);
 			}
 		}
+
+		// Optional debug cleanup
+		$this->remove_invalid_relationships( $origin_post_id, $blocks );
 	}
 
-	public function sync_post_objects($post_id, $parsed_objects) {
-		// Get block id's from $parsed_objects (Only parent block ids)
-		$blocks_in_post = array_map(function ($block) {
-			return $block['attrs']['block_id'];
-		}, $parsed_objects);
+	public function remove_invalid_relationships($post_id, $parsed_objects) {
+		$blocks_in_post = [];
+
+		foreach($parsed_objects as $block) {
+			if(! empty($block['attrs']['block_id'])) {
+				$blocks_in_post[] = $block['attrs']['block_id'];
+			}
+		}
 
 		// Select all blocks in post_id in the usage table
+		$items_in_db = $this->usage->get_relationships_by_column('post_id', $post_id);
+
+		foreach($items_in_db as $item) {
+			if( ! in_array($item['block_id'], $blocks_in_post) ) {
+				$this->usage->detach(
+					$item['object_type'],
+					$item['object_id'],
+					$item['post_id'],
+					$item['block_id']
+				);
+				
+				$this->maybe_tag_as_orphan($item);
+			}
+		}
+	}
+
+	public function maybe_tag_as_orphan( $block ) {
+		if($block['object_type'] === 'inserter') {
+			return;
+		}
 		
-		// Get block id's by $post_id from the usage table
-		// Get id's that are not in the post, but they are in the DB
-		// Delete the object usage for every result (from the comparision)
-		// Check if there is other relationships for that block_id in object_usage
-			// If the result is > 1, leave it as it is
-			// Else tag the object as orphaned
+		$related_in_db = $this->usage->get_relationships_by_column('block_id', $block['block_id']);
+
+		$repo = $block['object_type'] === 'card' ? $this->cards : $this->notes;
+
+		error_log("It comes this far: maybe_tag_as_orphan");
+
+		if( count($related_in_db ) === 0 ) {
+			$is_orphan = $repo->update($block['object_id'], [ 'status' => 'orphan' ]);
+			error_log($is_orphan);
+		}
 	}
 }

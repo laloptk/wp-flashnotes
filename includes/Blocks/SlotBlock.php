@@ -12,10 +12,10 @@ final class SlotBlock extends BaseBlock {
 
 	public function render( $attributes, $content, $block ) {
 		$role = $attributes['role'] ?? '';
-        return sprintf(
-            '<div class="wpfn-slot role-%s">%s</div>',
-            esc_attr($role),
-            $content // pass through children!
-        );
+		return sprintf(
+			'<div class="wpfn-slot role-%s">%s</div>',
+			esc_attr( $role ),
+			$content // pass through children!
+		);
 	}
 }

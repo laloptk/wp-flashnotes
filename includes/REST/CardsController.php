@@ -150,7 +150,7 @@ class CardsController extends BaseController {
 
 	public function list_items( WP_REST_Request $req ) {
 		$user_param = $req->get_param( 'user' );
-		$user_id   = null;
+		$user_id    = null;
 		if ( $user_param === 'me' || $user_param === null ) {
 			$user_id = get_current_user_id();
 		} elseif ( is_numeric( $user_param ) ) {
@@ -166,20 +166,20 @@ class CardsController extends BaseController {
 		}
 
 		$search_query = $req->get_param( 's' ) ?: '';
-		$args = array(
-			'where' => array(
+		$args         = array(
+			'where'  => array(
 				'user_id' => (int) $user_id,
 			),
 			'search' => array(
-				'question' => $search_query,
+				'question'     => $search_query,
 				'answers_json' => $search_query,
 			),
-			'limit' => absint( $req->get_param( 'per_page' ) ) ?: 20,
+			'limit'  => absint( $req->get_param( 'per_page' ) ) ?: 20,
 			'offset' => absint( $req->get_param( 'offset' ) ) ?: 0,
 		);
 
 		$rows = $this->repo->find( $args );
-		
+
 		return $this->ok(
 			array(
 				'items' => $rows,
@@ -189,14 +189,14 @@ class CardsController extends BaseController {
 	}
 
 	public function get_item( $req ) {
-		$id  = absint( $req->get_param('id') );
+		$id  = absint( $req->get_param( 'id' ) );
 		$row = $this->repo->read( $id );
 
 		if ( ! $row ) {
 			return $this->err( 'not_found', 'Card not found.', 404 );
 		}
 
-		return $this->ok( [ 'item' => $row ] );
+		return $this->ok( array( 'item' => $row ) );
 	}
 
 	public function create_item( $req ) {

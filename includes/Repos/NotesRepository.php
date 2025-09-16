@@ -85,43 +85,41 @@ class NotesRepository extends BaseRepository {
 	 * @param array $block Parsed block array (from BlockParser).
 	 * @return int Note ID (row id in wpfn_notes).
 	 */
-	public function upsert_from_block(array $block): int
-	{
-		$attrs   = $block['attrs'] ?? [];
+	public function upsert_from_block( array $block ): int {
+		$attrs   = $block['attrs'] ?? array();
 		$blockId = $block['block_id'] ?? null;
 
-		if (!$blockId) {
-			throw new \Exception('Note block is missing block_id.');
+		if ( ! $blockId ) {
+			throw new \Exception( 'Note block is missing block_id.' );
 		}
 
-		$data = [
+		$data = array(
 			'title'    => $attrs['title'],
 			'block_id' => $blockId,
 			'content'  => $attrs['content'] ?? '',
 			'user_id'  => get_current_user_id(),
-		];
+		);
 
 		// Try to find an existing row
-		$existing = $this->get_by_block_id($blockId);
+		$existing = $this->get_by_block_id( $blockId );
 
-		if ($existing) {
-			$this->update((int) $existing['id'], $data);
+		if ( $existing ) {
+			$this->update( (int) $existing['id'], $data );
 			return (int) $existing['id'];
 		}
 
-		return $this->insert($data);
+		return $this->insert( $data );
 	}
 
 	/**
 	 * Lookup a note by block_id.
 	 */
-	public function get_by_block_id(string $block_id): ?array
-	{
+	public function get_by_block_id( string $block_id ): ?array {
 		$sql = $this->wpdb->prepare(
 			"SELECT * FROM {$this->get_table_name()} WHERE block_id = %s LIMIT 1",
 			$block_id
 		);
-		$row = $this->wpdb->get_row($sql, ARRAY_A);
+		$row = $this->wpdb->get_row( $sql, ARRAY_A );
 		return $row ?: null;
 	}
 
@@ -132,16 +130,16 @@ class NotesRepository extends BaseRepository {
 	 * @return array<string,string>
 	 */
 	protected function fieldFormats(): array {
-		return [
-			'id'        => '%d',
-			'title'     => '%s',
-			'block_id'  => '%s',
-			'user_id'   => '%d',
-			'content'   => '%s',
-			'deleted_at'=> '%s',
-			'created_at'=> '%s',
-			'updated_at'=> '%s',
-		];
+		return array(
+			'id'         => '%d',
+			'title'      => '%s',
+			'block_id'   => '%s',
+			'user_id'    => '%d',
+			'content'    => '%s',
+			'deleted_at' => '%s',
+			'created_at' => '%s',
+			'updated_at' => '%s',
+		);
 	}
 
 	/**

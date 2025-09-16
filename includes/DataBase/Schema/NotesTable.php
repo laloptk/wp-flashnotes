@@ -31,6 +31,7 @@ final class NotesTable extends BaseTable {
 				block_id VARCHAR(128) DEFAULT NULL,
 				user_id BIGINT UNSIGNED NOT NULL DEFAULT 0,
 				content TEXT NOT NULL,
+				status ENUM('active', 'orphan') NOT NULL DEFAULT 'active',
 				deleted_at DATETIME DEFAULT NULL,
 				created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 				updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

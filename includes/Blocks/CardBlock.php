@@ -11,12 +11,12 @@ final class CardBlock extends BaseBlock {
 	}
 
 	public function render( $attributes, $content, $block ) {
-        return array();
+		return array();
 	}
 
-    protected function get_args(): array {
-        return array(
-            'render_callback' => null
-        );
-    }
+	protected function get_args(): array {
+		return array(
+			'render_callback' => null,
+		);
+	}
 }

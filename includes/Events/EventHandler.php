@@ -19,10 +19,10 @@ class EventHandler {
 
 		// Case 1: Saving a studyset directly
 		if ( $post->post_type === 'studyset' ) {
-			$ids = [
+			$ids = array(
 				'set_post_id'    => $post_id,
 				'origin_post_id' => $post_id,
-			];
+			);
 			$this->sync->sync_studyset( $ids, $post->post_content );
 			return;
 		}
@@ -44,10 +44,12 @@ class EventHandler {
 
 		$new_status = ( $origin_status === 'publish' ) ? 'publish' : 'draft';
 
-		wp_update_post( [
-			'ID'          => $set_post_id,
-			'post_status' => $new_status,
-		] );
+		wp_update_post(
+			array(
+				'ID'          => $set_post_id,
+				'post_status' => $new_status,
+			)
+		);
 	}
 
 	protected function is_autosave_or_revision( int $post_id ): bool {

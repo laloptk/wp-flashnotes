@@ -18,7 +18,7 @@ final class InserterBlock extends BaseBlock {
 		$card_id = intval( $attributes['id'] );
 
 		$cards_repo = new CardsRepository();
-		$card = $cards_repo->read( $card_id );
+		$card       = $cards_repo->read( $card_id );
 
 		if ( ! $card ) {
 			return '<p>' . esc_html__( 'Card not found.', 'wp-flashnotes' ) . '</p>';
@@ -26,7 +26,7 @@ final class InserterBlock extends BaseBlock {
 
 		// Assemble markup
 		$markup  = $card['question'] ?? '';
-		$answers = json_decode( $card['answers_json'], true ) ?: [];
+		$answers = json_decode( $card['answers_json'], true ) ?: array();
 
 		foreach ( $answers as $answer ) {
 			$markup .= $answer;
@@ -35,8 +35,8 @@ final class InserterBlock extends BaseBlock {
 		$markup .= $card['explanation'] ?? '';
 
 		// Parse and render blocks safely
-		$blocks  = parse_blocks( $markup );
-		$html    = '';
+		$blocks = parse_blocks( $markup );
+		$html   = '';
 
 		foreach ( $blocks as $block_data ) {
 			$html .= render_block( $block_data );
@@ -103,7 +103,7 @@ final class InserterBlock extends BaseBlock {
 				}
 			}
 		}
-		
+
 		return sprintf(
 			'<div class="wpfn-card" style="%s" data-id="%d">%s</div>',
 			esc_attr( $style ),
