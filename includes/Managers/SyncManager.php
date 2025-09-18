@@ -254,8 +254,6 @@ class SyncManager {
 		}
 
 		$current = $this->cards->read($child_id );
-
-		error_log(json_encode($current));
 		
 		if ( $current && $current['status'] === 'orphan' ) {
 			$this->cards->update( $child_id, [ 'status' => 'active' ] );
