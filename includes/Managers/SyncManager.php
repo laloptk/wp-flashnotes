@@ -43,9 +43,17 @@ class SyncManager {
 	 * @return array{set_post_id:int, origin_post_id:int}
 	 */
 	public function ensure_set_for_post( int $origin_post_id, string $content ): array {
-		$title  = get_the_title( $origin_post_id ) ?: 'Untitled';
+		$title  = get_the_title( $origin_post_id ) ?: __( 'Untitled', 'wp-flashnotes' );
 		$author = (int) ( get_post_field( 'post_author', $origin_post_id ) ?: get_current_user_id() );
 
+		// 1. Parse post into blocks
+		$all_blocks       = BlockParser::parse_raw( $content );
+		$flashnote_blocks = BlockParser::filter_flashnote_blocks( $all_blocks );
+
+		// 2. Only flashnotes go into the studyset post_content
+		$flashnote_content = serialize_blocks( $flashnote_blocks );
+
+		// 3. Get existing studyset (if any)
 		$existing = $this->sets->get_by_post_id( $origin_post_id );
 		if ( ! empty( $existing ) ) {
 			$set_post_id = (int) $existing[0]['set_post_id'];
@@ -54,7 +62,7 @@ class SyncManager {
 				array(
 					'ID'           => $set_post_id,
 					'post_title'   => $title,
-					'post_content' => $content,
+					'post_content' => $flashnote_content,
 				)
 			);
 
@@ -64,33 +72,45 @@ class SyncManager {
 			);
 		}
 
-		$set_post_id = wp_insert_post(
-			array(
-				'post_title'   => $title,
-				'post_type'    => 'studyset',
-				'post_status'  => get_post_status( $origin_post_id ),
-				'post_content' => $content,
-				'post_author'  => $author,
-			)
-		);
+		// 4. Insert a new studyset only if there are flashnote blocks
+		if ( ! empty( $flashnote_blocks ) ) {
+			$set_post_id = wp_insert_post(
+				array(
+					'post_title'   => $title,
+					'post_type'    => 'studyset',
+					'post_status'  => get_post_status( $origin_post_id ),
+					'post_content' => $flashnote_content,
+					'post_author'  => $author,
+				)
+			);
 
-		if ( is_wp_error( $set_post_id ) ) {
-			throw new \RuntimeException( 'Failed to create studyset: ' . $set_post_id->get_error_message() );
+			if ( is_wp_error( $set_post_id ) ) {
+				throw new \RuntimeException(
+					sprintf(
+						/* translators: %s is the WP error message. */
+						__( 'Failed to create studyset: %s', 'wp-flashnotes' ),
+						$set_post_id->get_error_message()
+					)
+				);
+			}
+
+			$this->sets->upsert_by_set_post_id(
+				array(
+					'title'       => $title,
+					'post_id'     => $origin_post_id,
+					'set_post_id' => $set_post_id,
+					'user_id'     => $author,
+				)
+			);
+
+			return array(
+				'set_post_id'    => (int) $set_post_id,
+				'origin_post_id' => $origin_post_id,
+			);
 		}
 
-		$this->sets->upsert_by_set_post_id(
-			array(
-				'title'       => $title,
-				'post_id'     => $origin_post_id,
-				'set_post_id' => $set_post_id,
-				'user_id'     => $author,
-			)
-		);
-
-		return array(
-			'set_post_id'    => (int) $set_post_id,
-			'origin_post_id' => $origin_post_id,
-		);
+		// 5. No studyset created if no flashnotes
+		return array();
 	}
 
 	/**
@@ -99,11 +119,13 @@ class SyncManager {
 	 * @param array{set_post_id:int, origin_post_id:int} $ids    IDs bundle.
 	 * @param string                                     $content Post content (block JSON).
 	 */
-	public function sync_studyset( array $ids, string $content ): void {
+	public function sync_pipeline( array $ids, string $content ): void {
 		$set_post_id    = $ids['set_post_id'];
 		$origin_post_id = $ids['origin_post_id'];
 
 		$blocks = BlockParser::from_post_content( $content );
+
+		$this->remove_invalid_relationships( $origin_post_id, $blocks );
 
 		if ( empty( $blocks ) ) {
 			return;
@@ -170,14 +192,13 @@ class SyncManager {
 					$origin_post_id,
 					$block_id
 				);
+
+				$this->maybe_reactivate_card((int)$row_id, $block_name);
 			}
 		}
-
-		// Optional debug cleanup
-		$this->remove_invalid_relationships( $origin_post_id, $blocks );
 	}
 
-	public function remove_invalid_relationships($post_id, $parsed_objects) {
+	public function remove_invalid_relationships($post_id, $parsed_objects): void {
 		$blocks_in_post = [];
 
 		foreach($parsed_objects as $block) {
@@ -203,7 +224,7 @@ class SyncManager {
 		}
 	}
 
-	public function maybe_tag_as_orphan( $block ) {
+	public function maybe_tag_as_orphan( $block ): void {
 		if($block['object_type'] === 'inserter') {
 			return;
 		}
@@ -215,8 +236,29 @@ class SyncManager {
 		error_log("It comes this far: maybe_tag_as_orphan");
 
 		if( count($related_in_db ) === 0 ) {
-			$is_orphan = $repo->update($block['object_id'], [ 'status' => 'orphan' ]);
-			error_log($is_orphan);
+			$repo->update($block['object_id'], [ 'status' => 'orphan' ]);
+		}
+	}
+
+	/**
+	 * Revive an orphaned card/note only if reinserted via an inserter block.
+	 *
+	 * @param string $object_type Either 'card' or 'note'.
+	 * @param int    $row_id      The DB row ID of the card/note.
+	 * @param array  $parent_block The parent block attributes/context.
+	 */
+	private function maybe_reactivate_card( int $child_id, string $parent_block_name ): void {
+		// We only revive from inserter
+		if ( $parent_block_name !== 'wpfn/inserter' ) {
+			return;
+		}
+
+		$current = $this->cards->read($child_id );
+
+		error_log(json_encode($current));
+		
+		if ( $current && $current['status'] === 'orphan' ) {
+			$this->cards->update( $child_id, [ 'status' => 'active' ] );
 		}
 	}
 }

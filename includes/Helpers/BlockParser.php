@@ -5,56 +5,61 @@ namespace WPFlashNotes\Helpers;
 defined( 'ABSPATH' ) || exit;
 
 class BlockParser {
+    /**
+     * Raw parse of all blocks in a post (WordPress native structure).
+     */
+    public static function parse_raw( string $content ): array {
+        return parse_blocks( $content );
+    }
 
-	/**
-	 * Entry point: parse post_content and return only normalized FlashNotes blocks.
-	 *
-	 * @param string $content Raw post_content
-	 * @return array Normalized FlashNotes blocks
-	 */
-	public static function from_post_content( string $content ): array {
-		$blocks = \parse_blocks( $content );
-		return self::extract_flashnotes_blocks( $blocks );
-	}
+    /**
+     * Filter only flashnote blocks, keep original WP block structure
+     * (needed for serialize_blocks).
+     */
+    public static function filter_flashnote_blocks( array $blocks ): array {
+        return array_values(
+            array_filter(
+                $blocks,
+                fn( $block ) => in_array(
+                    $block['blockName'],
+                    [ 'wpfn/note', 'wpfn/card', 'wpfn/inserter' ],
+                    true
+                )
+            )
+        );
+    }
 
-	/**
-	 * Extract only wpflashnotes blocks from parsed block tree.
-	 *
-	 * @param array $blocks Output of parse_blocks().
-	 * @return array Normalized FlashNotes blocks
-	 */
-	private static function extract_flashnotes_blocks( array $blocks ): array {
-		$results = array();
+    /**
+     * Normalize into plugin’s internal objects (used for sync/orphan logic).
+     */
+    public static function normalize_to_objects( array $blocks ): array {
+        $result = [];
 
-		foreach ( $blocks as $block ) {
-			if ( isset( $block['blockName'] ) && str_starts_with( $block['blockName'], 'wpfn/' ) ) {
-				$results[] = self::normalize_block( $block );
-			}
+        foreach ( $blocks as $block ) {
+            $attrs = $block['attrs'] ?? [];
+            $block_id = $attrs['block_id'] ?? null;
 
-			// Recurse into children only if innerBlocks is a non-empty array
-			if ( isset( $block['innerBlocks'] ) && ! empty( $block['innerBlocks'] ) && is_array( $block['innerBlocks'] ) ) {
-				$results = array_merge( $results, self::extract_flashnotes_blocks( $block['innerBlocks'] ) );
-			}
-		}
+            if ( ! $block_id ) {
+                continue;
+            }
 
-		return $results;
-	}
+            $result[] = [
+                'object_type' => str_replace( 'wpfn/', '', $block['blockName'] ),
+                'object_id'   => $attrs['id'] ?? null,
+                'block_id'    => $block_id,
+                'attrs'       => $attrs,
+            ];
+        }
 
-	/**
-	 * Normalize a block so we can rely on consistent keys.
-	 *
-	 * @param array $block Raw block array from parse_blocks().
-	 * @return array Normalized block.
-	 */
-	private static function normalize_block( array $block ): array {
-		return array(
-			'blockName'   => $block['blockName'] ?? '',
-			'attrs'       => $block['attrs'] ?? array(),
-			'block_id'    => $block['attrs']['block_id'] ?? null,
-			'type'        => $block['attrs']['type'] ?? null, // e.g. card subtype
-			'innerBlocks' => ( isset( $block['innerBlocks'] ) && is_array( $block['innerBlocks'] ) )
-				? $block['innerBlocks']
-				: array(),
-		);
-	}
+        return $result;
+    }
+
+    /**
+     * Convenience: get flashnote objects directly from post_content.
+     */
+    public static function from_post_content( string $content ): array {
+        $all_blocks       = self::parse_raw( $content );
+        $flashnote_blocks = self::filter_flashnote_blocks( $all_blocks );
+        return self::normalize_to_objects( $flashnote_blocks );
+    }
 }

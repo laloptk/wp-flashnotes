@@ -17,24 +17,6 @@ use WPFlashNotes\BaseClasses\BaseRepository;
 class CardsRepository extends BaseRepository {
 
 	/**
-	 * Allowed card types (must match ENUM in schema).
-	 *
-	 * @var array<int,string>
-	 */
-	private const CARD_TYPES = array(
-		'flip',
-		'true_false',
-		'multiple_choice',
-		'multiple_select',
-		'fill_in_blank',
-	);
-
-	private const CARD_STATUS = array(
-		'active',
-		'orphan',
-	);
-
-	/**
 	 * Fully-qualified table name.
 	 */
 	protected function get_table_name(): string {
