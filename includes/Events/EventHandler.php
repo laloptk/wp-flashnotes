@@ -19,7 +19,7 @@ class EventHandler {
 
 		// Case 1: Saving a studyset directly
 		if ( $post->post_type === 'studyset' ) {
-			
+
 			$ids = array(
 				'set_post_id'    => $post_id,
 				'origin_post_id' => $post_id,
@@ -32,7 +32,7 @@ class EventHandler {
 		// Case 2: Saving a regular post/page/CPT
 		$ids = $this->sync->ensure_set_for_post( $post_id, $post->post_content );
 
-		if( ! empty($ids) ) {
+		if ( ! empty( $ids ) ) {
 			$this->update_studyset_status( $ids['set_post_id'], $post );
 			$this->sync->sync_pipeline( $ids, $post->post_content );
 		}

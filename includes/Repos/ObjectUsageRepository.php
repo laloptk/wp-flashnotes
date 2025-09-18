@@ -118,18 +118,18 @@ class ObjectUsageRepository {
 	}
 
 	public function get_relationships_by_column( string $column, $column_val ) {
-		$column_validation_map = [ 
-			'object_type' => 'type', 
-			'object_id' => 'id', 
-			'post_id' => 'id', 
-			'block_id' => 'block_id'
-		];
+		$column_validation_map = array(
+			'object_type' => 'type',
+			'object_id'   => 'id',
+			'post_id'     => 'id',
+			'block_id'    => 'block_id',
+		);
 
-		if( ! isset($column_validation_map[$column])) {
+		if ( ! isset( $column_validation_map[ $column ] ) ) {
 			throw new Exception( 'Invalid column name.' );
 		}
 
-		$validated_val = $this->validate_arg( $column_validation_map[$column], $column_val );
+		$validated_val = $this->validate_arg( $column_validation_map[ $column ], $column_val );
 
 		$placeholder = is_int( $validated_val ) ? '%d' : '%s';
 
@@ -138,7 +138,7 @@ class ObjectUsageRepository {
 			$validated_val
 		);
 
-		$result_rows = $this->db->get_results( $sql, ARRAY_A ) ?: [];
+		$result_rows = $this->db->get_results( $sql, ARRAY_A ) ?: array();
 
 		return $result_rows;
 	}
@@ -182,7 +182,7 @@ class ObjectUsageRepository {
 	 */
 	public function sync_block_objects( int $post_id, string $block_id, string $object_type, array $desired_object_ids ): array {
 		$post_id     = $this->validate_arg( 'id', $post_id );
-		$block_id    = $this->validate_arg('block_id', $block_id );
+		$block_id    = $this->validate_arg( 'block_id', $block_id );
 		$object_type = $this->validate_arg( 'type', $object_type );
 		$desired     = $this->normalize_ids( $desired_object_ids );
 
@@ -235,8 +235,8 @@ class ObjectUsageRepository {
 		return $list;
 	}
 
-	protected function validate_arg($arg_type, $arg_val) {
-		switch($arg_type) {
+	protected function validate_arg( $arg_type, $arg_val ) {
+		switch ( $arg_type ) {
 			case 'id':
 				$validated_id = absint( $arg_val );
 				if ( $validated_id <= 0 ) {

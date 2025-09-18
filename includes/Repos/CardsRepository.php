@@ -65,11 +65,11 @@ class CardsRepository extends BaseRepository {
 					break;
 
 				case 'card_type':
-					$allowed_types = array( 'flip', 'true_false', 'multiple_choice', 'multiple_select', 'fill_in_blank' );
+					$allowed_types          = array( 'flip', 'true_false', 'multiple_choice', 'multiple_select', 'fill_in_blank' );
 					$sanitized['card_type'] = in_array( $value, $allowed_types, true ) ? $value : 'flip';
 					break;
-				case 'status': 
-					$allowed_status = array( 'active', 'orphan' );
+				case 'status':
+					$allowed_status      = array( 'active', 'orphan' );
 					$sanitized['status'] = in_array( $value, $allowed_status ) ? $value : 'active';
 					break;
 				case 'last_seen':
@@ -107,7 +107,7 @@ class CardsRepository extends BaseRepository {
 			'right_answers_json' => '%s',
 			'explanation'        => '%s',
 			'card_type'          => '%s',
-			'status'			 => '%s',
+			'status'             => '%s',
 			'last_seen'          => '%s',
 			'next_due'           => '%s',
 			'correct_count'      => '%d',

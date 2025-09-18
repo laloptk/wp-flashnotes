@@ -193,59 +193,58 @@ class SyncManager {
 					$block_id
 				);
 
-				$this->maybe_reactivate_card((int)$row_id, $block_name);
+				$this->maybe_reactivate_card( (int) $row_id, $block_name );
 			}
 		}
 	}
 
-	public function remove_invalid_relationships($post_id, $parsed_objects): void {
-		$blocks_in_post = [];
+	public function remove_invalid_relationships( int $post_id, array $parsed_objects ): void {
+		$blocks_in_post = array();
 
-		foreach($parsed_objects as $block) {
-			if(! empty($block['attrs']['block_id'])) {
+		foreach ( $parsed_objects as $block ) {
+			if ( ! empty( $block['attrs']['block_id'] ) ) {
 				$blocks_in_post[] = $block['attrs']['block_id'];
 			}
 		}
 
 		// Select all blocks in post_id in the usage table
-		$items_in_db = $this->usage->get_relationships_by_column('post_id', $post_id);
+		$items_in_db = $this->usage->get_relationships_by_column( 'post_id', $post_id );
 
-		foreach($items_in_db as $item) {
-			if( ! in_array($item['block_id'], $blocks_in_post) ) {
+		foreach ( $items_in_db as $item ) {
+			if ( ! in_array( $item['block_id'], $blocks_in_post ) ) {
 				$this->usage->detach(
 					$item['object_type'],
 					$item['object_id'],
 					$item['post_id'],
 					$item['block_id']
 				);
-				
-				$this->maybe_tag_as_orphan($item);
+
+				$this->maybe_tag_as_orphan( $item );
 			}
 		}
 	}
 
 	public function maybe_tag_as_orphan( $block ): void {
-		if($block['object_type'] === 'inserter') {
+		if ( $block['object_type'] === 'inserter' ) {
 			return;
 		}
-		
-		$related_in_db = $this->usage->get_relationships_by_column('block_id', $block['block_id']);
+
+		$related_in_db = $this->usage->get_relationships_by_column( 'block_id', $block['block_id'] );
 
 		$repo = $block['object_type'] === 'card' ? $this->cards : $this->notes;
 
-		error_log("It comes this far: maybe_tag_as_orphan");
+		error_log( 'It comes this far: maybe_tag_as_orphan' );
 
-		if( count($related_in_db ) === 0 ) {
-			$repo->update($block['object_id'], [ 'status' => 'orphan' ]);
+		if ( count( $related_in_db ) === 0 ) {
+			$repo->update( $block['object_id'], array( 'status' => 'orphan' ) );
 		}
 	}
 
 	/**
-	 * Revive an orphaned card/note only if reinserted via an inserter block.
+	 * Revive an orphaned card only if reinserted via an inserter block.
 	 *
-	 * @param string $object_type Either 'card' or 'note'.
-	 * @param int    $row_id      The DB row ID of the card/note.
-	 * @param array  $parent_block The parent block attributes/context.
+	 * @param int    $child_id      The DB row ID of the card inside inserter.
+	 * @param string $parent_block_name.
 	 */
 	private function maybe_reactivate_card( int $child_id, string $parent_block_name ): void {
 		// We only revive from inserter
@@ -253,10 +252,10 @@ class SyncManager {
 			return;
 		}
 
-		$current = $this->cards->read($child_id );
-		
+		$current = $this->cards->read( $child_id );
+
 		if ( $current && $current['status'] === 'orphan' ) {
-			$this->cards->update( $child_id, [ 'status' => 'active' ] );
+			$this->cards->update( $child_id, array( 'status' => 'active' ) );
 		}
 	}
 }
