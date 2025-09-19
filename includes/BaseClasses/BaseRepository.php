@@ -263,6 +263,39 @@ abstract class BaseRepository {
 	}
 
 	/**
+ * Generic get_by_column method.
+ *
+ * @param string $column Column name to filter by.
+ * @param mixed  $value  Value to match.
+ * @param int|null $limit Optional row limit (null = no limit).
+ *
+ * @return array|null Rows (array of assoc arrays) or single row if $limit === 1.
+ */
+	public function get_by_column( string $column, $value, ?int $limit = null ) {
+		// Simple safeguard: check column name exists in DB
+		$columns = $this->wpdb->get_col( "SHOW COLUMNS FROM {$this->get_table_name()}", 0 );
+		if ( ! in_array( $column, $columns, true ) ) {
+			throw new Exception( "Invalid column name: {$column}" );
+		}
+
+		$placeholder = is_int( $value ) ? '%d' : '%s';
+
+		$sql = $this->wpdb->prepare(
+			"SELECT * FROM {$this->get_table_name()} WHERE {$column} = {$placeholder}"
+			. ( $limit ? " LIMIT {$limit}" : "" ),
+			$value
+		);
+
+		if ( $limit === 1 ) {
+			$row = $this->wpdb->get_row( $sql, ARRAY_A );
+			return $row ?: null;
+		}
+
+		$rows = $this->wpdb->get_results( $sql, ARRAY_A );
+		return $rows ?: [];
+	}
+
+	/**
 	 * Child must return the fully-qualified table name (with prefix).
 	 */
 	abstract protected function get_table_name(): string;

@@ -150,25 +150,15 @@ class SetsRepository extends BaseRepository {
 	 * Lookup by set_post_id (unique).
 	 */
 	public function get_by_set_post_id( int $set_post_id ): ?array {
-		$set_post_id = $this->validate_id( $set_post_id );
-		$sql         = $this->wpdb->prepare(
-			"SELECT * FROM {$this->get_table_name()} WHERE set_post_id = %d LIMIT 1",
-			$set_post_id
-		);
-		$row         = $this->wpdb->get_row( $sql, ARRAY_A );
-		return $row ?: null;
+		return $this->get_by_column( 'set_post_id', $set_post_id, 1 );
 	}
 
-	/**
-	 * Fetch all sets that originate from a given content post (non-unique).
-	 */
 	public function get_by_post_id( int $post_id ): array {
-		$post_id = $this->validate_id( $post_id );
-		$sql     = $this->wpdb->prepare(
-			"SELECT * FROM {$this->get_table_name()} WHERE post_id = %d",
-			$post_id
-		);
-		return $this->wpdb->get_results( $sql, ARRAY_A ) ?: array();
+		return $this->get_by_column( 'post_id', $post_id );
+	}
+
+	public function get_by_primary_id( int $primary_id ): ?array {
+		return $this->get_by_column( 'id', $primary_id, 1 );
 	}
 
 	/**

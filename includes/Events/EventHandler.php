@@ -6,56 +6,63 @@ use WPFlashNotes\Managers\SyncManager;
 
 class EventHandler {
 
-	protected SyncManager $sync;
+    protected SyncManager $sync;
 
-	public function __construct( SyncManager $sync ) {
-		$this->sync = $sync;
-	}
+    public function __construct(SyncManager $sync) {
+        $this->sync = $sync;
+    }
 
-	public function on_post_save( int $post_id, WP_Post $post, bool $update ): void {
-		if ( $this->is_autosave_or_revision( $post_id ) || $post->post_status === 'auto-draft' ) {
-			return;
-		}
+    /**
+     * Handle post save events for studysets and origin posts.
+     */
+    public function on_post_save(int $post_id, WP_Post $post, bool $update): void {
+        if ($this->is_autosave_or_revision($post_id) || $post->post_status === 'auto-draft') {
+            return;
+        }
 
-		// Case 1: Saving a studyset directly
-		if ( $post->post_type === 'studyset' ) {
+        if ($post->post_type === 'studyset') {
+            // Saving a studyset directly
+            $ids = $this->sync->ensure_set_for_studyset($post_id, $post->post_content);
+            if (!empty($ids)) {
+                $this->sync->sync_pipeline($ids, $post->post_content);
+            }
+            return;
+        }
 
-			$ids = array(
-				'set_post_id'    => $post_id,
-				'origin_post_id' => $post_id,
-			);
+        // Saving a regular post/page/CPT
+        $ids = $this->sync->ensure_set_for_post($post_id, $post->post_content);
 
-			$this->sync->sync_pipeline( $ids, $post->post_content );
-			return;
-		}
+        if (!empty($ids)) {
+            $this->update_studyset_status($ids['set_post_id'], $post);
+            $this->sync->sync_pipeline($ids, $post->post_content);
+        }
+    }
 
-		// Case 2: Saving a regular post/page/CPT
-		$ids = $this->sync->ensure_set_for_post( $post_id, $post->post_content );
+    /**
+     * Handle post delete events → mark orphaned and detach relationships.
+     */
+    public function on_post_deleted(int $post_id, WP_Post $post): void {
+        $this->sync->sync_on_deleted($post);
+    }
 
-		if ( ! empty( $ids ) ) {
-			$this->update_studyset_status( $ids['set_post_id'], $post );
-			$this->sync->sync_pipeline( $ids, $post->post_content );
-		}
-	}
+    /* --------------------
+     * Helpers
+     * -------------------- */
 
+    /**
+     * Ensure the studyset has a valid post_status (draft or publish).
+     */
+    protected function update_studyset_status(int $set_post_id, WP_Post $origin): void {
+        $origin_status = get_post_status($origin->ID);
+        $new_status = ($origin_status === 'publish') ? 'publish' : 'draft';
 
-	/**
-	 * Ensure the studyset has a valid post_status (draft or publish).
-	 */
-	protected function update_studyset_status( int $set_post_id, WP_Post $origin ): void {
-		$origin_status = get_post_status( $origin->ID );
+        wp_update_post([
+            'ID'          => $set_post_id,
+            'post_status' => $new_status,
+        ]);
+    }
 
-		$new_status = ( $origin_status === 'publish' ) ? 'publish' : 'draft';
-
-		wp_update_post(
-			array(
-				'ID'          => $set_post_id,
-				'post_status' => $new_status,
-			)
-		);
-	}
-
-	protected function is_autosave_or_revision( int $post_id ): bool {
-		return wp_is_post_autosave( $post_id ) || wp_is_post_revision( $post_id );
-	}
+    protected function is_autosave_or_revision(int $post_id): bool {
+        return wp_is_post_autosave($post_id) || wp_is_post_revision($post_id);
+    }
 }

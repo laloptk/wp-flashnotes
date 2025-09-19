@@ -32,6 +32,7 @@ function wpflashnotes_bootstrap(): void {
 
 	// One hook handles posts, pages, CPTs, and studysets.
 	add_action( 'save_post', array( $event_handler, 'on_post_save' ), 10, 3 );
+	add_action( 'deleted_post', array($event_handler, 'on_post_deleted'), 10, 3);
 }
 
 wpflashnotes_bootstrap();
