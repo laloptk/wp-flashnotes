@@ -262,6 +262,30 @@ abstract class BaseRepository {
 		) ?: array();
 	}
 
+	public function get_by_column( string $column, $value, ?int $limit = null ) {
+		// Simple safeguard: check column name exists in DB
+		$columns = $this->wpdb->get_col( "SHOW COLUMNS FROM {$this->get_table_name()}", 0 );
+		if ( ! in_array( $column, $columns, true ) ) {
+			throw new Exception( "Invalid column name: {$column}" );
+		}
+
+		$placeholder = is_int( $value ) ? '%d' : '%s';
+
+		$sql = $this->wpdb->prepare(
+			"SELECT * FROM {$this->get_table_name()} WHERE {$column} = {$placeholder}"
+			. ( $limit ? " LIMIT {$limit}" : "" ),
+			$value
+		);
+
+		if ( $limit === 1 ) {
+			$row = $this->wpdb->get_row( $sql, ARRAY_A );
+			return $row ?: null;
+		}
+
+		$rows = $this->wpdb->get_results( $sql, ARRAY_A );
+		return $rows ?: [];
+	}
+
 	/**
 	 * Child must return the fully-qualified table name (with prefix).
 	 */

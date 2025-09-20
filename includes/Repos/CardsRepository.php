@@ -157,12 +157,7 @@ class CardsRepository extends BaseRepository {
 	 * Lookup a card by block_id.
 	 */
 	public function get_by_block_id( string $block_id ): ?array {
-		$sql = $this->wpdb->prepare(
-			"SELECT * FROM {$this->get_table_name()} WHERE block_id = %s LIMIT 1",
-			$block_id
-		);
-		$row = $this->wpdb->get_row( $sql, ARRAY_A );
-		return $row ?: null;
+		return $this->get_by_column( 'block_id', $block_id, 1 );
 	}
 
 	/**
