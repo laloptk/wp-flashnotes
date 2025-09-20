@@ -145,17 +145,17 @@ class SyncManager {
 
 		// Map block names to their handlers
 		$handlers = array(
-			'wpfn/note'     => array(
+			'note'     => array(
 				'repository' => $this->notes,
 				'relation'   => $this->note_relations,
 				'usage_type' => 'note',
 			),
-			'wpfn/card'     => array(
+			'card'     => array(
 				'repository' => $this->cards,
 				'relation'   => $this->card_relations,
 				'usage_type' => 'card',
 			),
-			'wpfn/inserter' => array(
+			'inserter' => array(
 				'repository' => null,
 				'relation'   => null,
 				'usage_type' => 'inserter',
@@ -164,7 +164,7 @@ class SyncManager {
 
 		foreach ( $blocks as $block ) {
 			$block_id   = $block['block_id'] ?? null;
-			$block_name = $block['blockName'] ?? null;
+			$block_name = $block['object_type'] ?? null;
 
 			if ( ! $block_id || ! isset( $handlers[ $block_name ] ) ) {
 				continue;
@@ -182,7 +182,11 @@ class SyncManager {
 			}
 
 			if ( ! empty( $handler['usage_type'] ) ) {
-				if ( $block_name === 'wpfn/inserter' ) {
+				if ( $block_name === 'inserter' ) {
+					if(empty($block['attrs']['id'])) {
+						continue;
+					}
+
 					$row_id = $block['attrs']['id'];
 				}
 
