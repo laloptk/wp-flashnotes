@@ -212,8 +212,6 @@ class SyncManager {
 		if($post->post_type !== 'studyset') {
 			$set_row = $this->sets->get_by_post_id( $post->ID );
 
-			//error_log(json_encode($set_row));
-
 			if( ! empty( $set_row ) && isset( $set_row[0] ) ) {
 				$this->sets->update($set_row[0]['id'], [ 'post_id' => $set_row[0]['set_post_id'] ]);
 			}
@@ -250,8 +248,6 @@ class SyncManager {
 		if ( $block['object_type'] === 'inserter' ) {
 			return;
 		}
-
-		//error_log(json_encode( $block ));
 
 		$related_in_db = $this->usage->get_relationships_by_column( 'block_id', $block['block_id'] );
 		$repo = $block['object_type'] === 'card' ? $this->cards : $this->notes;
