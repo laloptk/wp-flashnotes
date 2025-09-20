@@ -202,6 +202,24 @@ class SyncManager {
 		}
 	}
 
+	public function sync_on_deleted(WP_Post $post): void {
+        $blocks = BlockParser::from_post_content($post->post_content);
+        foreach ($blocks as $block) {
+			// DB Cascading takes care of removing invalid relationships
+            $this->maybe_tag_as_orphan($block);
+        }
+
+		if($post->post_type !== 'studyset') {
+			$set_row = $this->sets->get_by_post_id( $post->ID );
+
+			//error_log(json_encode($set_row));
+
+			if( ! empty( $set_row ) && isset( $set_row[0] ) ) {
+				$this->sets->update($set_row[0]['id'], [ 'post_id' => $set_row[0]['set_post_id'] ]);
+			}
+		}
+    }
+
 	public function remove_invalid_relationships( int $post_id, array $parsed_objects ): void {
 		$blocks_in_post = array();
 
@@ -233,14 +251,14 @@ class SyncManager {
 			return;
 		}
 
+		//error_log(json_encode( $block ));
+
 		$related_in_db = $this->usage->get_relationships_by_column( 'block_id', $block['block_id'] );
-
 		$repo = $block['object_type'] === 'card' ? $this->cards : $this->notes;
+		$flashnote = $repo->get_by_column('block_id', $block['block_id'], 1);
 
-		error_log( 'It comes this far: maybe_tag_as_orphan' );
-
-		if ( count( $related_in_db ) === 0 ) {
-			$repo->update( $block['object_id'], array( 'status' => 'orphan' ) );
+		if ( count( $related_in_db ) === 0 && ! empty($flashnote) ) {
+			$repo->update( $flashnote['id'], array( 'status' => 'orphan' ) );
 		}
 	}
 
@@ -252,7 +270,7 @@ class SyncManager {
 	 */
 	private function maybe_reactivate_card( int $child_id, string $parent_block_name ): void {
 		// We only revive from inserter
-		if ( $parent_block_name !== 'wpfn/inserter' ) {
+		if ( $parent_block_name !== 'inserter' ) {
 			return;
 		}
 
