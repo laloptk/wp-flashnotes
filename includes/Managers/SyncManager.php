@@ -183,7 +183,7 @@ class SyncManager {
 
 			if ( ! empty( $handler['usage_type'] ) ) {
 				if ( $block_name === 'inserter' ) {
-					if(empty($block['attrs']['id'])) {
+					if ( empty( $block['attrs']['id'] ) ) {
 						continue;
 					}
 
@@ -202,21 +202,21 @@ class SyncManager {
 		}
 	}
 
-	public function sync_on_deleted(WP_Post $post): void {
-        $blocks = BlockParser::from_post_content($post->post_content);
-        foreach ($blocks as $block) {
+	public function sync_on_deleted( WP_Post $post ): void {
+		$blocks = BlockParser::from_post_content( $post->post_content );
+		foreach ( $blocks as $block ) {
 			// DB Cascading takes care of removing invalid relationships
-            $this->maybe_tag_as_orphan($block);
-        }
+			$this->maybe_tag_as_orphan( $block );
+		}
 
-		if($post->post_type !== 'studyset') {
+		if ( $post->post_type !== 'studyset' ) {
 			$set_row = $this->sets->get_by_post_id( $post->ID );
 
-			if( ! empty( $set_row ) && isset( $set_row[0] ) ) {
-				$this->sets->update($set_row[0]['id'], [ 'post_id' => $set_row[0]['set_post_id'] ]);
+			if ( ! empty( $set_row ) && isset( $set_row[0] ) ) {
+				$this->sets->update( $set_row[0]['id'], array( 'post_id' => $set_row[0]['set_post_id'] ) );
 			}
 		}
-    }
+	}
 
 	public function remove_invalid_relationships( int $post_id, array $parsed_objects ): void {
 		$blocks_in_post = array();
@@ -250,10 +250,10 @@ class SyncManager {
 		}
 
 		$related_in_db = $this->usage->get_relationships_by_column( 'block_id', $block['block_id'] );
-		$repo = $block['object_type'] === 'card' ? $this->cards : $this->notes;
-		$flashnote = $repo->get_by_column('block_id', $block['block_id'], 1);
+		$repo          = $block['object_type'] === 'card' ? $this->cards : $this->notes;
+		$flashnote     = $repo->get_by_column( 'block_id', $block['block_id'], 1 );
 
-		if ( count( $related_in_db ) === 0 && ! empty($flashnote) ) {
+		if ( count( $related_in_db ) === 0 && ! empty( $flashnote ) ) {
 			$repo->update( $flashnote['id'], array( 'status' => 'orphan' ) );
 		}
 	}

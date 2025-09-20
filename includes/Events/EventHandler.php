@@ -38,11 +38,11 @@ class EventHandler {
 	}
 
 	/**
-     * Handle post delete events → mark orphaned and detach relationships.
-     */
-    public function on_post_deleted(int $post_id, WP_Post $post): void {
-        $this->sync->sync_on_deleted($post);
-    }
+	 * Handle post delete events → mark orphaned and detach relationships.
+	 */
+	public function on_post_deleted( int $post_id, WP_Post $post ): void {
+		$this->sync->sync_on_deleted( $post );
+	}
 
 	protected function is_autosave_or_revision( int $post_id ): bool {
 		return wp_is_post_autosave( $post_id ) || wp_is_post_revision( $post_id );

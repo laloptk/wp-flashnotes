@@ -273,7 +273,7 @@ abstract class BaseRepository {
 
 		$sql = $this->wpdb->prepare(
 			"SELECT * FROM {$this->get_table_name()} WHERE {$column} = {$placeholder}"
-			. ( $limit ? " LIMIT {$limit}" : "" ),
+			. ( $limit ? " LIMIT {$limit}" : '' ),
 			$value
 		);
 
@@ -283,7 +283,7 @@ abstract class BaseRepository {
 		}
 
 		$rows = $this->wpdb->get_results( $sql, ARRAY_A );
-		return $rows ?: [];
+		return $rows ?: array();
 	}
 
 	/**
