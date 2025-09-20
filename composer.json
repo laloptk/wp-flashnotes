@@ -20,5 +20,9 @@
         "allow-plugins": {
             "dealerdirect/phpcodesniffer-composer-installer": true
         }
+    },
+    "scripts": {
+        "lint": "phpcs --standard=WordPress ./includes ./wp-flashnotes.php",
+        "fix": "phpcbf --standard=WordPress ./includes ./wp-flashnotes.php"
     }
 }

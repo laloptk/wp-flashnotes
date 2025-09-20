@@ -187,8 +187,8 @@ class SetsRepository extends BaseRepository {
 			throw new Exception( 'set_post_id is required for upsert.' );
 		}
 
-		$set_post_id     = absint( $data['set_post_id'] );
-		$existing = $this->get_by_set_post_id( $set_post_id );
+		$set_post_id = absint( $data['set_post_id'] );
+		$existing    = $this->get_by_set_post_id( $set_post_id );
 
 		if ( $existing ) {
 			$payload = array();

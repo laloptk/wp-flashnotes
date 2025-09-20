@@ -23,15 +23,21 @@ add_filter( 'wp_is_application_passwords_available', '__return_true' );
 
 // Load Composer autoloader first if present.
 if ( file_exists( __DIR__ . '/vendor/autoload.php' ) ) {
-    require_once __DIR__ . '/vendor/autoload.php';
+	require_once __DIR__ . '/vendor/autoload.php';
 }
 
 // Activation hook must be registered here
-register_activation_hook( __FILE__, function () {
-    require_once __DIR__ . '/includes/DataBase/Schema/bootstrap.php';
-});
+register_activation_hook(
+	__FILE__,
+	function () {
+		require_once __DIR__ . '/includes/DataBase/Schema/bootstrap.php';
+	}
+);
 
 // Normal bootstrap continues after activation
-add_action( 'plugins_loaded', function() {
-    ( new Plugin() )->init();
-});
+add_action(
+	'plugins_loaded',
+	function () {
+		( new Plugin() )->init();
+	}
+);
