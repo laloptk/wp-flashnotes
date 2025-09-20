@@ -81,18 +81,18 @@ class SetsRepository extends BaseRepository {
 		}
 
 		if ( array_key_exists( 'post_id', $data ) ) {
-			$pid = absint( $data['post_id'] );
-			if ( $pid > 0 ) {
-				$out['post_id'] = $pid;
+			$post_id = absint( $data['post_id'] );
+			if ( $post_id > 0 ) {
+				$out['post_id'] = $post_id;
 			}
 		}
 
 		if ( array_key_exists( 'set_post_id', $data ) ) {
-			$spid = absint( $data['set_post_id'] );
-			if ( $spid <= 0 ) {
+			$set_post_id = absint( $data['set_post_id'] );
+			if ( $set_post_id <= 0 ) {
 				throw new Exception( 'set_post_id must be a positive integer.' );
 			}
-			$out['set_post_id'] = $spid;
+			$out['set_post_id'] = $set_post_id;
 		}
 
 		if ( array_key_exists( 'user_id', $data ) ) {
@@ -187,8 +187,8 @@ class SetsRepository extends BaseRepository {
 			throw new Exception( 'set_post_id is required for upsert.' );
 		}
 
-		$spid     = absint( $data['set_post_id'] );
-		$existing = $this->get_by_set_post_id( $spid );
+		$set_post_id     = absint( $data['set_post_id'] );
+		$existing = $this->get_by_set_post_id( $set_post_id );
 
 		if ( $existing ) {
 			$payload = array();
@@ -212,7 +212,7 @@ class SetsRepository extends BaseRepository {
 			array(
 				'title'       => $data['title'],
 				'post_id'     => $data['post_id'] ?? null,
-				'set_post_id' => $spid,
+				'set_post_id' => $set_post_id,
 				'user_id'     => (int) $data['user_id'],
 			)
 		);

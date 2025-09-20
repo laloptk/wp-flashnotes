@@ -112,7 +112,6 @@ class CardSetRelationsRepository {
 			$set_id
 		);
 
-        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		$rows = $this->wpdb->get_col( $sql );
 		return array_map( 'intval', $rows ?: array() );
 	}
@@ -130,7 +129,6 @@ class CardSetRelationsRepository {
 			$card_id
 		);
 
-        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		$rows = $this->wpdb->get_col( $sql );
 		return array_map( 'intval', $rows ?: array() );
 	}
@@ -141,7 +139,7 @@ class CardSetRelationsRepository {
 	public function count_for_set( int $set_id ): int {
 		$set_id = $this->validate_id( $set_id );
 		$sql    = $this->wpdb->prepare( "SELECT COUNT(*) FROM {$this->table} WHERE set_id = %d", $set_id );
-        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+        
 		return (int) $this->wpdb->get_var( $sql );
 	}
 
@@ -151,7 +149,7 @@ class CardSetRelationsRepository {
 	public function count_for_card( int $card_id ): int {
 		$card_id = $this->validate_id( $card_id );
 		$sql     = $this->wpdb->prepare( "SELECT COUNT(*) FROM {$this->table} WHERE card_id = %d", $card_id );
-        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+        
 		return (int) $this->wpdb->get_var( $sql );
 	}
 
