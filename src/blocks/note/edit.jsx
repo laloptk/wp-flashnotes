@@ -5,52 +5,99 @@ import {
 	useBlockProps,
 	InnerBlocks,
 } from '@wordpress/block-editor';
-import { ToggleControl, TextControl } from '@wordpress/components';
-import { __ } from '@wordpress/i18n';
 import { v4 as uuidv4 } from 'uuid';
-import { serialize } from '@wordpress/blocks';
+import {
+	VisibilityControls,
+	SpacingControls,
+	StyleControls,
+} from '@wpfn/components';
+import { normalizeStyle } from '@wpfn/styles';
+import { normalizeText } from '../../utils';
 
-const Edit = ( { clientId, allowedBlocks, attributes, setAttributes } ) => {
-	const { block_id, title, content, hide } = attributes;
-	const blockProps = useBlockProps( { className: 'wpfn-note' } );
+export default function Edit( { clientId, attributes, setAttributes } ) {
+	const {
+		block_id,
+		title,
+		content,
+		margin,
+		padding,
+		border,
+		borderRadius,
+		backgroundColor,
+		hidden,
+	} = attributes;
 
-	if ( ! block_id ) {
-		setAttributes( { block_id: uuidv4() } );
-	}
+	const style = {
+		...( backgroundColor && { backgroundColor } ),
+		...( normalizeStyle( 'border', border ) || {} ),
+		...( normalizeStyle( 'margin', margin ) || {} ),
+		...( normalizeStyle( 'padding', padding ) || {} ),
+		...( normalizeStyle( 'borderRadius', borderRadius ) || {} ),
+	};
 
-	// Observe this block’s direct children
-	const innerBlocks = useSelect(
+	const blockProps = useBlockProps( {
+		className: 'wpfn-note',
+		style,
+	} );
+
+	// Assign UUID once
+	useEffect( () => {
+		if ( ! block_id ) {
+			setAttributes( { block_id: uuidv4() } );
+		}
+	}, [ block_id, setAttributes ] );
+
+	// Watch direct children (slots)
+	const childBlocks = useSelect(
 		( select ) => select( blockEditorStore ).getBlocks( clientId ),
 		[ clientId ]
 	);
 
-	// Sync inner blocks → `attributes.content` as HTML
+	console.log(title);
+
+	// Sync slot content → attributes
 	useEffect( () => {
-		const html = serialize( innerBlocks ); // produces HTML with comments
-		setAttributes( { content: html } );
-	}, [ innerBlocks, setAttributes ] );
+		if ( ! childBlocks.length ) return;
+
+		let nextTitle = '';
+		let nextContent = '';
+
+		childBlocks.forEach( ( child ) => {
+			if ( child.name === 'wpfn/slot' ) {
+				const { role, content: raw } = child.attributes;
+				if ( role === 'title' ) {
+					nextTitle = normalizeText( raw || '' );
+				} else if ( role === 'content' ) {
+					nextContent = raw ? normalizeText( raw ) : '';
+				}
+			}
+		} );
+
+		// Only update if something actually changed
+		if ( nextTitle !== title || nextContent !== content ) {
+			setAttributes( {
+				title: nextTitle,
+				content: nextContent,
+			} );
+		}
+	}, [ childBlocks, title, content, setAttributes ] );
 
 	return (
-		<div { ...blockProps }>
-			<TextControl
-				label={ __( 'Title', 'wp-flashnotes' ) }
-				value={ title }
-				onChange={ ( val ) => setAttributes( { title: val } ) }
-				className="wpfn-note__title"
-				__nextHasNoMarginBottom
-			/>
+		<>
+			<VisibilityControls attributes={ attributes } setAttributes={ setAttributes } />
+			<SpacingControls attributes={ attributes } setAttributes={ setAttributes } />
+			<StyleControls attributes={ attributes } setAttributes={ setAttributes } />
 
-			<div className="wpfn-note__content">
-				<InnerBlocks allowedBlocks={ allowedBlocks } />
+			<div { ...blockProps }>
+				<InnerBlocks
+					template={ [
+						[ 'wpfn/slot', { role: 'title' } ],
+						[ 'wpfn/slot', { role: 'content' } ],
+					] }
+					allowedBlocks={ [ 'wpfn/slot' ] }
+					templateLock="all"
+				/>
 			</div>
-
-			<ToggleControl
-				label={ __( 'Hide Note In Frontend', 'wp-flashnotes' ) }
-				checked={ hide }
-				onChange={ ( val ) => setAttributes( { hide: val } ) }
-			/>
-		</div>
+		</>
 	);
-};
-
-export default Edit;
+}

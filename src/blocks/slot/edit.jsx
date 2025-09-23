@@ -7,13 +7,14 @@ import {
 } from '@wordpress/block-editor';
 import { serialize } from '@wordpress/blocks';
 import { Icon } from '@wordpress/icons';
-import { help, commentEditLink, quote, check } from '@wordpress/icons';
+import { help, commentEditLink, quote, check, heading, page } from '@wordpress/icons';
 
 const ALLOWED_MAP = {
 	question: [ 'core/paragraph', 'core/heading', 'core/list', 'core/quote' ],
 	explanation: [ 'core/paragraph', 'core/list', 'core/image', 'core/heading', 'core/quote' ],
 	answer: [ 'core/paragraph' ],
-	note: [ 'core/paragraph', 'core/heading', 'core/quote', 'core/list' ],
+	title: [ 'core/heading' ],
+	content: [ 'core/paragraph', 'core/list', 'core/image', 'core/heading', 'core/quote', 'core/list' ],
 };
 
 const ROLE_ICONS = {
@@ -21,6 +22,8 @@ const ROLE_ICONS = {
 	answer: check,
 	explanation: commentEditLink,
 	note: quote,
+	title: heading,
+	content: page,
 };
 
 export default function Edit( { clientId, attributes, setAttributes } ) {

@@ -11,9 +11,6 @@
   },
   "allowedBlocks": [ "core/paragraph", "core/list", "core/spacer" ],
   "attributes": {
-    "noteId": {
-      "type": "integer"
-    },
     "title": {
       "type": "string",
       "default": ""
@@ -22,19 +19,51 @@
       "type": "string",
       "default": ""
     },
-    "hide": {
-      "type": "boolean",
-      "default": false
-    },
     "block_id": {
       "type": "string"
     },
-    "setIds": {
-      "type": "array",
-      "items": {
-        "type": "integer"
-      },
-      "default": []
+    "margin": {
+      "type": "object",
+      "default": {
+        "top": "1em",
+        "right": "0",
+        "bottom": "1em",
+        "left": "0"
+      }
+    },
+    "padding": {
+      "type": "object",
+      "default": {
+        "top": "15px",
+        "right": "15px",
+        "bottom": "15px",
+        "left": "15px"
+      }
+    },
+    "border": {
+      "type": "object",
+      "default": {
+        "color": "#ddd",
+        "style": "solid",
+        "width": "1px"
+      }
+    },
+    "borderRadius": {
+      "type": "object",
+      "default": {
+        "top": "25px",
+        "right": "25px",
+        "bottom": "25px",
+        "left": "25px"
+      }
+    },
+    "backgroundColor": {
+      "type": "string",
+      "default": "#fafafa"
+    },
+    "hidden": {
+      "type": "boolean",
+      "default": false
     }
   },
   "editorScript": "wpfn-blocks",

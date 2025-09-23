@@ -86,26 +86,27 @@ class NotesRepository extends BaseRepository {
 	 * @return int Note ID (row id in wpfn_notes).
 	 */
 	public function upsert_from_block( array $block ): int {
-		$attrs   = $block['attrs'] ?? array();
-		$blockId = $block['block_id'] ?? null;
+		$attrs   = $block['attrs'] ?: array();
+		$block_id = $block['block_id'] ?: null;
 
-		if ( ! $blockId ) {
+		if ( ! $block_id ) {
 			throw new \Exception( 'Note block is missing block_id.' );
 		}
 
 		$data = array(
 			'title'    => $attrs['title'],
-			'block_id' => $blockId,
+			'block_id' => $block_id,
 			'content'  => $attrs['content'] ?? '',
 			'user_id'  => get_current_user_id(),
 		);
 
 		// Try to find an existing row
-		$existing = $this->get_by_block_id( $blockId );
+		$note_row = $this->get_by_block_id( $block_id );
+		error_log(json_encode($note_row));
 
-		if ( $existing ) {
-			$this->update( (int) $existing['id'], $data );
-			return (int) $existing['id'];
+		if ( ! empty( $note_row ) ) {
+			$this->update( (int) $note_row['id'], $data );
+			return (int) $note_row['id'];
 		}
 
 		return $this->insert( $data );
@@ -115,7 +116,7 @@ class NotesRepository extends BaseRepository {
 	 * Lookup a note by block_id.
 	 */
 	public function get_by_block_id( string $block_id ): ?array {
-		return $this->get_by_column( 'block_id', $block_id );
+		return $this->get_by_column( 'block_id', $block_id )[0] ?: array();
 	}
 
 

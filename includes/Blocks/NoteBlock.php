@@ -12,6 +12,12 @@ final class NoteBlock extends BaseBlock {
 
 	public function render( $attributes, $content, $block ) {
 		// Placeholder output — replace with real render later.
-		return '<div class="wpfn-note-placeholder">NotesBlock placeholder</div>';
+		return array();
+	}
+
+	protected function get_args(): array {
+		return array(
+			'render_callback' => null,
+		);
 	}
 }

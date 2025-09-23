@@ -21,14 +21,11 @@ export default function save( { attributes } ) {
 
 	return (
 		<div { ...blockProps }>
-			<div className="wpfn-slot role-question">
+			<div className="wpfn-slot role-title">
 				<InnerBlocks.Content />
 			</div>
-			<div className="wpfn-slot role-answer">
+			<div className="wpfn-slot role-content">
 				{/* answer InnerBlocks */}
-			</div>
-			<div className="wpfn-slot role-explanation">
-				{/* explanation InnerBlocks */}
 			</div>
 		</div>
 	);
