@@ -68,6 +68,7 @@ class Plugin {
 		require_once WPFN_PLUGIN_DIR . 'includes/CPT/bootstrap.php';
 		require_once WPFN_PLUGIN_DIR . 'includes/Blocks/bootstrap.php';
 		require_once WPFN_PLUGIN_DIR . 'includes/Events/bootstrap.php';
+		require_once WPFN_PLUGIN_DIR . 'includes/Managers/bootstrap.php';
 	}
 
 	private function setup_i18n(): void {
