@@ -102,11 +102,10 @@ class NotesRepository extends BaseRepository {
 
 		// Try to find an existing row
 		$note_row = $this->get_by_block_id( $block_id );
-		error_log(json_encode($note_row));
 
 		if ( ! empty( $note_row ) ) {
-			$this->update( (int) $note_row['id'], $data );
-			return (int) $note_row['id'];
+			$this->update( (int) $note_row[0]['id'], $data );
+			return (int) $note_row[0]['id'];
 		}
 
 		return $this->insert( $data );
@@ -116,7 +115,7 @@ class NotesRepository extends BaseRepository {
 	 * Lookup a note by block_id.
 	 */
 	public function get_by_block_id( string $block_id ): ?array {
-		return $this->get_by_column( 'block_id', $block_id )[0] ?: array();
+		return $this->get_by_column( 'block_id', $block_id );
 	}
 
 

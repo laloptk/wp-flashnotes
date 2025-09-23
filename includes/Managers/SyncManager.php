@@ -127,9 +127,6 @@ class SyncManager {
 			return;
 		}
 
-		// Propagate from studyset → origin post if needed
-		$this->sync_post_from_studyset( $ids, $flashnote_blocks );
-
 		// Ensure wpfn_sets row exists (handles direct studyset creation)
 		$set_row = $this->sets->get_by_set_post_id( $set_post_id );
 		if ( empty($set_row) ) {
@@ -141,6 +138,13 @@ class SyncManager {
 				'set_post_id' => $set_post_id,
 				'user_id'     => $author,
 			]);
+		}
+
+		error_log(print_r($set_row, true));
+		
+		// Ensure correct origin id when saving from studysets
+		if($origin_post_id === $set_post_id) {
+			$origin_post_id = $set_row['post_id'];
 		}
 
 		$set_id = ! empty( $set_row ) ? (int) $set_row['id'] : $set_id;
@@ -201,6 +205,9 @@ class SyncManager {
 				$this->maybe_reactivate_card( (int) $row_id, $block_name );
 			}
 		}
+
+		// Propagate from studyset → origin post if needed
+		$this->sync_post_from_studyset( $origin_post_id, $set_post_id, $flashnote_blocks );
 	}
 
 	public function sync_on_deleted( WP_Post $post ): void {
@@ -219,18 +226,20 @@ class SyncManager {
 		}
 	}
 
-	public function sync_post_from_studyset(array $ids, array $parsed_set_blocks) {
-		if (get_post_type($ids['set_post_id']) !== 'studyset' || $ids['set_post_id'] === $ids['origin_post_id']) {
+	public function sync_post_from_studyset(int $origin_post_id, int $set_post_id, array $parsed_set_blocks) {
+		
+		if ( get_post_type($set_post_id) !== 'studyset' || $set_post_id === $origin_post_id) {
 			return;
 		}
 
-		$origin_post = get_post($ids['origin_post_id']);
+		$origin_post = get_post($origin_post_id);
 		$parsed_origin_blocks = BlockParser::parse_raw($origin_post->post_content);
-
+		// TODO: check the serialization is not being duplicated
 		$merged_blocks = BlockHelpers::merge_gutenberg_blocks($parsed_origin_blocks, $parsed_set_blocks);
+		error_log(print_r($merged_blocks, true));
 		$updated_post_content = serialize_blocks($merged_blocks);
 
-		$this->update_post($ids['origin_post_id'], [
+		$this->update_post($origin_post_id, [
 			'post_content' => $updated_post_content
 		]);
 	}
