@@ -9,6 +9,7 @@ use WPFlashNotes\Repos\NoteSetRelationsRepository;
 use WPFlashNotes\Repos\CardSetRelationsRepository;
 use WPFlashNotes\Repos\ObjectUsageRepository;
 use WPFlashNotes\Helpers\BlockParser;
+use WPFlashNotes\Helpers\BlockHelpers;
 
 class SyncManager {
 
@@ -58,13 +59,12 @@ class SyncManager {
 		if ( ! empty( $existing ) ) {
 			$set_post_id = (int) $existing[0]['set_post_id'];
 
-			wp_update_post(
-				array(
-					'ID'           => $set_post_id,
-					'post_title'   => $title,
-					'post_content' => $flashnote_content,
-				)
+			$post_args = array(
+				'post_title'   => $title,
+				'post_content' => $flashnote_content,
 			);
+
+			$this->update_post( $set_post_id, $post_args );
 
 			return array(
 				'set_post_id'    => $set_post_id,
@@ -113,35 +113,37 @@ class SyncManager {
 		return array();
 	}
 
-	/**
-	 * Sync cards and notes for a given studyset + origin post, with change detection.
-	 *
-	 * @param array{set_post_id:int, origin_post_id:int} $ids    IDs bundle.
-	 * @param string                                     $content Post content (block JSON).
-	 */
 	public function sync_pipeline( array $ids, string $content ): void {
 		$set_post_id    = $ids['set_post_id'];
 		$origin_post_id = $ids['origin_post_id'];
 
-		$blocks = BlockParser::from_post_content( $content );
+		$all_blocks       = BlockParser::parse_raw( $content );
+		$flashnote_blocks = BlockParser::filter_flashnote_blocks( $all_blocks );
+		$objects          = BlockParser::normalize_to_objects( $flashnote_blocks );
 
-		$this->remove_invalid_relationships( $origin_post_id, $blocks );
+		$this->remove_invalid_relationships( $origin_post_id, $objects );
 
-		if ( empty( $blocks ) ) {
+		if ( empty( $flashnote_blocks ) ) {
 			return;
 		}
 
-		// Resolve set row once
+		// Propagate from studyset → origin post if needed
+		$this->sync_post_from_studyset( $ids, $flashnote_blocks );
+
+		// Ensure wpfn_sets row exists (handles direct studyset creation)
 		$set_row = $this->sets->get_by_set_post_id( $set_post_id );
+		if ( empty($set_row) ) {
+			$author = (int) get_post_field( 'post_author', $set_post_id );
 
-		if ( ! $set_row ) {
-			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( "WP FlashNotes: No wpfn_sets row found for set_post_id {$set_post_id}" );
-			}
-			return;
+			$set_id = $this->sets->upsert_by_set_post_id([
+				'title'       => get_the_title( $set_post_id ),
+				'post_id'     => $origin_post_id > 0 ? $origin_post_id : $set_post_id,
+				'set_post_id' => $set_post_id,
+				'user_id'     => $author,
+			]);
 		}
 
-		$set_id = (int) $set_row['id'];
+		$set_id = ! empty( $set_row ) ? (int) $set_row['id'] : $set_id;
 
 		// Map block names to their handlers
 		$handlers = array(
@@ -162,7 +164,7 @@ class SyncManager {
 			),
 		);
 
-		foreach ( $blocks as $block ) {
+		foreach ( $objects as $block ) {
 			$block_id   = $block['block_id'] ?? null;
 			$block_name = $block['object_type'] ?? null;
 
@@ -186,7 +188,6 @@ class SyncManager {
 					if ( empty( $block['attrs']['id'] ) ) {
 						continue;
 					}
-
 					$row_id = $block['attrs']['id'];
 				}
 
@@ -218,7 +219,54 @@ class SyncManager {
 		}
 	}
 
-	public function remove_invalid_relationships( int $post_id, array $parsed_objects ): void {
+	public function sync_post_from_studyset(array $ids, array $parsed_set_blocks) {
+		if (get_post_type($ids['set_post_id']) !== 'studyset' || $ids['set_post_id'] === $ids['origin_post_id']) {
+			return;
+		}
+
+		$origin_post = get_post($ids['origin_post_id']);
+		$parsed_origin_blocks = BlockParser::parse_raw($origin_post->post_content);
+
+		$merged_blocks = BlockHelpers::merge_gutenberg_blocks($parsed_origin_blocks, $parsed_set_blocks);
+		$updated_post_content = serialize_blocks($merged_blocks);
+
+		$this->update_post($ids['origin_post_id'], [
+			'post_content' => $updated_post_content
+		]);
+	}
+
+	public function update_post($post_id, $args) {
+		static $is_syncing = false;
+
+		// Prevent recursion
+		if ($is_syncing) {
+			return 0; // or return early without updating
+		}
+
+		$is_syncing = true;
+
+		$args['ID'] = $post_id;
+		$post_updated = wp_update_post($args, true);
+
+		$is_syncing = false;
+
+		if ( is_wp_error( $post_updated ) ) {
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log(
+					sprintf(
+						__( 'Failed to update post during sync: %s', 'wp-flashnotes' ),
+						$post_updated->get_error_message()
+					)
+				);
+			}
+			return 0;
+		}
+
+		return $post_updated;
+	}
+
+
+	private function remove_invalid_relationships( int $post_id, array $parsed_objects ): void {
 		$blocks_in_post = array();
 
 		foreach ( $parsed_objects as $block ) {
@@ -244,7 +292,7 @@ class SyncManager {
 		}
 	}
 
-	public function maybe_tag_as_orphan( $block ): void {
+	private function maybe_tag_as_orphan( $block ): void {
 		if ( $block['object_type'] === 'inserter' ) {
 			return;
 		}
