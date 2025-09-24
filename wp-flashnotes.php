@@ -41,3 +41,19 @@ add_action(
 		( new Plugin() )->init();
 	}
 );
+
+add_action( 'enqueue_block_editor_assets', function() {
+    wp_enqueue_script(
+        'wp-flashnotes-sidebar',
+        WPFN_PLUGIN_URL . 'build/editor-sidebar.js',
+        [ 
+			'wp-plugins',
+            'wp-editor',
+            'wp-components',
+            'wp-element',
+            'wp-i18n',
+	    ],
+        '1.0.0',
+        true
+    );
+} );

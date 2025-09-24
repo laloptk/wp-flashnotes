@@ -207,7 +207,7 @@ class SyncManager {
 		}
 
 		// Propagate from studyset → origin post if needed
-		$this->sync_post_from_studyset( $origin_post_id, $set_post_id, $flashnote_blocks );
+		//$this->sync_post_from_studyset( $origin_post_id, $set_post_id, $flashnote_blocks );
 	}
 
 	public function sync_on_deleted( WP_Post $post ): void {
@@ -226,7 +226,7 @@ class SyncManager {
 		}
 	}
 
-	public function sync_post_from_studyset(int $origin_post_id, int $set_post_id, array $parsed_set_blocks) {
+	/*public function sync_post_from_studyset(int $origin_post_id, int $set_post_id, array $parsed_set_blocks) {
 		
 		if ( get_post_type($set_post_id) !== 'studyset' || $set_post_id === $origin_post_id) {
 			return;
@@ -242,7 +242,7 @@ class SyncManager {
 		$this->update_post($origin_post_id, [
 			'post_content' => $updated_post_content
 		]);
-	}
+	}*/
 
 	public function update_post($post_id, $args) {
 		static $is_syncing = false;
