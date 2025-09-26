@@ -113,6 +113,14 @@ class SyncManager {
 		return array();
 	}
 
+	public function create_studyset() {
+
+	}
+
+	public function sync_studyset() {
+
+	}
+
 	public function sync_pipeline( array $ids, string $content ): void {
 		$set_post_id    = $ids['set_post_id'];
 		$origin_post_id = $ids['origin_post_id'];
