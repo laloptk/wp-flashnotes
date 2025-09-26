@@ -24,6 +24,7 @@ module.exports = {
 			...defaultConfig.resolve.alias,
 			'@wpfn/styles': path.resolve(process.cwd(), 'src/utils/styles'),
 			'@wpfn/components': path.resolve(process.cwd(), 'src/components'),
+			'@wpfn/hooks': path.resolve(process.cwd(), 'src/hooks'),
 		},
 	},
 };

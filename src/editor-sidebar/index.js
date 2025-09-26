@@ -2,10 +2,12 @@ import { registerPlugin } from '@wordpress/plugins';
 import { PluginSidebar, PluginSidebarMoreMenuItem } from '@wordpress/editor';
 import { PanelBody, Button } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
-import { dispatch } from '@wordpress/data';
-import { useEffect } from '@wordpress/element';
+import { dispatch, useSelect } from '@wordpress/data';
+import { useEffect, useState } from '@wordpress/element';
+import { useFetch } from '@wpfn/hooks';
 
 function FlashNotesSidebar() {
+    const [fetchSlug, setFetchSlug] = useState('by_post_id');
     const { postId, postType } = useSelect( ( select ) => {
 		const editor = select( 'core/editor' );
 		return {
@@ -13,6 +15,26 @@ function FlashNotesSidebar() {
 			postType: editor.getCurrentPostType(),
 		};
 	}, [] );
+    
+    useEffect(() => {
+        if(postType === 'studyset') {
+            setFetchSlug('by-set-post-id');
+        } 
+    }, []);
+    // Fetch for relationship between post and studyset (sets table endpoint)
+    const { data, loading, error } = useFetch(fetchSlug, { id: postId });
+    //console.log(data);
+    // If relationship exist
+        // Show the sync button (sync from origin post if studyset) and a message with a link to the studyset/post
+    // If not
+        // Show the Create Studyset button
+
+    // Write a function handleOnClick
+        // Upsert a studyset via REST API
+        // Propagate relationships in DB via REST API
+            // Update sets table (Relationship between post and studyset)
+            // Update usage table (Relationships between blocks and posts)
+            // Update set-card set-note tables
     
     useEffect( () => {
         if ( postType === 'post' || postType === 'studyset' ) {

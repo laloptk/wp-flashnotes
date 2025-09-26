@@ -10,7 +10,7 @@ import {
 	StyleControls,
 	SafeHTMLContent
 } from '@wpfn/components';
-import useFetch from '../../hooks/useFetch';
+import { useFetch } from '@wpfn/hooks';
 import {assembleContent} from '../../utils';
 
 const Edit = ({ attributes, setAttributes, clientId }) => {
