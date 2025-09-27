@@ -8,7 +8,7 @@ use WPFlashNotes\Repos\SetsRepository;
 use WPFlashNotes\Repos\NoteSetRelationsRepository;
 use WPFlashNotes\Repos\CardSetRelationsRepository;
 use WPFlashNotes\Repos\ObjectUsageRepository;
-use WPFlashNotes\Helpers\BlockParser;
+use WPFlashNotes\Helpers\BlockFormatter;
 use WPFlashNotes\Helpers\BlockHelpers;
 
 class SyncManager {
@@ -48,11 +48,11 @@ class SyncManager {
 		$author = (int) ( get_post_field( 'post_author', $origin_post_id ) ?: get_current_user_id() );
 
 		// 1. Parse post into blocks
-		$all_blocks       = BlockParser::parse_raw( $content );
-		$flashnote_blocks = BlockParser::filter_flashnote_blocks( $all_blocks );
+		$all_blocks       = BlockFormatter::parse_raw( $content );
+		$flashnote_blocks = BlockFormatter::filter_flashnotes_blocks( $all_blocks );
 
 		// 2. Only flashnotes go into the studyset post_content
-		$flashnote_content = serialize_blocks( $flashnote_blocks );
+		$flashnote_content = BlockFormatter::serialize( $flashnote_blocks );
 
 		// 3. Get existing studyset (if any)
 		$existing = $this->sets->get_by_post_id( $origin_post_id );
@@ -125,9 +125,9 @@ class SyncManager {
 		$set_post_id    = $ids['set_post_id'];
 		$origin_post_id = $ids['origin_post_id'];
 
-		$all_blocks       = BlockParser::parse_raw( $content );
-		$flashnote_blocks = BlockParser::filter_flashnote_blocks( $all_blocks );
-		$objects          = BlockParser::normalize_to_objects( $flashnote_blocks );
+		$all_blocks       = BlockFormatter::parse_raw( $content );
+		$flashnote_blocks = BlockFormatter::filter_flashnotes_blocks( $all_blocks );
+		$objects          = BlockFormatter::normalize_to_objects( $flashnote_blocks );
 
 		$this->remove_invalid_relationships( $origin_post_id, $objects );
 
@@ -219,7 +219,7 @@ class SyncManager {
 	}
 
 	public function sync_on_deleted( WP_Post $post ): void {
-		$blocks = BlockParser::from_post_content( $post->post_content );
+		$blocks = BlockFormatter::from_post_content( $post->post_content );
 		foreach ( $blocks as $block ) {
 			// DB Cascading takes care of removing invalid relationships
 			$this->maybe_tag_as_orphan( $block );
@@ -241,7 +241,7 @@ class SyncManager {
 		}
 
 		$origin_post = get_post($origin_post_id);
-		$parsed_origin_blocks = BlockParser::parse_raw($origin_post->post_content);
+		$parsed_origin_blocks = BlockFormatter::parse_raw($origin_post->post_content);
 		// TODO: check the serialization is not being duplicated
 		$merged_blocks = BlockHelpers::merge_gutenberg_blocks($parsed_origin_blocks, $parsed_set_blocks);
 		error_log(print_r($merged_blocks, true));

@@ -63,11 +63,11 @@ add_filter(
     function( $prepared_post, $request ) {
         // Defensive: only touch post_content if present
         if ( ! empty( $prepared_post->post_content ) ) {
-            $blocks = \WPFlashNotes\Helpers\BlockParser::parse_raw( $prepared_post->post_content );
-            $filtered = \WPFlashNotes\Helpers\BlockParser::filter_flashnote_blocks( $blocks );
+            $blocks = \WPFlashNotes\Helpers\BlockFormatter::parse_raw( $prepared_post->post_content );
+            $filtered = \WPFlashNotes\Helpers\BlockFormatter::filter_flashnotes_blocks( $blocks );
 
             // If you want to persist only flashnote blocks
-            $prepared_post->post_content = serialize_blocks( $filtered );
+            $prepared_post->post_content = \WPFlashNotes\Helpers\BlockFormatter::serialize( $filtered );
         }
 
         return $prepared_post;

@@ -4,7 +4,7 @@ namespace WPFlashNotes\Helpers;
 
 defined( 'ABSPATH' ) || exit;
 
-class BlockParser {
+class BlockFormatter {
 	/**
 	 * Raw parse of all blocks in a post (WordPress native structure).
 	 */
@@ -12,11 +12,15 @@ class BlockParser {
 		return parse_blocks( $content );
 	}
 
+	public static function serialize( array $blocks) {
+		return serialize_blocks($blocks);
+	}
+
 	/**
 	 * Filter only flashnote blocks, keep original WP block structure
 	 * (needed for serialize_blocks).
 	 */
-	public static function filter_flashnote_blocks( array $blocks ): array {
+	public static function filter_flashnotes_blocks( array $blocks ): array {
 		return array_values(
 			array_filter(
 				$blocks,
