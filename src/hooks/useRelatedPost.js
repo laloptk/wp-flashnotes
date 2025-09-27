@@ -16,7 +16,7 @@ const useRelatedPost = ( { postType, postId } ) => {
 	}, [ postType ] );
 
 	const { data, loading: loadingRel, error } = useFetch( `${ slug }/${ postId }` );
-
+	
 	useEffect( () => {
 		if ( data?.item?.set_post_id ) {
 			setRelatedId( data.item.set_post_id );
