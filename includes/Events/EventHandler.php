@@ -25,15 +25,15 @@ class EventHandler {
 				'origin_post_id' => $post_id,
 			);
 
-			$this->sync->sync_pipeline( $ids, $post->post_content );
+			//$this->sync->sync_pipeline( $ids, $post->post_content );
 			return;
 		}
 
 		// Case 2: Saving a regular post/page/CPT
-		$ids = $this->sync->ensure_set_for_post( $post_id, $post->post_content );
+		//$ids = $this->sync->ensure_set_for_post( $post_id, $post->post_content );
 
 		if ( ! empty( $ids ) ) {
-			$this->sync->sync_pipeline( $ids, $post->post_content );
+			//$this->sync->sync_pipeline( $ids, $post->post_content );
 		}
 	}
 

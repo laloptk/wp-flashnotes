@@ -114,11 +114,11 @@ class SyncManager {
 	}
 
 	public function create_studyset() {
-
+		// Put the insert for the studyset here (breaking ensure_set_for_post)
 	}
 
 	public function sync_studyset() {
-
+		// Put the insert for the studyset here (breaking ensure_set_for_post)
 	}
 
 	public function sync_pipeline( array $ids, string $content ): void {

@@ -57,3 +57,21 @@ add_action( 'enqueue_block_editor_assets', function() {
         true
     );
 } );
+
+add_filter(
+    'rest_pre_insert_studyset',
+    function( $prepared_post, $request ) {
+        // Defensive: only touch post_content if present
+        if ( ! empty( $prepared_post->post_content ) ) {
+            $blocks = \WPFlashNotes\Helpers\BlockParser::parse_raw( $prepared_post->post_content );
+            $filtered = \WPFlashNotes\Helpers\BlockParser::filter_flashnote_blocks( $blocks );
+
+            // If you want to persist only flashnote blocks
+            $prepared_post->post_content = serialize_blocks( $filtered );
+        }
+
+        return $prepared_post;
+    },
+    10,
+    3
+);

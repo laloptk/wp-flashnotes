@@ -3,41 +3,49 @@ import { PluginSidebar, PluginSidebarMoreMenuItem } from '@wordpress/editor';
 import { PanelBody, Button, Spinner } from '@wordpress/components';
 import { Annotation } from '@wpfn/components';
 import { __ } from '@wordpress/i18n';
-import { dispatch, useSelect, useRef } from '@wordpress/data';
-import { store as coreDataStore } from '@wordpress/core-data';
+import { dispatch, useSelect } from '@wordpress/data';
 import { useEffect, useState } from '@wordpress/element';
 import { useFetch, useRelatedPost } from '@wpfn/hooks';
+import apiFetch from '@wordpress/api-fetch';
 
 function FlashNotesSidebar() {
     const [syncBtnText, setSyncBtnText] = useState('Sync study set');
     
-    const { postId, postType } = useSelect( ( select ) => {
-		const editor = select( 'core/editor' );
-		return {
-			postId: editor.getCurrentPostId(),
-			postType: editor.getCurrentPostType(),
-		};
-	}, [] );
+    const { postId, postType, title, content, author } = useSelect( ( select ) => {
+        const editor = select( 'core/editor' );
+            return {
+                postId: editor.getCurrentPostId(),
+                postType: editor.getCurrentPostType(),
+                title: editor.getEditedPostAttribute( 'title' ),
+                content: editor.getEditedPostContent(),
+                author: editor.getEditedPostAttribute( 'author' ),
+            };
+    }, [] );
     
     useEffect(() => {
         if(postType === 'studyset') {
-            setSyncBtnText('Sync study set from post');
+            setSyncBtnText('Sync from post');
         } 
     }, []);
-    // Fetch for relationship between post and studyset (sets table endpoint)
-    const { record, loading, error } = useRelatedPost( { postType, postId } );
-    
-    // If relationship exist
-        // Show the sync button (sync from origin post if studyset) and a message with a link to the studyset/post
-    // If not
-        // Show the Create Studyset button
 
-    // Write a function handleOnClick
-        // Upsert a studyset via REST API
-        // Propagate relationships in DB via REST API
-            // Update sets table (Relationship between post and studyset)
-            // Update usage table (Relationships between blocks and posts)
-            // Update set-card set-note tables
+    const { record, loading, error } = useRelatedPost( { postType, postId } );
+
+    console.log(record);
+
+    const handleSetUpsert = (type) => {
+       apiFetch( {
+            path: '/wp/v2/studyset',
+            method: 'POST',
+            data: {
+                title: title,
+                content: content,
+                author: author,
+                status: 'publish',
+            },
+        } ).then( ( response ) => {
+            console.log( 'Studyset created', response );
+        } );
+    }
     
     useEffect( () => {
         if ( postType === 'post' || postType === 'studyset' ) {
@@ -48,7 +56,7 @@ function FlashNotesSidebar() {
     return (
         <>
             <PluginSidebarMoreMenuItem target="wp-flashnotes-sidebar">
-                { __( 'FlashNotes', 'wp-flashnotes' ) }
+                { __( 'WP FlashNotes', 'wp-flashnotes' ) }
             </PluginSidebarMoreMenuItem>
             <PluginSidebar
                 name="wp-flashnotes-sidebar"
@@ -59,13 +67,13 @@ function FlashNotesSidebar() {
                     {(! record )
                         ?
                         <div>
-                            <Annotation prefix="Study set not attached: ">
+                            <Annotation prefix={__("Study set not attached: ")} >
                                 <p>
                                     {__('This post does not have a study set linked to it.', 'wp-flashnotes' )} 
                                     {__('To generate one, click on the button below.', 'wp-flashnotes')}
                                 </p>
                             </Annotation>
-                            <Button variant="primary">
+                            <Button variant="primary" onClick={() => handleSetUpsert('insert')}>
                                 { __( 'Create Studyset', 'wp-flashnotes' ) }
                             </Button>
                         </div> 
@@ -89,7 +97,7 @@ function FlashNotesSidebar() {
             </PluginSidebar>
         </>
     );
-    }
+}
 
 registerPlugin( 'wp-flashnotes-editor-sidebar', {
     render: FlashNotesSidebar,
