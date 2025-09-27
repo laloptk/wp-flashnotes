@@ -3,13 +3,14 @@ import { PluginSidebar, PluginSidebarMoreMenuItem } from '@wordpress/editor';
 import { PanelBody, Button, Spinner } from '@wordpress/components';
 import { Annotation } from '@wpfn/components';
 import { __ } from '@wordpress/i18n';
-import { dispatch, useSelect } from '@wordpress/data';
+import { dispatch, useSelect, useRef } from '@wordpress/data';
+import { store as coreDataStore } from '@wordpress/core-data';
 import { useEffect, useState } from '@wordpress/element';
-import { useFetch } from '@wpfn/hooks';
-import { __ } from '@wordpress/i18n';
+import { useFetch, useRelatedPost } from '@wpfn/hooks';
 
 function FlashNotesSidebar() {
-    const [fetchSlug, setFetchSlug] = useState('sets/by-post-id');
+    const [syncBtnText, setSyncBtnText] = useState('Sync study set');
+    
     const { postId, postType } = useSelect( ( select ) => {
 		const editor = select( 'core/editor' );
 		return {
@@ -20,12 +21,12 @@ function FlashNotesSidebar() {
     
     useEffect(() => {
         if(postType === 'studyset') {
-            setFetchSlug('sets/by-set-post-id');
+            setSyncBtnText('Sync study set from post');
         } 
     }, []);
     // Fetch for relationship between post and studyset (sets table endpoint)
-    const { data, loading, error } = useFetch(`${fetchSlug}/${postId}`);
-    console.log(data);
+    const { record, loading, error } = useRelatedPost( { postType, postId } );
+    
     // If relationship exist
         // Show the sync button (sync from origin post if studyset) and a message with a link to the studyset/post
     // If not
@@ -55,9 +56,15 @@ function FlashNotesSidebar() {
                 icon="edit"  /* optional icon slug */
             >
                 <PanelBody>
-                    {(! data && data.item !== null)
+                    {(! record )
                         ?
                         <div>
+                            <Annotation prefix="Study set not attached: ">
+                                <p>
+                                    {__('This post does not have a study set linked to it.', 'wp-flashnotes' )} 
+                                    {__('To generate one, click on the button below.', 'wp-flashnotes')}
+                                </p>
+                            </Annotation>
                             <Button variant="primary">
                                 { __( 'Create Studyset', 'wp-flashnotes' ) }
                             </Button>
@@ -66,19 +73,18 @@ function FlashNotesSidebar() {
                         <div>
                             <Annotation prefix="Study set attached: ">
                                 <p>
-                                    {__('A study set is related to this post,', 'wp-flashnotes' )} 
-                                    {__('to see it, follow the <a href="" >link to its page</a>.', 'wp-flashnotes')}
+                                    {__('A study set is related to this post, to see it, follow the ', 'wp-flashnotes' )} 
+                                    <a href={record.link || '#'} target="_blank" >{__('link to its page', 'wp-flashnotes')}</a>
                                 </p>
                                 <p>
                                     {__('Or you can sync the flashnotes blocks in this post to the study set by clicking on the button below.', 'wp-flshnotes')}
                                 </p>
                             </Annotation>
                             <Button variant="secondary">
-                                { __( 'Sync Studyset', 'wp-flashnotes' ) }
+                                { syncBtnText }
                             </Button>
                         </div>
                     }
-                    
                 </PanelBody>
             </PluginSidebar>
         </>
@@ -86,7 +92,5 @@ function FlashNotesSidebar() {
     }
 
 registerPlugin( 'wp-flashnotes-editor-sidebar', {
-  render: FlashNotesSidebar,
+    render: FlashNotesSidebar,
 } );
-
-dispatch( 'core/edit-post' ).openGeneralSidebar( 'wp-flashnotes-sidebar' );
