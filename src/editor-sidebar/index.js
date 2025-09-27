@@ -6,6 +6,7 @@ import { __ } from '@wordpress/i18n';
 import { dispatch, useSelect } from '@wordpress/data';
 import { useEffect, useState } from '@wordpress/element';
 import { useFetch } from '@wpfn/hooks';
+import { __ } from '@wordpress/i18n';
 
 function FlashNotesSidebar() {
     const [fetchSlug, setFetchSlug] = useState('sets/by-post-id');
@@ -54,7 +55,7 @@ function FlashNotesSidebar() {
                 icon="edit"  /* optional icon slug */
             >
                 <PanelBody>
-                    {(! data)
+                    {(! data && data.item !== null)
                         ?
                         <div>
                             <Button variant="primary">
@@ -65,12 +66,11 @@ function FlashNotesSidebar() {
                         <div>
                             <Annotation prefix="Study set attached: ">
                                 <p>
-                                    A study set is related to this post, 
-                                    to see it, follow the <a href="" >link to its page</a>.
+                                    {__('A study set is related to this post,', 'wp-flashnotes' )} 
+                                    {__('to see it, follow the <a href="" >link to its page</a>.', 'wp-flashnotes')}
                                 </p>
                                 <p>
-                                    Or you can sync the flashnotes blocks in this post to 
-                                    the study set by clicking on the button below.
+                                    {__('Or you can sync the flashnotes blocks in this post to the study set by clicking on the button below.', 'wp-flshnotes')}
                                 </p>
                             </Annotation>
                             <Button variant="secondary">
