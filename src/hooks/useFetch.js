@@ -29,7 +29,7 @@ const useFetch = ( type, queryParams = {} ) => {
 		try {
 			setLoading( true );
 			setError( null );
-			const result = await api.get( queryParams, {
+			const result = await api.find( queryParams, {
 				signal: controller.signal,
 			} );
 			setData( result );

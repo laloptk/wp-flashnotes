@@ -1,3 +1,4 @@
+// ResourcesAPIService.js
 import apiFetch from '@wordpress/api-fetch';
 import { addQueryArgs } from '@wordpress/url';
 
@@ -12,64 +13,69 @@ export default class ResourceAPIService {
 		return apiFetch( args );
 	}
 
-	get( query_params, { signal } = {} ) {
-		const args = {
+	// GET /{type}?...
+	get( query_params = {}, { signal } = {} ) {
+		return this.request({
 			path: addQueryArgs( this.path, query_params ),
 			method: 'GET',
 			signal,
-		};
-
-		return this.request( args );
+		});
 	}
 
-	update( item_id, body = {} ) {
-		if ( Object.keys( body ).length === 0 ) {
-			throw new Error( 'Body cannot be empty' );
-		}
-
-		const args = {
-			path: `${ this.path } / ${ item_id }`,
-			method: 'PUT',
-			data: body,
-		};
-
-		if ( this.isValidId( item_id ) && Object.keys( body ).length > 0 ) {
-			return this.request( args );
-		}
+	// GET /{type}/find?...
+	find( query_params = {}, { signal } = {} ) {
+		return this.request({
+			path: addQueryArgs( `${ this.path }/find`, query_params ),
+			method: 'GET',
+			signal,
+		});
 	}
 
-	remove( item_id ) {
-		const args = {
-			path: addQueryArgs( `${ this.path } / ${ item_id }`, { hard: 1 } ),
-			method: 'DELETE',
+	// Optional: build args objects for useFetch (args-only variant)
+	build_get_args( query_params = {} ) {
+		return {
+			path: addQueryArgs( this.path, query_params ),
+			method: 'GET',
 		};
+	}
 
-		if ( this.isValidId( item_id ) ) {
-			return this.request( args );
-		}
+	build_find_args( query_params = {} ) {
+		return {
+			path: addQueryArgs( `${ this.path }/find`, query_params ),
+			method: 'GET',
+		};
 	}
 
 	create( body = {}, { signal } = {} ) {
-		if ( Object.keys( body ).length === 0 ) {
-			throw new Error( 'Body cannot be empty' );
-		}
-
-		const args = {
+		if ( Object.keys( body ).length === 0 ) throw new Error( 'Body cannot be empty' );
+		return this.request({
 			path: this.path,
 			method: 'POST',
 			data: body,
 			signal,
-		};
-
-		return this.request( args );
+		});
 	}
 
-	isValidId( id ) {
-		const check_id = parseInt( id );
-		if ( Number.isInteger( check_id ) && check_id > 0 ) {
-			return true;
-		}
+	update( item_id, body = {} ) {
+		if ( Object.keys( body ).length === 0 ) throw new Error( 'Body cannot be empty' );
+		if ( ! this.is_valid_id( item_id ) ) return;
+		return this.request({
+			path: `${ this.path }/${ item_id }`,
+			method: 'PUT',
+			data: body,
+		});
+	}
 
-		return false;
+	remove( item_id ) {
+		if ( ! this.is_valid_id( item_id ) ) return;
+		return this.request({
+			path: addQueryArgs( `${ this.path }/${ item_id }`, { hard: 1 } ),
+			method: 'DELETE',
+		});
+	}
+
+	is_valid_id( id ) {
+		const check_id = parseInt( id, 10 );
+		return Number.isInteger( check_id ) && check_id > 0;
 	}
 }

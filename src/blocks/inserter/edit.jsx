@@ -14,7 +14,7 @@ import { useFetch } from '@wpfn/hooks';
 import {assembleContent} from '../../utils';
 
 const Edit = ({ attributes, setAttributes, clientId }) => {
-	const { id, block_id, margin, padding, border, borderRadius, backgroundColor, hidden } = attributes;
+	const { id, block_id, card_block_id, margin, padding, border, borderRadius, backgroundColor, hidden } = attributes;
 	
 	const style = {
 		...(backgroundColor && { backgroundColor }),
@@ -34,8 +34,9 @@ const Edit = ({ attributes, setAttributes, clientId }) => {
 	}, [block_id, clientId, setAttributes]);
 
 	const [content, setContent] = useState('');
-
-	const { data, loading, error } = useFetch('cards', { id });
+	
+	const query = id ? { id } : { block_id: card_block_id };
+	const { data, loading, error } = useFetch('cards', query );
 
 	useEffect(() => {
 		if (!data?.items) return;
