@@ -53,7 +53,7 @@ const Edit = ({ attributes, setAttributes, clientId }) => {
 
 	const handleSearchOnChange = (selectedItem) => {
 		if (!selectedItem) return;
-		setAttributes({ id: selectedItem.id });
+		setAttributes({ id: selectedItem.id, card_block_id: selectedItem.block_id });
 		setContent(assembleContent(selectedItem));
 	};
 
