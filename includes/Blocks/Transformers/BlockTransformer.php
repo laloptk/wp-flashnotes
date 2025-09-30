@@ -1,5 +1,5 @@
 <?php
-namespace WPFlashNotes\Blocks;
+namespace WPFlashNotes\Blocks\Transformers;
 
 class BlockTransformer {
 
@@ -35,9 +35,9 @@ class BlockTransformer {
         }
 
         // Recurse into innerBlocks
-        if (!empty($block['innerBlocks'])) {
+        /*if (!empty($block['innerBlocks'])) {
             $block['innerBlocks'] = $this->transformTree($block['innerBlocks']);
-        }
+        }*/
 
         return $block;
     }

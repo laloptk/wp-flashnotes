@@ -51,7 +51,6 @@ class CardSetRelationsRepository {
 			$set_id
 		);
 
-        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		$res = $this->wpdb->query( $sql );
 		if ( $res === false ) {
 			throw new Exception( 'Attach failed: ' . ( $this->wpdb->last_error ?: 'unknown DB error' ) );
