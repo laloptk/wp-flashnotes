@@ -1,6 +1,27 @@
 <?php
 
+
+use WPFlashNotes\Events\EventHandler;
 use WPFlashNotes\DataBase\PropagationService;
+use WPFlashNotes\Repos\CardsRepository;
+use WPFlashNotes\Repos\NotesRepository;
+use WPFlashNotes\Repos\SetsRepository;
+use WPFlashNotes\Repos\CardSetRelationsRepository;
+use WPFlashNotes\Repos\NoteSetRelationsRepository;
+use WPFlashNotes\Repos\ObjectUsageRepository;
+
+$propagation = new PropagationService(
+    new CardsRepository(),
+    new NotesRepository(),
+    new SetsRepository(),
+    new CardSetRelationsRepository(),
+    new NoteSetRelationsRepository(),
+    new ObjectUsageRepository()
+);
+
+$event_handler = new EventHandler($propagation);
+$event_handler->register();
+/*use WPFlashNotes\DataBase\PropagationService;
 use WPFlashNotes\Repos\CardsRepository;
 use WPFlashNotes\Repos\NotesRepository;
 use WPFlashNotes\Repos\SetsRepository;
@@ -80,4 +101,4 @@ function sync_post( $post_id, $post, $update ) {
 }
 
 add_action( 'save_post', 'sync_post', 10, 3 );
-add_action( 'save_post_studyset', 'sync_studyset', 10, 3 );
+add_action( 'save_post_studyset', 'sync_studyset', 10, 3 );*/

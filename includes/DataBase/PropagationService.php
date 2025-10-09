@@ -39,18 +39,24 @@ class PropagationService {
         $set_row = null;
         $set_id = null;
         
-        if($post->post_type === 'studyset') {
+        if($post->post_type === 'studyset' && $post->post_status !== 'auto-draft') {
             $set_row = $this->sets->get_by_set_post_id( $post_id );
 
             if( empty($set_row) ) {
                 $set_id = $this->sets->upsert_by_set_post_id(array(
                     'title' => ! empty( $post->post_title ) ? $post->post_title : 'Untitled',
-                    'origin_post_id' => $post_id,
+                    'post_id' => $post_id,
                     'set_post_id' => $post_id,
                     'user_id' => $post->post_author,
                 ));
             } else {
                 $set_id = $set_row['id'];
+                if(isset($set_row['title']) && $set_row['title'] !== $post->post_title) {
+                    $this->sets->update(
+                    $set_id, 
+                    array('title' => $post->post_title)
+                    );
+                }
             }
         }
         
