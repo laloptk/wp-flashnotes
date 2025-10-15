@@ -4,24 +4,34 @@ namespace WPFlashNotes\Blocks\Transformers;
 use WPFlashNotes\Interfaces\BlockTransformStrategy;
 
 class CardBlockStrategy implements BlockTransformStrategy {
-    public function supports( array $block ): bool {
-        return ($block['blockName'] ?? null) === 'wpfn/card';
-    }
+	public function supports( array $block ): bool {
+		return ( $block['blockName'] ?? null ) === 'wpfn/card';
+	}
 
-    public function transform( array $block ): array {
-        $attrs = $block['attrs'] ?? [];
+	public function transform( array $block ): array {
+		$attrs             = $block['attrs'] ?? [];
+		$origin_block_id   = $attrs['block_id'] ?? null;          // card's block_id (from origin post)
+		$inserter_block_id = wp_generate_uuid4();                 // new block_id for the inserter
+		$card_id           = $attrs['id'] ?? null;                 // may be null until propagation
 
-        return [
-            'blockName'    => 'wpfn/inserter',
-            'attrs'        => [
-                'object_type'   => 'card',
-                'id'            => $attrs['id']        ?? null, // may be null now; resolved in propagation
-                'block_id'      => $attrs['block_id']  ?? null, // inserter's own identifier (can reuse)
-                'card_block_id' => $attrs['block_id']  ?? null, // origin card block_id reference
-            ],
-            'innerBlocks'  => [],
-            'innerHTML'    => '',
-            'innerContent' => [],
-        ];
-    }
+		// Exact placeholder markup that your save() emits (no inline styles).
+		$placeholder = sprintf(
+			'<div class="wp-block-wpfn-inserter wpfn-card" data-id="%s" data-block-id="%s"></div>',
+			esc_attr( $card_id ?? '' ),
+			esc_attr( $inserter_block_id )
+		);
+
+		return [
+			'blockName'    => 'wpfn/inserter',
+			'attrs'        => [
+				'object_type'   => 'card',
+				'id'            => $card_id,             // null now; will resolve later / or via render() fallback
+				'block_id'      => $inserter_block_id,   // inserter’s own identifier
+				'card_block_id' => $origin_block_id,     // reference to the origin card’s block id
+			],
+			'innerBlocks'  => [],
+			'innerHTML'    => $placeholder,
+			'innerContent' => [ $placeholder ],
+		];
+	}
 }

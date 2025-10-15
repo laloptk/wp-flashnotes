@@ -6,22 +6,25 @@ use WPFlashNotes\BaseClasses\BaseBlock;
 use WPFlashNotes\Repos\CardsRepository;
 
 final class InserterBlock extends BaseBlock {
+
 	protected function get_block_folder_name(): string {
 		return 'inserter';
 	}
 
 	public function render( $attributes, $content, $block ) {
-		if ( empty( $attributes['id'] ) ) {
-			return '<p>' . esc_html__( 'No card selected.', 'wp-flashnotes' ) . '</p>';
+		$cards_repo = new CardsRepository();
+		$card       = null;
+
+		// Try to resolve card by ID first, fallback to block_id
+		if ( ! empty( $attributes['id'] ) ) {
+			$card_id = (int) $attributes['id'];
+			$card    = $cards_repo->read( $card_id );
+		} elseif ( ! empty( $attributes['card_block_id'] ) ) {
+			$card = $cards_repo->get_by_block_id( $attributes['card_block_id'] );
 		}
 
-		$card_id = intval( $attributes['id'] );
-
-		$cards_repo = new CardsRepository();
-		$card       = $cards_repo->read( $card_id );
-
 		if ( ! $card ) {
-			return '<p>' . esc_html__( 'Card not found.', 'wp-flashnotes' ) . '</p>';
+			return '<p>' . esc_html__( 'No card selected.', 'wp-flashnotes' ) . '</p>';
 		}
 
 		// Assemble markup
@@ -34,7 +37,7 @@ final class InserterBlock extends BaseBlock {
 
 		$markup .= $card['explanation'] ?? '';
 
-		// Parse and render blocks safely
+		// Parse and render nested blocks safely
 		$blocks = parse_blocks( $markup );
 		$html   = '';
 
@@ -51,11 +54,9 @@ final class InserterBlock extends BaseBlock {
 
 		// Borders
 		if ( ! empty( $attributes['border'] ) ) {
-			// If shorthand (all sides)
 			if ( ! empty( $attributes['border']['width'] ) && ! empty( $attributes['border']['color'] ) ) {
 				$style .= 'border:' . esc_attr( $attributes['border']['width'] ) . ' solid ' . esc_attr( $attributes['border']['color'] ) . ';';
 			} else {
-				// Per-side borders
 				foreach ( $attributes['border'] as $side => $val ) {
 					if ( ! empty( $val['width'] ) && ! empty( $val['color'] ) ) {
 						$style .= 'border-' . esc_attr( $side ) . ':' . esc_attr( $val['width'] ) . ' solid ' . esc_attr( $val['color'] ) . ';';
@@ -107,7 +108,7 @@ final class InserterBlock extends BaseBlock {
 		return sprintf(
 			'<div class="wpfn-card" style="%s" data-id="%d">%s</div>',
 			esc_attr( $style ),
-			$card_id,
+			(int) ( $card['id'] ?? 0 ),
 			$html
 		);
 	}

@@ -15,7 +15,7 @@ import {assembleContent} from '../../utils';
 
 const Edit = ({ attributes, setAttributes, clientId }) => {
 	const { id, block_id, card_block_id, margin, padding, border, borderRadius, backgroundColor, hidden } = attributes;
-	
+	console.log(attributes);
 	const style = {
 		...(backgroundColor && { backgroundColor }),
 		...(normalizeStyle('border', border) || {}),
@@ -38,19 +38,19 @@ const Edit = ({ attributes, setAttributes, clientId }) => {
 	const query = id ? { id } : { block_id: card_block_id };
 	const { data, loading, error } = useFetch('cards', query );
 
+	console.log(data);
+
 	useEffect(() => {
-		if (!data?.items) return;
+		if (!data?.items?.length) return;
 
-		const selected = Object.values(data.items).find(
-			(item) => String(item.id) === String(id)
-		);
-
-		if (!selected) return;
-
-		if (!content || String(selected.id) === String(id)) {
-			setContent(assembleContent(selected));
+		const item = data.items[0];
+		if (!item) {
+			return;
 		}
-	}, [data, id]);
+		
+		setAttributes({id: item.id});
+		setContent(assembleContent(item));
+	}, [data]);
 
 	const handleSearchOnChange = (selectedItem) => {
 		if (!selectedItem) return;
@@ -70,9 +70,9 @@ const Edit = ({ attributes, setAttributes, clientId }) => {
 			</InspectorControls>
 
 			<div className="wpfn-rendered-card">
-				{!id && <p>{__('Select a card…', 'wp-flashnotes')}</p>}
-				{id && loading && !content && <Spinner />}
 				{error && <p className="error">{String(error)}</p>}
+				{loading && <Spinner />}
+				{!loading && !content && <p>{__('No content available.', 'wp-flashnotes')}</p>}
 				{content && <SafeHTMLContent content={content} classes="wpfn-card-html" />}
 			</div>
 		</div>

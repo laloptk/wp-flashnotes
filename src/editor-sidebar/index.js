@@ -30,8 +30,6 @@ function FlashNotesSidebar() {
 
     const { record, loading, error } = useRelatedPost( { postType, postId } );
 
-    console.log(record);
-
     const handleSetUpsert = useCallback(
         ( type ) => {
             const path = `/wp/v2/studyset${

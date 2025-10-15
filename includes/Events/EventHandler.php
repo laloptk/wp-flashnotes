@@ -76,8 +76,10 @@ class EventHandler {
 		$parsed_blocks    = BlockFormatter::parse_raw( $origin_post->post_content );
 		$flashnote_blocks = BlockFormatter::filter_flashnotes_blocks( $parsed_blocks );
 		$transformed_blocks = $this->transformer->transformTree( $flashnote_blocks );
+		error_log("This comes from the event handler, it is the transformed blocks: " . json_encode($transformed_blocks));
 		$normalized_blocks = BlockFormatter::normalize_to_objects($transformed_blocks);
 		$serialized_content = BlockFormatter::serialize( $transformed_blocks );
+		error_log("This comes from the event handler, it is the serialized content: " . json_encode($serialized_content));
 
 		$existing_set_id = $this->propagation->get_studyset_for_origin_post( $origin_post_id );
 
