@@ -25,9 +25,9 @@ class CardBlockStrategy implements BlockTransformStrategy {
 			'blockName'    => 'wpfn/inserter',
 			'attrs'        => [
 				'object_type'   => 'card',
-				'id'            => $card_id,             // null now; will resolve later / or via render() fallback
-				'block_id'      => $inserter_block_id,   // inserter’s own identifier
-				'card_block_id' => $origin_block_id,     // reference to the origin card’s block id
+				'id'            => $card_id,             
+				'block_id'      => $inserter_block_id,   
+				'card_block_id' => $origin_block_id,
 			],
 			'innerBlocks'  => [],
 			'innerHTML'    => $placeholder,
