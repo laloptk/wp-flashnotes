@@ -1,9 +1,5 @@
 import { InspectorControls, PanelColorSettings } from '@wordpress/block-editor';
-import { 
-	PanelBody, 
-	BorderBoxControl,
-	BoxControl
-} from '@wordpress/components';
+import { PanelBody, BorderBoxControl, BoxControl } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 
 const StyleControls = ( { attributes, setAttributes } ) => {
@@ -18,9 +14,7 @@ const StyleControls = ( { attributes, setAttributes } ) => {
 				<BorderBoxControl
 					__next40pxDefaultSize
 					label={ __( 'Border', 'wp-flashnotes' ) }
-					onChange={ ( val ) =>
-						setAttributes( { border: val } )
-					}
+					onChange={ ( val ) => setAttributes( { border: val } ) }
 					value={ border }
 					enableStyle={ false }
 				/>
@@ -47,6 +41,6 @@ const StyleControls = ( { attributes, setAttributes } ) => {
 			</PanelBody>
 		</InspectorControls>
 	);
-}
+};
 
 export default StyleControls;

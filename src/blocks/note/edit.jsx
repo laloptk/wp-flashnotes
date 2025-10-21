@@ -53,11 +53,13 @@ export default function Edit( { clientId, attributes, setAttributes } ) {
 		[ clientId ]
 	);
 
-	console.log(title);
+	console.log( title );
 
 	// Sync slot content → attributes
 	useEffect( () => {
-		if ( ! childBlocks.length ) return;
+		if ( ! childBlocks.length ) {
+			return;
+		}
 
 		let nextTitle = '';
 		let nextContent = '';
@@ -84,9 +86,18 @@ export default function Edit( { clientId, attributes, setAttributes } ) {
 
 	return (
 		<>
-			<VisibilityControls attributes={ attributes } setAttributes={ setAttributes } />
-			<SpacingControls attributes={ attributes } setAttributes={ setAttributes } />
-			<StyleControls attributes={ attributes } setAttributes={ setAttributes } />
+			<VisibilityControls
+				attributes={ attributes }
+				setAttributes={ setAttributes }
+			/>
+			<SpacingControls
+				attributes={ attributes }
+				setAttributes={ setAttributes }
+			/>
+			<StyleControls
+				attributes={ attributes }
+				setAttributes={ setAttributes }
+			/>
 
 			<div { ...blockProps }>
 				<InnerBlocks

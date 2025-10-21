@@ -5,9 +5,9 @@ export default function save( { attributes } ) {
 
 	return (
 		<div
-			{ ...useBlockProps.save({
+			{ ...useBlockProps.save( {
 				className: 'wpfn-card',
-			}) }
+			} ) }
 			data-id={ id || '' }
 			data-block-id={ block_id || '' }
 		/>

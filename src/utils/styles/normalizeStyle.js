@@ -1,20 +1,20 @@
-import normalizeBorder from "./normalizeBorder";
-import normalizeBorderRadius from "./normalizeBorderRadius";
-import normalizeSpacing from "./normalizeSpacing";
+import normalizeBorder from './normalizeBorder';
+import normalizeBorderRadius from './normalizeBorderRadius';
+import normalizeSpacing from './normalizeSpacing';
 
 const styles = {
-    border: (border) => normalizeBorder(border),
-    margin: (margin) => normalizeSpacing(margin, 'margin'),
-    padding: (margin) => normalizeSpacing(margin, 'padding'),
-    borderRadius: (borderRadius) => normalizeBorderRadius(borderRadius)
+	border: ( border ) => normalizeBorder( border ),
+	margin: ( margin ) => normalizeSpacing( margin, 'margin' ),
+	padding: ( margin ) => normalizeSpacing( margin, 'padding' ),
+	borderRadius: ( borderRadius ) => normalizeBorderRadius( borderRadius ),
 };
 
-const normalizeStyle = (type = null, value = null) => {
-    if (type && value && typeof styles[type] === 'function') {
-        return styles[type](value);
-    }
+const normalizeStyle = ( type = null, value = null ) => {
+	if ( type && value && typeof styles[ type ] === 'function' ) {
+		return styles[ type ]( value );
+	}
 
-    return null;
-}
+	return null;
+};
 
 export default normalizeStyle;

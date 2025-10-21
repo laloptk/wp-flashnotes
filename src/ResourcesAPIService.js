@@ -15,20 +15,20 @@ export default class ResourceAPIService {
 
 	// GET /{type}?...
 	get( query_params = {}, { signal } = {} ) {
-		return this.request({
+		return this.request( {
 			path: addQueryArgs( this.path, query_params ),
 			method: 'GET',
 			signal,
-		});
+		} );
 	}
 
 	// GET /{type}/find?...
 	find( query_params = {}, { signal } = {} ) {
-		return this.request({
+		return this.request( {
 			path: addQueryArgs( `${ this.path }/find`, query_params ),
 			method: 'GET',
 			signal,
-		});
+		} );
 	}
 
 	// Optional: build args objects for useFetch (args-only variant)
@@ -47,39 +47,47 @@ export default class ResourceAPIService {
 	}
 
 	create( body = {}, { signal } = {} ) {
-		if ( Object.keys( body ).length === 0 ) throw new Error( 'Body cannot be empty' );
-		return this.request({
+		if ( Object.keys( body ).length === 0 ) {
+			throw new Error( 'Body cannot be empty' );
+		}
+		return this.request( {
 			path: this.path,
 			method: 'POST',
 			data: body,
 			signal,
-		});
+		} );
 	}
 
 	update( item_id, body = {} ) {
-		if ( Object.keys( body ).length === 0 ) throw new Error( 'Body cannot be empty' );
-		if ( ! this.is_valid_id( item_id ) ) return;
-		return this.request({
+		if ( Object.keys( body ).length === 0 ) {
+			throw new Error( 'Body cannot be empty' );
+		}
+		if ( ! this.is_valid_id( item_id ) ) {
+			return;
+		}
+		return this.request( {
 			path: `${ this.path }/${ item_id }`,
 			method: 'PUT',
 			data: body,
-		});
+		} );
 	}
 
-	upsert(body = {}, item_id = null) {
+	upsert( body = {}, item_id = null ) {
 		if ( ! this.is_valid_id( item_id ) ) {
-			return this.create(body)
-		} 
-		
+			return this.create( body );
+		}
+
 		return this.update( item_id, body );
 	}
 
 	remove( item_id ) {
-		if ( ! this.is_valid_id( item_id ) ) return;
-		return this.request({
+		if ( ! this.is_valid_id( item_id ) ) {
+			return;
+		}
+		return this.request( {
 			path: addQueryArgs( `${ this.path }/${ item_id }`, { hard: 1 } ),
 			method: 'DELETE',
-		});
+		} );
 	}
 
 	is_valid_id( id ) {
