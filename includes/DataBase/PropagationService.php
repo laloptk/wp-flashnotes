@@ -95,7 +95,8 @@ class PropagationService {
     }
 
     public function get_studyset_for_origin_post( int $origin_post_id ): ?int {
-        return $this->sets->get_by_post_id( $origin_post_id );
+        $row = $this->sets->get_by_post_id( $origin_post_id );
+        return $row ? (int) $row['set_post_id'] : null;
     }
 
     public function register_post_set_relation(array $data) {

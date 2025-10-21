@@ -66,6 +66,14 @@ export default class ResourceAPIService {
 		});
 	}
 
+	upsert(body = {}, item_id = null) {
+		if ( ! this.is_valid_id( item_id ) ) {
+			return this.create(body)
+		} 
+		
+		return this.update( item_id, body );
+	}
+
 	remove( item_id ) {
 		if ( ! this.is_valid_id( item_id ) ) return;
 		return this.request({

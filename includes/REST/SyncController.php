@@ -9,6 +9,7 @@ use WPFlashNotes\Events\EventHandler;
 use WP_REST_Request;
 use WP_REST_Response;
 use WP_Error;
+use WP_REST_Server;
 
 /**
  * SyncController
@@ -34,17 +35,15 @@ class SyncController extends BaseController {
 			'/studyset/sync',
 			[
 				[
-					'methods'             => 'POST',
+					'methods'             => WP_REST_Server::CREATABLE,
 					'callback'            => [ $this, 'handle_generate_studyset' ],
-					'permission_callback' => [ $this, 'require_logged_in' ],
+					'permission_callback' => function () {
+						return current_user_can( 'edit_posts' );
+					},
 					'args'                => [
-						'post_id' => [
+						'origin_post_id' => [
 							'type'     => 'integer',
 							'required' => true,
-						],
-						'title' => [
-							'type'     => 'string',
-							'required' => false,
 						],
 					],
 				],
@@ -59,16 +58,22 @@ class SyncController extends BaseController {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function handle_generate_studyset( WP_REST_Request $request ): WP_REST_Response|WP_Error {
-		$post_id = $this->absint_or_null( $request['post_id'] );
-		if ( ! $post_id ) {
-			return $this->err( 'invalid_post_id', 'Post ID required.', 400 );
+		$origin_post_id = $this->absint_or_null( $request['origin_post_id'] );
+
+		if ( ! $origin_post_id ) {
+			return $this->err( 'invalid_origin_post_id', 'Origin post ID required.', 400 );
 		}
 
-		$title     = sanitize_text_field( $request['title'] ?? '' );
+		$origin_post = get_post( $origin_post_id );
+		if ( ! $origin_post ) {
+			return $this->err( 'invalid_post', 'Origin post not found.', 404 );
+		}
+
 		$author_id = get_current_user_id();
+		$title     = get_the_title( $origin_post );
 
 		$result = $this->event_handler->generate_studyset_from_origin(
-			$post_id,
+			$origin_post_id,
 			$title,
 			$author_id
 		);
