@@ -19,15 +19,17 @@ class EventHandler {
 		$this->propagation = $propagation;
 
 		// Strategies are UI/domain-level; safe to instantiate directly here.
-		$this->transformer = new BlockTransformer( [
-			new CardBlockStrategy(),
+		$this->transformer = new BlockTransformer(
+			array(
+				new CardBlockStrategy(),
 			// Add NoteBlockStrategy when ready.
-		] );
+			)
+		);
 	}
 
 	public function register(): void {
-		add_action( 'save_post', [ $this, 'on_save_non_studyset' ], 10, 3 );
-		add_action( 'save_post_studyset', [ $this, 'on_save_studyset' ], 10, 3 );
+		add_action( 'save_post', array( $this, 'on_save_non_studyset' ), 10, 3 );
+		add_action( 'save_post_studyset', array( $this, 'on_save_studyset' ), 10, 3 );
 		// Deletion hooks will be added later.
 	}
 
@@ -77,10 +79,10 @@ class EventHandler {
 		$origin_post = get_post( $origin_post_id );
 
 		if ( ! $origin_post ) {
-			return [
+			return array(
 				'ok'     => false,
 				'reason' => 'missing_origin',
-			];
+			);
 		}
 
 		// Ensure title is never empty.
@@ -99,52 +101,60 @@ class EventHandler {
 			$existing_set_post = get_post( $existing_set_id );
 			$studyset_title    = $existing_set_post ? $existing_set_post->post_title : get_the_title( $origin_post );
 
-			wp_update_post( [
-				'ID'           => (int) $existing_set_id,
-				'post_content' => $serialized_content,
-			] );
+			wp_update_post(
+				array(
+					'ID'           => (int) $existing_set_id,
+					'post_content' => $serialized_content,
+				)
+			);
 
-			$this->propagation->register_post_set_relation( [
-				'title'        => $studyset_title,
-				'post_id'      => $origin_post_id,
-				'set_post_id'  => (int) $existing_set_id,
-				'user_id'      => $author_id,
-			] );
+			$this->propagation->register_post_set_relation(
+				array(
+					'title'       => $studyset_title,
+					'post_id'     => $origin_post_id,
+					'set_post_id' => (int) $existing_set_id,
+					'user_id'     => $author_id,
+				)
+			);
 
 			$this->propagation->propagate( $existing_set_id, $normalized_blocks );
 
-			return [
+			return array(
 				'ok'          => true,
 				'studyset_id' => (int) $existing_set_id,
 				'action'      => 'updated',
-			];
+			);
 		}
 
 		// Studyset does not exist – create it using origin post title.
 		$studyset_title = get_the_title( $origin_post );
 
-		$studyset_id = wp_insert_post( [
-			'post_type'    => 'studyset',
-			'post_title'   => $studyset_title,
-			'post_status'  => $status,
-			'post_author'  => $author_id,
-			'post_content' => $serialized_content,
-		] );
+		$studyset_id = wp_insert_post(
+			array(
+				'post_type'    => 'studyset',
+				'post_title'   => $studyset_title,
+				'post_status'  => $status,
+				'post_author'  => $author_id,
+				'post_content' => $serialized_content,
+			)
+		);
 
-		$this->propagation->register_post_set_relation( [
-			'title'        => $studyset_title,
-			'post_id'      => $origin_post_id,
-			'set_post_id'  => (int) $studyset_id,
-			'user_id'      => $author_id,
-		] );
+		$this->propagation->register_post_set_relation(
+			array(
+				'title'       => $studyset_title,
+				'post_id'     => $origin_post_id,
+				'set_post_id' => (int) $studyset_id,
+				'user_id'     => $author_id,
+			)
+		);
 
 		$this->propagation->propagate( $studyset_id, $normalized_blocks );
 
-		return [
+		return array(
 			'ok'          => true,
 			'studyset_id' => (int) $studyset_id,
 			'action'      => 'created',
-		];
+		);
 	}
 
 	protected function is_auto_generated_post( int $post_id ): bool {

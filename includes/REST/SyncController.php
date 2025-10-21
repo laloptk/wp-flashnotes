@@ -33,21 +33,21 @@ class SyncController extends BaseController {
 		register_rest_route(
 			$this->namespace,
 			'/studyset/sync',
-			[
-				[
+			array(
+				array(
 					'methods'             => WP_REST_Server::CREATABLE,
-					'callback'            => [ $this, 'handle_generate_studyset' ],
+					'callback'            => array( $this, 'handle_generate_studyset' ),
 					'permission_callback' => function () {
 						return current_user_can( 'edit_posts' );
 					},
-					'args'                => [
-						'origin_post_id' => [
+					'args'                => array(
+						'origin_post_id' => array(
 							'type'     => 'integer',
 							'required' => true,
-						],
-					],
-				],
-			]
+						),
+					),
+				),
+			)
 		);
 	}
 

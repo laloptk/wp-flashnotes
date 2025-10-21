@@ -137,21 +137,23 @@ class SyncManager {
 
 		// Ensure wpfn_sets row exists (handles direct studyset creation)
 		$set_row = $this->sets->get_by_set_post_id( $set_post_id );
-		if ( empty($set_row) ) {
+		if ( empty( $set_row ) ) {
 			$author = (int) get_post_field( 'post_author', $set_post_id );
 
-			$set_id = $this->sets->upsert_by_set_post_id([
-				'title'       => get_the_title( $set_post_id ),
-				'post_id'     => $origin_post_id > 0 ? $origin_post_id : $set_post_id,
-				'set_post_id' => $set_post_id,
-				'user_id'     => $author,
-			]);
+			$set_id = $this->sets->upsert_by_set_post_id(
+				array(
+					'title'       => get_the_title( $set_post_id ),
+					'post_id'     => $origin_post_id > 0 ? $origin_post_id : $set_post_id,
+					'set_post_id' => $set_post_id,
+					'user_id'     => $author,
+				)
+			);
 		}
 
-		error_log(print_r($set_row, true));
-		
+		error_log( print_r( $set_row, true ) );
+
 		// Ensure correct origin id when saving from studysets
-		if($origin_post_id === $set_post_id) {
+		if ( $origin_post_id === $set_post_id ) {
 			$origin_post_id = $set_row['post_id'];
 		}
 
@@ -215,7 +217,7 @@ class SyncManager {
 		}
 
 		// Propagate from studyset → origin post if needed
-		//$this->sync_post_from_studyset( $origin_post_id, $set_post_id, $flashnote_blocks );
+		// $this->sync_post_from_studyset( $origin_post_id, $set_post_id, $flashnote_blocks );
 	}
 
 	public function sync_on_deleted( WP_Post $post ): void {
@@ -234,8 +236,9 @@ class SyncManager {
 		}
 	}
 
-	/*public function sync_post_from_studyset(int $origin_post_id, int $set_post_id, array $parsed_set_blocks) {
-		
+	/*
+	public function sync_post_from_studyset(int $origin_post_id, int $set_post_id, array $parsed_set_blocks) {
+
 		if ( get_post_type($set_post_id) !== 'studyset' || $set_post_id === $origin_post_id) {
 			return;
 		}
@@ -252,18 +255,18 @@ class SyncManager {
 		]);
 	}*/
 
-	public function update_post($post_id, $args) {
+	public function update_post( $post_id, $args ) {
 		static $is_syncing = false;
 
 		// Prevent recursion
-		if ($is_syncing) {
+		if ( $is_syncing ) {
 			return 0; // or return early without updating
 		}
 
 		$is_syncing = true;
 
-		$args['ID'] = $post_id;
-		$post_updated = wp_update_post($args, true);
+		$args['ID']   = $post_id;
+		$post_updated = wp_update_post( $args, true );
 
 		$is_syncing = false;
 

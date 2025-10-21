@@ -11,17 +11,18 @@ use WPFlashNotes\Repos\NoteSetRelationsRepository;
 use WPFlashNotes\Repos\ObjectUsageRepository;
 
 $propagation = new PropagationService(
-    new CardsRepository(),
-    new NotesRepository(),
-    new SetsRepository(),
-    new CardSetRelationsRepository(),
-    new NoteSetRelationsRepository(),
-    new ObjectUsageRepository()
+	new CardsRepository(),
+	new NotesRepository(),
+	new SetsRepository(),
+	new CardSetRelationsRepository(),
+	new NoteSetRelationsRepository(),
+	new ObjectUsageRepository()
 );
 
-$event_handler = new EventHandler($propagation);
+$event_handler = new EventHandler( $propagation );
 $event_handler->register();
-/*use WPFlashNotes\DataBase\PropagationService;
+/*
+use WPFlashNotes\DataBase\PropagationService;
 use WPFlashNotes\Repos\CardsRepository;
 use WPFlashNotes\Repos\NotesRepository;
 use WPFlashNotes\Repos\SetsRepository;
@@ -44,60 +45,60 @@ function wpfn_should_propagate( int $post_id, WP_Post $post ): bool {
 }
 
 function sync_studyset( $post_id, $post, $update ) {
-    if ( ! wpfn_should_propagate( $post_id, $post ) ) {
-        return;
-    }
-    $from_sidebar = did_action( 'wpfn_button_transform_context_start' ) > 0;
-    $transformer = new BlockTransformer( [
-        new CardBlockStrategy(),
-        // add NoteBlockStrategy when ready
-    ] );
+	if ( ! wpfn_should_propagate( $post_id, $post ) ) {
+		return;
+	}
+	$from_sidebar = did_action( 'wpfn_button_transform_context_start' ) > 0;
+	$transformer = new BlockTransformer( [
+		new CardBlockStrategy(),
+		// add NoteBlockStrategy when ready
+	] );
 
-    $propagation = new PropagationService(
-        new CardsRepository(),
-        new NotesRepository(),
-        new SetsRepository(),
-        new CardSetRelationsRepository(),
-        new NoteSetRelationsRepository(),
-        new ObjectUsageRepository()
-    );
+	$propagation = new PropagationService(
+		new CardsRepository(),
+		new NotesRepository(),
+		new SetsRepository(),
+		new CardSetRelationsRepository(),
+		new NoteSetRelationsRepository(),
+		new ObjectUsageRepository()
+	);
 
-    $parsed_blocks     = BlockFormatter::parse_raw( $post->post_content );
-    $flashnote_blocks  = BlockFormatter::filter_flashnotes_blocks( $parsed_blocks );
-    $final_blocks = $flashnote_blocks;
+	$parsed_blocks     = BlockFormatter::parse_raw( $post->post_content );
+	$flashnote_blocks  = BlockFormatter::filter_flashnotes_blocks( $parsed_blocks );
+	$final_blocks = $flashnote_blocks;
 
-    if( $from_sidebar > 0) {
-        $final_blocks = $transformer->transformTree( $flashnote_blocks );
-    }
-    
-    $normalized_blocks = BlockFormatter::normalize_to_objects( $final_blocks );
+	if( $from_sidebar > 0) {
+		$final_blocks = $transformer->transformTree( $flashnote_blocks );
+	}
 
-    $propagation->propagate( $post_id, $normalized_blocks );
+	$normalized_blocks = BlockFormatter::normalize_to_objects( $final_blocks );
+
+	$propagation->propagate( $post_id, $normalized_blocks );
 }
 
 function sync_post( $post_id, $post, $update ) {
-    if ( ! wpfn_should_propagate( $post_id, $post ) ) {
-        return;
-    }
+	if ( ! wpfn_should_propagate( $post_id, $post ) ) {
+		return;
+	}
 
-    if ( $post->post_type === 'studyset' ) {
-        return;
-    }
+	if ( $post->post_type === 'studyset' ) {
+		return;
+	}
 
-    $propagation = new PropagationService(
-        new CardsRepository(),
-        new NotesRepository(),
-        new SetsRepository(),
-        new CardSetRelationsRepository(),
-        new NoteSetRelationsRepository(),
-        new ObjectUsageRepository()
-    );
+	$propagation = new PropagationService(
+		new CardsRepository(),
+		new NotesRepository(),
+		new SetsRepository(),
+		new CardSetRelationsRepository(),
+		new NoteSetRelationsRepository(),
+		new ObjectUsageRepository()
+	);
 
-    $parsed_blocks     = BlockFormatter::parse_raw( $post->post_content );
-    $flashnote_blocks  = BlockFormatter::filter_flashnotes_blocks( $parsed_blocks );
-    $normalized_blocks = BlockFormatter::normalize_to_objects( $flashnote_blocks );
+	$parsed_blocks     = BlockFormatter::parse_raw( $post->post_content );
+	$flashnote_blocks  = BlockFormatter::filter_flashnotes_blocks( $parsed_blocks );
+	$normalized_blocks = BlockFormatter::normalize_to_objects( $flashnote_blocks );
 
-    $propagation->propagate( $post_id, $normalized_blocks );
+	$propagation->propagate( $post_id, $normalized_blocks );
 }
 
 add_action( 'save_post', 'sync_post', 10, 3 );

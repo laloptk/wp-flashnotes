@@ -22,7 +22,7 @@ abstract class BaseRepository {
 	 */
 	protected wpdb $wpdb;
 
-	protected static array $table_cols_cache = [];
+	protected static array $table_cols_cache = array();
 
 	public function __construct() {
 		global $wpdb;
@@ -241,7 +241,7 @@ abstract class BaseRepository {
 
 		$sql = "SELECT * FROM {$table}";
 
-		$where_str  = ! empty( $where_clauses )  ? implode( ' AND ', $where_clauses ) : '';
+		$where_str  = ! empty( $where_clauses ) ? implode( ' AND ', $where_clauses ) : '';
 		$search_str = ! empty( $search_clauses ) ? '(' . implode( ' OR ', $search_clauses ) . ')' : '';
 
 		$all_filters = array_filter( array( $where_str, $search_str ) );
@@ -371,13 +371,13 @@ abstract class BaseRepository {
 		return (bool) preg_match( '/^[A-Za-z_][A-Za-z0-9_]{0,63}$/', $name );
 	}
 
-	
+
 	protected function get_table_columns(): array {
 		$table = $this->get_table_name();
 
 		if ( ! isset( self::$table_cols_cache[ $table ] ) ) {
-			$columns = $this->wpdb->get_col( "SHOW COLUMNS FROM `{$table}`", 0 );
-			self::$table_cols_cache[ $table ] = is_array( $columns ) ? $columns : [];
+			$columns                          = $this->wpdb->get_col( "SHOW COLUMNS FROM `{$table}`", 0 );
+			self::$table_cols_cache[ $table ] = is_array( $columns ) ? $columns : array();
 		}
 
 		return self::$table_cols_cache[ $table ];

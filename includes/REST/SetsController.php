@@ -173,7 +173,7 @@ class SetsController extends BaseController {
 
 		$id = $req['set_post_id'];
 
-		if(! empty($req['post_id'])) {
+		if ( ! empty( $req['post_id'] ) ) {
 			$id = $req['post_id'];
 		}
 
@@ -250,7 +250,7 @@ class SetsController extends BaseController {
 
 	public function get_by_post_id( WP_REST_Request $req ) {
 		$post_id = absint( $req['post_id'] );
-		$row         = $this->repo->get_by_post_id( $post_id );
+		$row     = $this->repo->get_by_post_id( $post_id );
 		return $this->ok( array( 'item' => $row ?: null ) );
 	}
 

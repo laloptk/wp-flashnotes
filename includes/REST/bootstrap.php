@@ -40,10 +40,10 @@ function wpfn_default_rest_controllers(): array {
 		\WPFlashNotes\REST\TaxonomyRelationsController::class,
 
 		// Controllers requiring dependencies
-		[
+		array(
 			'class' => \WPFlashNotes\REST\SyncController::class,
-			'args'  => [ $event_handler ],
-		],
+			'args'  => array( $event_handler ),
+		),
 	);
 }
 

@@ -19,7 +19,7 @@ class BlockFormatter {
 				$blocks,
 				fn( $block ) => in_array(
 					$block['blockName'] ?? '',
-					[ 'wpfn/note', 'wpfn/card', 'wpfn/inserter' ],
+					array( 'wpfn/note', 'wpfn/card', 'wpfn/inserter' ),
 					true
 				)
 			)
@@ -27,29 +27,29 @@ class BlockFormatter {
 	}
 
 	public static function normalize_to_objects( array $blocks ): array {
-		$result = [];
+		$result = array();
 
 		foreach ( $blocks as $block ) {
-			$attrs    = $block['attrs'] ?? [];
+			$attrs    = $block['attrs'] ?? array();
 			$block_id = $attrs['block_id'] ?? null;
 			if ( ! $block_id ) {
 				continue;
 			}
 
-			$result[] = [
+			$result[] = array(
 				'object_type' => str_replace( 'wpfn/', '', $block['blockName'] ?? '' ),
 				'object_id'   => $attrs['id'] ?? null,
 				'block_id'    => $block_id,
 				'attrs'       => $attrs,
-			];
+			);
 		}
 
 		return $result;
 	}
 
 	public static function from_post_content( string $content ): array {
-		$all       = self::parse_raw( $content );
-		$filtered  = self::filter_flashnotes_blocks( $all );
+		$all      = self::parse_raw( $content );
+		$filtered = self::filter_flashnotes_blocks( $all );
 		return self::normalize_to_objects( $filtered );
 	}
 }

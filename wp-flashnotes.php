@@ -42,36 +42,39 @@ add_action(
 	}
 );
 
-add_action( 'enqueue_block_editor_assets', function() {
-    wp_enqueue_script(
-        'wp-flashnotes-sidebar',
-        WPFN_PLUGIN_URL . 'build/editor-sidebar.js',
-        [ 
-			'wp-plugins',
-            'wp-editor',
-            'wp-components',
-            'wp-element',
-            'wp-i18n',
-	    ],
-        '1.0.0',
-        true
-    );
-} );
+add_action(
+	'enqueue_block_editor_assets',
+	function () {
+		wp_enqueue_script(
+			'wp-flashnotes-sidebar',
+			WPFN_PLUGIN_URL . 'build/editor-sidebar.js',
+			array(
+				'wp-plugins',
+				'wp-editor',
+				'wp-components',
+				'wp-element',
+				'wp-i18n',
+			),
+			'1.0.0',
+			true
+		);
+	}
+);
 
 add_filter(
-    'rest_pre_insert_studyset',
-    function( $prepared_post, $request ) {
-        // Defensive: only touch post_content if present
-        if ( ! empty( $prepared_post->post_content ) ) {
-            $blocks = \WPFlashNotes\Helpers\BlockFormatter::parse_raw( $prepared_post->post_content );
-            $filtered = \WPFlashNotes\Helpers\BlockFormatter::filter_flashnotes_blocks( $blocks );
+	'rest_pre_insert_studyset',
+	function ( $prepared_post, $request ) {
+		// Defensive: only touch post_content if present
+		if ( ! empty( $prepared_post->post_content ) ) {
+			$blocks   = \WPFlashNotes\Helpers\BlockFormatter::parse_raw( $prepared_post->post_content );
+			$filtered = \WPFlashNotes\Helpers\BlockFormatter::filter_flashnotes_blocks( $blocks );
 
-            // If you want to persist only flashnote blocks
-            $prepared_post->post_content = \WPFlashNotes\Helpers\BlockFormatter::serialize( $filtered );
-        }
+			// If you want to persist only flashnote blocks
+			$prepared_post->post_content = \WPFlashNotes\Helpers\BlockFormatter::serialize( $filtered );
+		}
 
-        return $prepared_post;
-    },
-    10,
-    3
+		return $prepared_post;
+	},
+	10,
+	3
 );

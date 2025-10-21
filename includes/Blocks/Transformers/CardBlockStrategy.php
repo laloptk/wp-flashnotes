@@ -9,7 +9,7 @@ class CardBlockStrategy implements BlockTransformStrategy {
 	}
 
 	public function transform( array $block ): array {
-		$attrs             = $block['attrs'] ?? [];
+		$attrs             = $block['attrs'] ?? array();
 		$origin_block_id   = $attrs['block_id'] ?? null;          // card's block_id (from origin post)
 		$inserter_block_id = wp_generate_uuid4();                 // new block_id for the inserter
 		$card_id           = $attrs['id'] ?? null;                 // may be null until propagation
@@ -21,17 +21,17 @@ class CardBlockStrategy implements BlockTransformStrategy {
 			esc_attr( $inserter_block_id )
 		);
 
-		return [
+		return array(
 			'blockName'    => 'wpfn/inserter',
-			'attrs'        => [
+			'attrs'        => array(
 				'object_type'   => 'card',
-				'id'            => $card_id,             
-				'block_id'      => $inserter_block_id,   
+				'id'            => $card_id,
+				'block_id'      => $inserter_block_id,
 				'card_block_id' => $origin_block_id,
-			],
-			'innerBlocks'  => [],
+			),
+			'innerBlocks'  => array(),
 			'innerHTML'    => $placeholder,
-			'innerContent' => [ $placeholder ],
-		];
+			'innerContent' => array( $placeholder ),
+		);
 	}
 }

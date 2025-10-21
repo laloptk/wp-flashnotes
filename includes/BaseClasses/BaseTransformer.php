@@ -1,9 +1,8 @@
-<?php 
+<?php
 
 namespace WPFlashNotes\BaseClasses;
 
 class BaseTransformer {
-    public function get_origin_blocktree() {
-        
-    }
+	public function get_origin_blocktree() {
+	}
 }
