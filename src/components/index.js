@@ -4,3 +4,4 @@ export { default as StyleControls } from './controls/StyleControls';
 export { default as CardsNotesSelect } from './CardsNotesSelect';
 export { default as CardsNotesSearch } from './CardsNotesSearch';
 export { default as SafeHTMLContent } from './SafeHTMLContent';
+export { default as Annotation } from './Annotation';

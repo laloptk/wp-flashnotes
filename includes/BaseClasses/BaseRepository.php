@@ -22,6 +22,8 @@ abstract class BaseRepository {
 	 */
 	protected wpdb $wpdb;
 
+	protected static array $table_cols_cache = array();
+
 	public function __construct() {
 		global $wpdb;
 		$this->wpdb = $wpdb;
@@ -214,58 +216,59 @@ abstract class BaseRepository {
 
 		$args = array_merge( $default_args, $args );
 
-		$clauses        = array();
-		$search_clauses = array();
-		$values         = array();
+		$where_clauses   = array();
+		$search_clauses  = array();
+		$prepared_values = array();
 
-		// Where clauses
-		foreach ( $args['where'] as $col => $val ) {
-			if ( ! $this->is_valid_identifier( $col ) ) {
+		// WHERE clauses
+		foreach ( $args['where'] as $where_column => $where_value ) {
+			if ( ! $this->column_exists( $where_column ) ) {
 				continue;
 			}
-			$placeholder = is_int( $val ) ? '%d' : '%s';
-			$clauses[]   = "`{$col}` = {$placeholder}";
-			$values[]    = $val;
+			$placeholder       = is_int( $where_value ) ? '%d' : '%s';
+			$where_clauses[]   = "`{$where_column}` = {$placeholder}";
+			$prepared_values[] = $where_value;
 		}
 
-		// Search clauses: column => string
-		foreach ( $args['search'] as $col => $str ) {
-			if ( ! $this->is_valid_identifier( $col ) || $str === null ) {
+		// SEARCH clauses (LIKE)
+		foreach ( $args['search'] as $search_column => $search_term ) {
+			if ( ! $this->column_exists( $search_column ) || $search_term === null ) {
 				continue;
 			}
-
-			$search_clauses[] = "`{$col}` LIKE %s";
-			$values[]         = '%' . $this->wpdb->esc_like( $str ) . '%';
+			$search_clauses[]  = "`{$search_column}` LIKE %s";
+			$prepared_values[] = '%' . $this->wpdb->esc_like( (string) $search_term ) . '%';
 		}
 
-		// Build query
-		$sql                = "SELECT * FROM {$table}";
-		$clauses_str        = ! empty( $clauses ) ? implode( ' AND ', $clauses ) : '';
-		$search_clauses_str = ! empty( $search_clauses ) ? '(' . implode( ' OR ', $search_clauses ) . ')' : '';
-		$parts              = array_filter( array( $clauses_str, $search_clauses_str ) );
-		if ( ! empty( $parts ) ) {
-			$sql .= ' WHERE ' . implode( ' AND ', $parts );
+		$sql = "SELECT * FROM {$table}";
+
+		$where_str  = ! empty( $where_clauses ) ? implode( ' AND ', $where_clauses ) : '';
+		$search_str = ! empty( $search_clauses ) ? '(' . implode( ' OR ', $search_clauses ) . ')' : '';
+
+		$all_filters = array_filter( array( $where_str, $search_str ) );
+		if ( ! empty( $all_filters ) ) {
+			$sql .= ' WHERE ' . implode( ' AND ', $all_filters );
 		}
 
 		// Pagination
 		if ( $args['limit'] !== null ) {
-			$sql .= $this->wpdb->prepare( ' LIMIT %d', $args['limit'] );
+			$sql .= $this->wpdb->prepare( ' LIMIT %d', (int) $args['limit'] );
 			if ( $args['offset'] !== null ) {
-				$sql .= $this->wpdb->prepare( ' OFFSET %d', $args['offset'] );
+				$sql .= $this->wpdb->prepare( ' OFFSET %d', (int) $args['offset'] );
 			}
 		}
 
-		// Execute
-		return $this->wpdb->get_results(
-			$this->wpdb->prepare( $sql, ...$values ),
+		$rows = $this->wpdb->get_results(
+			$this->wpdb->prepare( $sql, ...$prepared_values ),
 			ARRAY_A
-		) ?: array();
+		);
+
+		return $rows ?: array();
 	}
+
 
 	public function get_by_column( string $column, $value, ?int $limit = null ) {
 		// Simple safeguard: check column name exists in DB
-		$columns = $this->wpdb->get_col( "SHOW COLUMNS FROM {$this->get_table_name()}", 0 );
-		if ( ! in_array( $column, $columns, true ) ) {
+		if ( ! $this->column_exists( $column ) ) {
 			throw new Exception( "Invalid column name: {$column}" );
 		}
 
@@ -368,6 +371,18 @@ abstract class BaseRepository {
 		return (bool) preg_match( '/^[A-Za-z_][A-Za-z0-9_]{0,63}$/', $name );
 	}
 
+
+	protected function get_table_columns(): array {
+		$table = $this->get_table_name();
+
+		if ( ! isset( self::$table_cols_cache[ $table ] ) ) {
+			$columns                          = $this->wpdb->get_col( "SHOW COLUMNS FROM `{$table}`", 0 );
+			self::$table_cols_cache[ $table ] = is_array( $columns ) ? $columns : array();
+		}
+
+		return self::$table_cols_cache[ $table ];
+	}
+
 	/**
 	 * Checks if a column exists in the table.
 	 * Cheap and sufficient for deciding whether to set updated_at on soft delete.
@@ -376,10 +391,7 @@ abstract class BaseRepository {
 		if ( ! $this->is_valid_identifier( $column ) ) {
 			return false;
 		}
-		$table = $this->get_table_name();
-		// Works on MySQL/MariaDB; fine for production. In Studio/SQLite this will just return false.
-        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-		$row = $this->wpdb->get_row( "SHOW COLUMNS FROM `{$table}` LIKE '{$column}'" );
-		return ! empty( $row );
+		$columns = $this->get_table_columns();
+		return in_array( $column, $columns, true );
 	}
 }

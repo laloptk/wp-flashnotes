@@ -49,15 +49,28 @@ class SetsController extends BaseController {
 			)
 		);
 
-		// GET /wpfn/v1/sets/by-set-post/{set_post_id}
+		// GET /wpfn/v1/sets/by-set-post-id/{set_post_id}
 		register_rest_route(
 			$this->namespace,
-			'/' . $this->rest_base . '/by-set-post/(?P<set_post_id>\d+)',
+			'/' . $this->rest_base . '/by-set-post-id/(?P<set_post_id>\d+)',
 			array(
 				array(
 					'methods'             => 'GET',
-					'callback'            => array( $this, 'get_by_set_post' ),
-					'permission_callback' => array( $this, 'perm_edit_setpost_from_param' ),
+					'callback'            => array( $this, 'get_by_set_post_id' ),
+					'permission_callback' => array( $this, 'perm_edit_post_from_param' ),
+				),
+			)
+		);
+
+		// GET /wpfn/v1/sets/by-post-id/{post_id}
+		register_rest_route(
+			$this->namespace,
+			'/' . $this->rest_base . '/by-post-id/(?P<post_id>\d+)',
+			array(
+				array(
+					'methods'             => 'GET',
+					'callback'            => array( $this, 'get_by_post_id' ),
+					'permission_callback' => array( $this, 'perm_edit_post_from_param' ),
 				),
 			)
 		);
@@ -151,12 +164,20 @@ class SetsController extends BaseController {
 		return $this->can_edit_post( $set_post_id );
 	}
 
-	public function perm_edit_setpost_from_param( WP_REST_Request $req ) {
+	public function perm_edit_post_from_param( WP_REST_Request $req ) {
 		$auth = $this->require_logged_in();
+
 		if ( $auth !== true ) {
 			return $auth;
 		}
-		return $this->can_edit_post( absint( $req['set_post_id'] ) );
+
+		$id = $req['set_post_id'];
+
+		if ( ! empty( $req['post_id'] ) ) {
+			$id = $req['post_id'];
+		}
+
+		return $this->can_edit_post( absint( $id ) );
 	}
 
 	public function perm_edit_set_from_id( WP_REST_Request $req ) {
@@ -221,9 +242,15 @@ class SetsController extends BaseController {
 		);
 	}
 
-	public function get_by_set_post( WP_REST_Request $req ) {
+	public function get_by_set_post_id( WP_REST_Request $req ) {
 		$set_post_id = absint( $req['set_post_id'] );
 		$row         = $this->repo->get_by_set_post_id( $set_post_id );
+		return $this->ok( array( 'item' => $row ?: null ) );
+	}
+
+	public function get_by_post_id( WP_REST_Request $req ) {
+		$post_id = absint( $req['post_id'] );
+		$row     = $this->repo->get_by_post_id( $post_id );
 		return $this->ok( array( 'item' => $row ?: null ) );
 	}
 

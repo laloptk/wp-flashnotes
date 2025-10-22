@@ -13,6 +13,13 @@
     "block_id": {
       "type": "string"
     },
+    "card_block_id": {
+      "type": "string"
+    },
+    "object_type": {
+      "type": "string",
+      "default": "card"
+    },
     "margin": {
       "type": "object",
       "default": {}

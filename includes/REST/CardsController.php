@@ -63,6 +63,19 @@ class CardsController extends BaseController {
 			)
 		);
 
+		// GET /wpfn/v1/cards/find
+		register_rest_route(
+			$this->namespace,
+			'/' . $this->rest_base . '/find',
+			array(
+				array(
+					'methods'             => 'GET',
+					'callback'            => array( $this, 'find_cards' ),
+					'permission_callback' => array( $this, 'require_logged_in' ),
+				),
+			)
+		);
+
 		// GET /wpfn/v1/cards/{id}
 		register_rest_route(
 			$this->namespace,
@@ -146,6 +159,40 @@ class CardsController extends BaseController {
 			: $this->err( 'forbidden', 'You cannot access this card.', 403 );
 	}
 
+	public function perm_row_from_block_id( \WP_REST_Request $request ) {
+		$block_id = $request['block_id'];
+
+		if ( ! is_string( $block_id ) || $block_id === '' ) {
+			return new \WP_Error(
+				'rest_invalid_param',
+				__( 'Invalid block_id parameter.', 'wp-flashnotes' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		// Try to load the row
+		$row = $this->repo->get_by_block_id( $block_id );
+
+		if ( ! $row ) {
+			return new \WP_Error(
+				'rest_not_found',
+				__( 'Card not found.', 'wp-flashnotes' ),
+				array( 'status' => 404 )
+			);
+		}
+
+		if ( ! current_user_can( 'read' ) ) {
+			return new \WP_Error(
+				'rest_forbidden',
+				__( 'Sorry, you are not allowed to view cards.', 'wp-flashnotes' ),
+				array( 'status' => 403 )
+			);
+		}
+
+		return true;
+	}
+
+
 	// ---- Handlers ----------------------------------------------------------
 
 	public function list_items( WP_REST_Request $req ) {
@@ -197,6 +244,65 @@ class CardsController extends BaseController {
 		}
 
 		return $this->ok( array( 'item' => $row ) );
+	}
+
+	public function find_cards( \WP_REST_Request $request ) {
+		$params = $request->get_params();
+
+		$args = array(
+			'where'  => array(),
+			'search' => array(),
+			'limit'  => null,
+			'offset' => null,
+		);
+
+		foreach ( $params as $param_key => $param_value ) {
+			if ( 'limit' === $param_key ) {
+				$limit = absint( $param_value );
+				if ( $limit > 0 ) {
+					$args['limit'] = $limit;
+				}
+				continue;
+			}
+
+			if ( 'offset' === $param_key ) {
+				$offset = absint( $param_value );
+				if ( $offset > 0 ) { // do not include OFFSET 0
+					$args['offset'] = $offset;
+				}
+				continue;
+			}
+
+			if ( 's' === $param_key && is_string( $param_value ) ) {
+				$term = trim( $param_value );
+				if ( '' !== $term ) {
+					$args['search'] = array(
+						'question'    => $term,
+						'answer'      => $term,
+						'explanation' => $term,
+					);
+				}
+				continue;
+			}
+
+			if ( '' === $param_value || null === $param_value ) {
+				continue;
+			}
+
+			if ( is_string( $param_value ) && preg_match( '/^-?\d+$/', $param_value ) ) {
+				$param_value = (int) $param_value;
+			}
+
+			$args['where'][ $param_key ] = $param_value;
+		}
+
+		$rows = $this->repo->find( $args );
+
+		return $this->ok(
+			array(
+				'items' => $rows,
+			)
+		);
 	}
 
 	public function create_item( $req ) {

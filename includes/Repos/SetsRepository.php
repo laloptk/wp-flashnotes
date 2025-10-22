@@ -156,7 +156,7 @@ class SetsRepository extends BaseRepository {
 	 * Fetch all sets that originate from a given content post (non-unique).
 	 */
 	public function get_by_post_id( int $post_id ): ?array {
-		return $this->get_by_column( 'post_id', $post_id );
+		return $this->get_by_column( 'post_id', $post_id, 1 );
 	}
 
 	/**

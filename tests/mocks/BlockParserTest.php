@@ -1,7 +1,7 @@
 <?php
 namespace WPFlashNotes\Helpers;
 
-class BlockParser {
+class BlockFormatter {
 
 	private static array $mock_blocks = [];
 

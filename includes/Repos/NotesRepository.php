@@ -82,11 +82,11 @@ class NotesRepository extends BaseRepository {
 	/**
 	 * Upsert a note row based on a block's attributes.
 	 *
-	 * @param array $block Parsed block array (from BlockParser).
+	 * @param array $block Parsed block array (from BlockFormatter).
 	 * @return int Note ID (row id in wpfn_notes).
 	 */
 	public function upsert_from_block( array $block ): int {
-		$attrs   = $block['attrs'] ?: array();
+		$attrs    = $block['attrs'] ?: array();
 		$block_id = $block['block_id'] ?: null;
 
 		if ( ! $block_id ) {

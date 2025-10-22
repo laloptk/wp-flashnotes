@@ -12,7 +12,7 @@ use WPFlashNotes\Repos\SetsRepository;
 use WPFlashNotes\Repos\NoteSetRelationsRepository;
 use WPFlashNotes\Repos\CardSetRelationsRepository;
 use WPFlashNotes\Repos\ObjectUsageRepository;
-use WPFlashNotes\Helpers\BlockParser;
+use WPFlashNotes\Helpers\BlockFormatter;
 
 class SyncManagerTest extends WP_UnitTestCase {
 
@@ -104,7 +104,7 @@ class SyncManagerTest extends WP_UnitTestCase {
 			[ 'blockName' => 'wpfn/card', 'block_id' => 'c1', 'attrs' => [ 'question' => 'Q' ] ],
 			[ 'blockName' => 'wpfn/note', 'block_id' => 'n1', 'attrs' => [ 'title' => 'T' ] ],
 		];
-		BlockParser::set_mock_blocks( $blocks );
+		BlockFormatter::set_mock_blocks( $blocks );
 
 		$manager->sync_studyset( 555, 'dummy' );
 	}

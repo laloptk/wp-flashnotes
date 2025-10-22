@@ -8,7 +8,7 @@ use WPFlashNotes\Repos\SetsRepository;
 use WPFlashNotes\Repos\NoteSetRelationsRepository;
 use WPFlashNotes\Repos\CardSetRelationsRepository;
 use WPFlashNotes\Repos\ObjectUsageRepository;
-use WPFlashNotes\Helpers\BlockParser;
+use WPFlashNotes\Helpers\BlockFormatter;
 use WPFlashNotes\Helpers\BlockHelpers;
 
 class SyncManager {
@@ -48,11 +48,11 @@ class SyncManager {
 		$author = (int) ( get_post_field( 'post_author', $origin_post_id ) ?: get_current_user_id() );
 
 		// 1. Parse post into blocks
-		$all_blocks       = BlockParser::parse_raw( $content );
-		$flashnote_blocks = BlockParser::filter_flashnote_blocks( $all_blocks );
+		$all_blocks       = BlockFormatter::parse_raw( $content );
+		$flashnote_blocks = BlockFormatter::filter_flashnotes_blocks( $all_blocks );
 
 		// 2. Only flashnotes go into the studyset post_content
-		$flashnote_content = serialize_blocks( $flashnote_blocks );
+		$flashnote_content = BlockFormatter::serialize( $flashnote_blocks );
 
 		// 3. Get existing studyset (if any)
 		$existing = $this->sets->get_by_post_id( $origin_post_id );
@@ -113,13 +113,21 @@ class SyncManager {
 		return array();
 	}
 
+	public function create_studyset() {
+		// Put the insert for the studyset here (breaking ensure_set_for_post)
+	}
+
+	public function sync_studyset() {
+		// Put the insert for the studyset here (breaking ensure_set_for_post)
+	}
+
 	public function sync_pipeline( array $ids, string $content ): void {
 		$set_post_id    = $ids['set_post_id'];
 		$origin_post_id = $ids['origin_post_id'];
 
-		$all_blocks       = BlockParser::parse_raw( $content );
-		$flashnote_blocks = BlockParser::filter_flashnote_blocks( $all_blocks );
-		$objects          = BlockParser::normalize_to_objects( $flashnote_blocks );
+		$all_blocks       = BlockFormatter::parse_raw( $content );
+		$flashnote_blocks = BlockFormatter::filter_flashnotes_blocks( $all_blocks );
+		$objects          = BlockFormatter::normalize_to_objects( $flashnote_blocks );
 
 		$this->remove_invalid_relationships( $origin_post_id, $objects );
 
@@ -129,21 +137,23 @@ class SyncManager {
 
 		// Ensure wpfn_sets row exists (handles direct studyset creation)
 		$set_row = $this->sets->get_by_set_post_id( $set_post_id );
-		if ( empty($set_row) ) {
+		if ( empty( $set_row ) ) {
 			$author = (int) get_post_field( 'post_author', $set_post_id );
 
-			$set_id = $this->sets->upsert_by_set_post_id([
-				'title'       => get_the_title( $set_post_id ),
-				'post_id'     => $origin_post_id > 0 ? $origin_post_id : $set_post_id,
-				'set_post_id' => $set_post_id,
-				'user_id'     => $author,
-			]);
+			$set_id = $this->sets->upsert_by_set_post_id(
+				array(
+					'title'       => get_the_title( $set_post_id ),
+					'post_id'     => $origin_post_id > 0 ? $origin_post_id : $set_post_id,
+					'set_post_id' => $set_post_id,
+					'user_id'     => $author,
+				)
+			);
 		}
 
-		error_log(print_r($set_row, true));
-		
+		error_log( print_r( $set_row, true ) );
+
 		// Ensure correct origin id when saving from studysets
-		if($origin_post_id === $set_post_id) {
+		if ( $origin_post_id === $set_post_id ) {
 			$origin_post_id = $set_row['post_id'];
 		}
 
@@ -207,11 +217,11 @@ class SyncManager {
 		}
 
 		// Propagate from studyset → origin post if needed
-		$this->sync_post_from_studyset( $origin_post_id, $set_post_id, $flashnote_blocks );
+		// $this->sync_post_from_studyset( $origin_post_id, $set_post_id, $flashnote_blocks );
 	}
 
 	public function sync_on_deleted( WP_Post $post ): void {
-		$blocks = BlockParser::from_post_content( $post->post_content );
+		$blocks = BlockFormatter::from_post_content( $post->post_content );
 		foreach ( $blocks as $block ) {
 			// DB Cascading takes care of removing invalid relationships
 			$this->maybe_tag_as_orphan( $block );
@@ -226,14 +236,15 @@ class SyncManager {
 		}
 	}
 
+	/*
 	public function sync_post_from_studyset(int $origin_post_id, int $set_post_id, array $parsed_set_blocks) {
-		
+
 		if ( get_post_type($set_post_id) !== 'studyset' || $set_post_id === $origin_post_id) {
 			return;
 		}
 
 		$origin_post = get_post($origin_post_id);
-		$parsed_origin_blocks = BlockParser::parse_raw($origin_post->post_content);
+		$parsed_origin_blocks = BlockFormatter::parse_raw($origin_post->post_content);
 		// TODO: check the serialization is not being duplicated
 		$merged_blocks = BlockHelpers::merge_gutenberg_blocks($parsed_origin_blocks, $parsed_set_blocks);
 		error_log(print_r($merged_blocks, true));
@@ -242,20 +253,20 @@ class SyncManager {
 		$this->update_post($origin_post_id, [
 			'post_content' => $updated_post_content
 		]);
-	}
+	}*/
 
-	public function update_post($post_id, $args) {
+	public function update_post( $post_id, $args ) {
 		static $is_syncing = false;
 
 		// Prevent recursion
-		if ($is_syncing) {
+		if ( $is_syncing ) {
 			return 0; // or return early without updating
 		}
 
 		$is_syncing = true;
 
-		$args['ID'] = $post_id;
-		$post_updated = wp_update_post($args, true);
+		$args['ID']   = $post_id;
+		$post_updated = wp_update_post( $args, true );
 
 		$is_syncing = false;
 

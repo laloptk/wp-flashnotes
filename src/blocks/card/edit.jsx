@@ -12,27 +12,35 @@ import { normalizeText } from '../../utils';
 import {
 	VisibilityControls,
 	SpacingControls,
-	StyleControls
+	StyleControls,
 } from '@wpfn/components';
 import { __ } from '@wordpress/i18n';
 
 export default function Edit( { clientId, attributes, setAttributes } ) {
-	const { block_id, margin, padding, border, borderRadius, backgroundColor, hidden } = attributes;
+	const {
+		block_id,
+		margin,
+		padding,
+		border,
+		borderRadius,
+		backgroundColor,
+		hidden,
+	} = attributes;
 	const [ stage, setStage ] = useState( 0 );
 	const nextStage = () => setStage( ( stage + 1 ) % 3 );
-	
+
 	const style = {
-		...(backgroundColor && { backgroundColor }),
-		...(normalizeStyle('border', border) || {}),
-		...(normalizeStyle('margin', margin) || {}),
-		...(normalizeStyle('padding', padding) || {}),
-		...(normalizeStyle('borderRadius', borderRadius) || {}),
+		...( backgroundColor && { backgroundColor } ),
+		...( normalizeStyle( 'border', border ) || {} ),
+		...( normalizeStyle( 'margin', margin ) || {} ),
+		...( normalizeStyle( 'padding', padding ) || {} ),
+		...( normalizeStyle( 'borderRadius', borderRadius ) || {} ),
 	};
 
-	const blockProps = useBlockProps({
+	const blockProps = useBlockProps( {
 		className: 'wpfn-card',
-		style
-	});
+		style,
+	} );
 
 	// Assign UUID once
 	useEffect( () => {
@@ -117,7 +125,11 @@ export default function Edit( { clientId, attributes, setAttributes } ) {
 					templateLock="all"
 				/>
 				<Button onClick={ nextStage }>
-					{ stage === 0 ? 'Show Answer' : stage === 1 ? 'Show Explanation' : 'Back to Question' }
+					{ stage === 0
+						? 'Show Answer'
+						: stage === 1
+						? 'Show Explanation'
+						: 'Back to Question' }
 				</Button>
 			</div>
 		</>

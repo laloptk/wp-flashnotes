@@ -123,7 +123,7 @@ class CardsRepository extends BaseRepository {
 	/**
 	 * Upsert a card row based on a block's attributes.
 	 *
-	 * @param array $block Parsed block array (from BlockParser).
+	 * @param array $block Parsed block array (from BlockFormatter).
 	 * @return int Card ID (row id in wpfn_cards).
 	 */
 	public function upsert_from_block( array $block ): int {
