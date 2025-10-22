@@ -108,13 +108,6 @@ class SetsRepository extends BaseRepository {
 	}
 
 	/**
-	 * Sets table has NO soft-delete column -> fallback to hard delete.
-	 */
-	protected function soft_delete_column(): ?string {
-		return null;
-	}
-
-	/**
 	 * Insert with required fields enforced and uniqueness check for set_post_id.
 	 */
 	public function insert( array $data ): int {

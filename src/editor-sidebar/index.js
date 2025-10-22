@@ -81,7 +81,7 @@ function FlashNotesSidebar() {
 		}
 	}, [ postType ] );
 
-	// --- Relationship and identity logic ---
+	// Relationship and identity logic
 	const hasRelationship = Boolean( relationship?.item );
 	const studysetId =
 		records.studysetRecord?.id ?? relationship?.item?.set_post_id ?? null;
