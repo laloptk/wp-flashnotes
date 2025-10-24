@@ -63,6 +63,7 @@ class PropagationService {
 		}
 
 		foreach ( $blocks as $block ) {
+			error_log(json_encode($block));
 			if ( $block['object_type'] === 'card' ) {
 				$card_id = $this->cards->upsert_from_block( $block );
 

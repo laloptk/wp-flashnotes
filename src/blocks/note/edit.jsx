@@ -53,8 +53,6 @@ export default function Edit( { clientId, attributes, setAttributes } ) {
 		[ clientId ]
 	);
 
-	console.log( title );
-
 	// Sync slot content → attributes
 	useEffect( () => {
 		if ( ! childBlocks.length ) {

@@ -25,7 +25,7 @@ const Edit = ( { attributes, setAttributes, clientId } ) => {
 		backgroundColor,
 		hidden,
 	} = attributes;
-	console.log( attributes );
+
 	const style = {
 		...( backgroundColor && { backgroundColor } ),
 		...( normalizeStyle( 'border', border ) || {} ),
@@ -49,8 +49,6 @@ const Edit = ( { attributes, setAttributes, clientId } ) => {
 
 	const query = id ? { id } : { block_id: card_block_id };
 	const { data, loading, error } = useFetch( 'cards', query );
-
-	console.log( data );
 
 	useEffect( () => {
 		if ( ! data?.items?.length ) {
