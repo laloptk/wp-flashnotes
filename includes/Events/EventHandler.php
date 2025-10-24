@@ -30,7 +30,7 @@ class EventHandler {
 	public function register(): void {
 		add_action( 'save_post', array( $this, 'on_save_non_studyset' ), 10, 3 );
 		add_action( 'save_post_studyset', array( $this, 'on_save_studyset' ), 10, 3 );
-		// Deletion hooks will be added later.
+		add_action( 'after_delete_post', array($this, 'on_delete_post'), 10, 2);
 	}
 
 	public function on_save_non_studyset( int $post_id, WP_Post $post, bool $update ): void {
@@ -155,6 +155,16 @@ class EventHandler {
 			'studyset_id' => (int) $studyset_id,
 			'action'      => 'created',
 		);
+	}
+
+	public function on_delete_post(int $post_id, WP_Post $post): void {
+		$parsed_blocks      = BlockFormatter::parse_raw( $post->post_content );
+		$flashnote_blocks   = BlockFormatter::filter_flashnotes_blocks( $parsed_blocks );
+		$normalized_blocks  = BlockFormatter::normalize_to_objects( $flashnote_blocks );
+		
+		foreach($normalized_blocks as $block) {
+			$this->propagation->tag_as_orphan($block);
+		}
 	}
 
 	protected function is_auto_generated_post( int $post_id ): bool {

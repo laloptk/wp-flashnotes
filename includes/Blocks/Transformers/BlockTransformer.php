@@ -34,12 +34,6 @@ class BlockTransformer {
 			}
 		}
 
-		// Recurse into innerBlocks
-		/*
-		if (!empty($block['innerBlocks'])) {
-			$block['innerBlocks'] = $this->transformTree($block['innerBlocks']);
-		}*/
-
 		return $block;
 	}
 }

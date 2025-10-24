@@ -113,7 +113,7 @@ class PropagationService {
 		$related_in_db = $this->usage->get_relationships_by_column( 'block_id', $block['block_id'] );
 		$repo          = $block['object_type'] === 'card' ? $this->cards : $this->notes;
 		$flashnote     = $repo->get_by_column( 'block_id', $block['block_id'], 1 );
-
+		
 		if ( count( $related_in_db ) === 0 && ! empty( $flashnote ) ) {
 			$repo->update( $flashnote['id'], array( 'status' => 'orphan' ) );
 		}
