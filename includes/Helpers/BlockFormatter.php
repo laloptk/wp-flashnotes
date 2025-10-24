@@ -46,10 +46,4 @@ class BlockFormatter {
 
 		return $result;
 	}
-
-	public static function from_post_content( string $content ): array {
-		$all      = self::parse_raw( $content );
-		$filtered = self::filter_flashnotes_blocks( $all );
-		return self::normalize_to_objects( $filtered );
-	}
 }
