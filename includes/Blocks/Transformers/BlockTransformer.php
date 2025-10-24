@@ -2,8 +2,7 @@
 namespace WPFlashNotes\Blocks\Transformers;
 
 class BlockTransformer {
-
-	/** @var BlockTransformStrategy[] */
+	
 	private array $strategies;
 
 	public function __construct( array $strategies ) {

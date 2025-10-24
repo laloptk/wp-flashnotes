@@ -38,11 +38,7 @@ class EventHandler {
 			return;
 		}
 
-		$parsed_blocks     = BlockFormatter::parse_raw( $post->post_content );
-		$flashnote_blocks  = BlockFormatter::filter_flashnotes_blocks( $parsed_blocks );
-		$normalized_blocks = BlockFormatter::normalize_to_objects( $flashnote_blocks );
-
-		$this->propagation->propagate( $post_id, $normalized_blocks );
+		$this->process_flashnotes($post_id, $post, $update);
 	}
 
 	public function on_save_studyset( int $post_id, WP_Post $post, bool $update ): void {
@@ -55,11 +51,7 @@ class EventHandler {
 			return;
 		}
 
-		$parsed_blocks     = BlockFormatter::parse_raw( $post->post_content );
-		$flashnote_blocks  = BlockFormatter::filter_flashnotes_blocks( $parsed_blocks );
-		$normalized_blocks = BlockFormatter::normalize_to_objects( $flashnote_blocks );
-
-		$this->propagation->propagate( $post_id, $normalized_blocks );
+		$this->process_flashnotes($post_id, $post, $update);
 	}
 
 	/**
@@ -158,13 +150,37 @@ class EventHandler {
 	}
 
 	public function on_delete_post(int $post_id, WP_Post $post): void {
-		$parsed_blocks      = BlockFormatter::parse_raw( $post->post_content );
-		$flashnote_blocks   = BlockFormatter::filter_flashnotes_blocks( $parsed_blocks );
-		$normalized_blocks  = BlockFormatter::normalize_to_objects( $flashnote_blocks );
+		if ( empty( $post->post_content ) ) {
+			return;
+		}
+
+		$normalized_blocks = $this->normalize_post_content($post->post_content);
 		
 		foreach($normalized_blocks as $block) {
 			$this->propagation->tag_as_orphan($block);
 		}
+	}
+
+	private function process_flashnotes(int $post_id, WP_Post $post, bool $update): void {
+		$normalized_blocks = $this->normalize_post_content($post->post_content);
+		
+		try {
+			if ($update) {
+				$this->propagation->remove_invalid_relationships($post_id, $normalized_blocks);
+			}
+			
+			$this->propagation->propagate($post_id, $normalized_blocks);
+		} catch (\Throwable $e) {
+			error_log("[FlashNotes] Propagation error on post {$post_id}: {$e->getMessage()}");
+		}
+	}
+
+	private function normalize_post_content( $post_content ): array {
+		$parsed_blocks     = BlockFormatter::parse_raw( $post_content );
+		$flashnote_blocks  = BlockFormatter::filter_flashnotes_blocks( $parsed_blocks );
+		$normalized_blocks = BlockFormatter::normalize_to_objects( $flashnote_blocks );
+
+		return $normalized_blocks;
 	}
 
 	protected function is_auto_generated_post( int $post_id ): bool {

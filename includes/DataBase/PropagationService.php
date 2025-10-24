@@ -96,6 +96,41 @@ class PropagationService {
 		}
 	}
 
+	public function remove_invalid_relationships( int $post_id, array $parsed_objects ): void {
+		// Build an associative map of [block_id][object_type] => true
+		$blocks_in_post = [];
+
+		foreach ( $parsed_objects as $block ) {
+			$block_id    = $block['object_type'] === 'inserter' 
+				? $block['attrs']['card_block_id'] 
+				: ($block['block_id'] ?? null);
+			
+			$object_type = $block['object_type'] ?? null;
+
+			if ( $block_id && $object_type ) {
+				$blocks_in_post[$block_id][$object_type] = true;
+			}
+		}
+
+		// Fetch existing relationships for this post
+		$items_in_db = $this->usage->get_relationships_by_column( 'post_id', $post_id );
+
+		foreach ( $items_in_db as $item ) {
+			$block_id    = $item['block_id'];
+			$object_type = $item['object_type'];
+
+			// If the pair doesn’t exist in the new post content, remove it
+			if ( empty( $blocks_in_post[$block_id][$object_type] ) ) {
+				$this->usage->detach(
+					$object_type,
+					$item['object_id'],
+					$item['post_id'],
+					$block_id
+				);
+			}
+		}
+	}
+
 	public function get_studyset_for_origin_post( int $origin_post_id ): ?int {
 		$row = $this->sets->get_by_post_id( $origin_post_id );
 		return $row ? (int) $row['set_post_id'] : null;
@@ -113,7 +148,7 @@ class PropagationService {
 		$related_in_db = $this->usage->get_relationships_by_column( 'block_id', $block['block_id'] );
 		$repo          = $block['object_type'] === 'card' ? $this->cards : $this->notes;
 		$flashnote     = $repo->get_by_column( 'block_id', $block['block_id'], 1 );
-		
+
 		if ( count( $related_in_db ) === 0 && ! empty( $flashnote ) ) {
 			$repo->update( $flashnote['id'], array( 'status' => 'orphan' ) );
 		}
