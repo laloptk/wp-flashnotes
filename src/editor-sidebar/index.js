@@ -79,8 +79,6 @@ function FlashNotesSidebar() {
 		}
 	}, [ postType ] );
 
-	console.log(relationship);
-
 	// Relationship and identity logic
 	const hasRelationship = Boolean( relationship?.item );
 	const studysetId =

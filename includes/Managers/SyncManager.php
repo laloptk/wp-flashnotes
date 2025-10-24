@@ -150,8 +150,6 @@ class SyncManager {
 			);
 		}
 
-		error_log( print_r( $set_row, true ) );
-
 		// Ensure correct origin id when saving from studysets
 		if ( $origin_post_id === $set_post_id ) {
 			$origin_post_id = $set_row['post_id'];
