@@ -36,13 +36,11 @@ function FlashNotesSidebar() {
 		setSyncBtnText( __( 'Syncing…', 'wp-flashnotes' ) );
 
 		try {
-			// Determine the origin post ID:
-			// - If record exists (studyset context): use its originPostRecord.id
-			// - Otherwise (regular post): use current postId
-			const originPostId =
-				records.originPostRecord?.id ??
-				( postType !== 'studyset' ? postId : null );
-
+			const originPostId = 
+				relationship?.item?.post_id 
+				? relationship.item.post_id 
+				: (postType !== 'studyset' ? postId : null);
+			
 			if ( ! originPostId ) {
 				throw new Error( 'Missing origin post ID' );
 			}
@@ -81,7 +79,7 @@ function FlashNotesSidebar() {
 		}
 	}, [ postType ] );
 
-	// --- Relationship and identity logic ---
+	// Relationship and identity logic
 	const hasRelationship = Boolean( relationship?.item );
 	const studysetId =
 		records.studysetRecord?.id ?? relationship?.item?.set_post_id ?? null;
