@@ -91,6 +91,8 @@ class PropagationService {
 					$this->usage->attach( 'inserter', (int) $block['attrs']['id'], $post_id, $block['attrs']['card_block_id'] );
 				}
 
+				$this->tag_as_active($block);
+
 				continue;
 			}
 		}
@@ -155,6 +157,18 @@ class PropagationService {
 		}
 	}
 
+	public function orphan_by_post_id( int $post_id ): void {
+		$relationships = $this->usage->get_relationships_by_column( 'post_id', $post_id );
+
+		if ( empty( $relationships ) ) {
+			return;
+		}
+
+		foreach ( $relationships as $item ) {
+			$this->tag_as_orphan( $item );
+		}
+	}
+
 	public function tag_as_orphan( $block ) {
 		if ( $block['object_type'] === 'inserter' ) {
 			return;
@@ -175,14 +189,14 @@ class PropagationService {
 		}
 
 		// Object type must come from inserter attributes
-		$type      = $block['attrs']['object_type'] ?? null;
 		$object_id = $block['attrs']['id'] ?? null;
+		$is_card = isset($block['attrs']['card_block_id']);
 
-		if ( ! $type || ! $object_id ) {
+		if ( empty( $object_id ) ) {
 			return;
 		}
 
-		$repo    = $type === 'card' ? $this->cards : $this->notes;
+		$repo    = $is_card ? $this->cards : $this->notes;
 		$current = $repo->read( $object_id );
 
 		if ( $current && $current['status'] === 'orphan' ) {

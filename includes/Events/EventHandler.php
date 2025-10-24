@@ -153,6 +153,8 @@ class EventHandler {
 		$this->propagation->update_post_set_relationship($post_id, $post->post_type);
 		
 		if ( empty( $post->post_content ) ) {
+			$this->propagation->orphan_by_post_id( $post_id );
+			
 			return;
 		}
 
