@@ -127,6 +127,8 @@ class PropagationService {
 					$item['post_id'],
 					$block_id
 				);
+
+				$this->tag_as_orphan($item);
 			}
 		}
 	}
@@ -138,6 +140,21 @@ class PropagationService {
 
 	public function register_post_set_relation( array $data ) {
 		return $this->sets->upsert_by_set_post_id( $data );
+	}
+
+	public function update_post_set_relationship(int $post_id, string $post_type): void {
+		if($post_type !== 'studyset') {
+			$relationship = $this->sets->get_by_post_id($post_id);
+
+			error_log(json_encode($relationship));
+			
+			if($relationship) {
+				$this->sets->update(
+					$relationship['id'], 
+					array('post_id' => $relationship['set_post_id'])
+				);
+			}
+		}
 	}
 
 	public function tag_as_orphan( $block ) {

@@ -150,6 +150,8 @@ class EventHandler {
 	}
 
 	public function on_delete_post(int $post_id, WP_Post $post): void {
+		$this->propagation->update_post_set_relationship($post_id, $post->post_type);
+		
 		if ( empty( $post->post_content ) ) {
 			return;
 		}
