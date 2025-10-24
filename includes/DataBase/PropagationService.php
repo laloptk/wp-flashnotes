@@ -145,8 +145,6 @@ class PropagationService {
 	public function update_post_set_relationship(int $post_id, string $post_type): void {
 		if($post_type !== 'studyset') {
 			$relationship = $this->sets->get_by_post_id($post_id);
-
-			error_log(json_encode($relationship));
 			
 			if($relationship) {
 				$this->sets->update(
