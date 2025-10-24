@@ -2,8 +2,7 @@
 namespace WPFlashNotes\Blocks\Transformers;
 
 class BlockTransformer {
-
-	/** @var BlockTransformStrategy[] */
+	
 	private array $strategies;
 
 	public function __construct( array $strategies ) {
@@ -33,12 +32,6 @@ class BlockTransformer {
 				break;
 			}
 		}
-
-		// Recurse into innerBlocks
-		/*
-		if (!empty($block['innerBlocks'])) {
-			$block['innerBlocks'] = $this->transformTree($block['innerBlocks']);
-		}*/
 
 		return $block;
 	}

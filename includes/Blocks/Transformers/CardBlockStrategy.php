@@ -12,7 +12,7 @@ class CardBlockStrategy implements BlockTransformStrategy {
 		$attrs             = $block['attrs'] ?? array();
 		$origin_block_id   = $attrs['block_id'] ?? null;          // card's block_id (from origin post)
 		$inserter_block_id = wp_generate_uuid4();                 // new block_id for the inserter
-		$card_id           = $attrs['id'] ?? null;                 // may be null until propagation
+		$card_id           = $attrs['id'] ?? null;                // may be null until propagation
 
 		// Exact placeholder markup that your save() emits (no inline styles).
 		$placeholder = sprintf(

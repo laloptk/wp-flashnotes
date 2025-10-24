@@ -30,7 +30,7 @@ class EventHandler {
 	public function register(): void {
 		add_action( 'save_post', array( $this, 'on_save_non_studyset' ), 10, 3 );
 		add_action( 'save_post_studyset', array( $this, 'on_save_studyset' ), 10, 3 );
-		// Deletion hooks will be added later.
+		add_action( 'after_delete_post', array($this, 'on_delete_post'), 10, 2);
 	}
 
 	public function on_save_non_studyset( int $post_id, WP_Post $post, bool $update ): void {
@@ -38,11 +38,7 @@ class EventHandler {
 			return;
 		}
 
-		$parsed_blocks     = BlockFormatter::parse_raw( $post->post_content );
-		$flashnote_blocks  = BlockFormatter::filter_flashnotes_blocks( $parsed_blocks );
-		$normalized_blocks = BlockFormatter::normalize_to_objects( $flashnote_blocks );
-
-		$this->propagation->propagate( $post_id, $normalized_blocks );
+		$this->process_flashnotes($post_id, $post, $update);
 	}
 
 	public function on_save_studyset( int $post_id, WP_Post $post, bool $update ): void {
@@ -55,11 +51,7 @@ class EventHandler {
 			return;
 		}
 
-		$parsed_blocks     = BlockFormatter::parse_raw( $post->post_content );
-		$flashnote_blocks  = BlockFormatter::filter_flashnotes_blocks( $parsed_blocks );
-		$normalized_blocks = BlockFormatter::normalize_to_objects( $flashnote_blocks );
-
-		$this->propagation->propagate( $post_id, $normalized_blocks );
+		$this->process_flashnotes($post_id, $post, $update);
 	}
 
 	/**
@@ -155,6 +147,40 @@ class EventHandler {
 			'studyset_id' => (int) $studyset_id,
 			'action'      => 'created',
 		);
+	}
+
+	public function on_delete_post(int $post_id, WP_Post $post): void {
+		if ( empty( $post->post_content ) ) {
+			return;
+		}
+
+		$normalized_blocks = $this->normalize_post_content($post->post_content);
+		
+		foreach($normalized_blocks as $block) {
+			$this->propagation->tag_as_orphan($block);
+		}
+	}
+
+	private function process_flashnotes(int $post_id, WP_Post $post, bool $update): void {
+		$normalized_blocks = $this->normalize_post_content($post->post_content);
+		
+		try {
+			if ($update) {
+				$this->propagation->remove_invalid_relationships($post_id, $normalized_blocks);
+			}
+			
+			$this->propagation->propagate($post_id, $normalized_blocks);
+		} catch (\Throwable $e) {
+			error_log("[FlashNotes] Propagation error on post {$post_id}: {$e->getMessage()}");
+		}
+	}
+
+	private function normalize_post_content( $post_content ): array {
+		$parsed_blocks     = BlockFormatter::parse_raw( $post_content );
+		$flashnote_blocks  = BlockFormatter::filter_flashnotes_blocks( $parsed_blocks );
+		$normalized_blocks = BlockFormatter::normalize_to_objects( $flashnote_blocks );
+
+		return $normalized_blocks;
 	}
 
 	protected function is_auto_generated_post( int $post_id ): bool {
