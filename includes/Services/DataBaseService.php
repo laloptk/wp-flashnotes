@@ -9,21 +9,17 @@ defined( 'ABSPATH' ) || exit;
  * DatabaseService
  *
  * Handles all database schema creation at plugin activation.
- * Simplified version — no version checks or migrations.
+ * Works without relying on plugin constants.
  */
 final class DatabaseService implements ServiceInterface {
 
-	/**
-	 * Register service hooks.
-	 * No runtime hooks needed beyond activation.
-	 */
 	public function register(): void {
-		// Intentionally empty — schema is only created on activation.
+		// Intentionally empty — schema only installed at activation.
 	}
 
 	/**
-	 * Static method for plugin activation.
-	 * Called directly by register_activation_hook() in the main plugin file.
+	 * Called directly by register_activation_hook() in main plugin file.
+	 * This method must not depend on constants like WPFN_PLUGIN_DIR.
 	 */
 	public static function install_schema(): void {
 		$instance = new self();
@@ -31,13 +27,20 @@ final class DatabaseService implements ServiceInterface {
 	}
 
 	/**
-	 * Executes schema tasks in dependency order.
-	 * Equivalent to the old run_schema_bootstrap() logic.
+	 * Executes schema tasks using direct paths (no constants).
 	 */
 	private function run_schema_tasks(): void {
-		require_once WPFN_PLUGIN_DIR . 'includes/DataBase/Schema/tasks.php';
+		$tasks_path = dirname(__DIR__, 1) . '/DataBase/Schema/tasks.php';
+
+		if ( ! file_exists( $tasks_path ) ) {
+			error_log('[WPFlashNotes] tasks.php not found: ' . $tasks_path);
+			return;
+		}
+
+		require_once $tasks_path;
 
 		if ( ! function_exists( 'wpfn_schema_tasks' ) ) {
+			error_log('[WPFlashNotes] wpfn_schema_tasks() missing after require.');
 			return;
 		}
 
@@ -59,12 +62,10 @@ final class DatabaseService implements ServiceInterface {
 				return;
 			}
 
-			// Run dependencies first
 			foreach ( $task['deps'] as $dependency ) {
 				$execute_task( $dependency );
 			}
 
-			// Execute this task
 			if ( is_callable( $task['run'] ) ) {
 				call_user_func( $task['run'] );
 			}
@@ -77,7 +78,7 @@ final class DatabaseService implements ServiceInterface {
 		}
 
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			error_log( '[WPFlashNotes] Database schema installed successfully.' );
+			error_log('[WPFlashNotes] Database schema installed successfully.');
 		}
 	}
 }

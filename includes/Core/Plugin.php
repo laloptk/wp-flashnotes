@@ -7,7 +7,6 @@ use WPFlashNotes\Services\{
 	RestService,
 	CptService,
 	BlocksService,
-	DatabaseService,
     PropagationService,
 };
 
@@ -34,7 +33,6 @@ final class Plugin {
 
 		$registrar->add( new I18nService() );
 		$registrar->add( new AssetsService() );
-		$registrar->add( new DatabaseService() );
 		$registrar->add( new RestService() );
 		$registrar->add( new CptService() );
 		$registrar->add( new BlocksService() );
