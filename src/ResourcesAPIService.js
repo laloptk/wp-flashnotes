@@ -22,15 +22,22 @@ export default class ResourceAPIService {
 		} );
 	}
 
-	getSetRelationship(args = { type: '', id: 0 }, { signal } = {}) {
-		const validTypes = ['by-set-post-id', 'by-post-id', 'by-relationship-id'];
-		
-		if(! this.is_valid_id(args['id']) || ! validTypes.includes(args.type)) {
+	getSetRelationship( args = { type: '', id: 0 }, { signal } = {} ) {
+		const validTypes = [
+			'by-set-post-id',
+			'by-post-id',
+			'by-relationship-id',
+		];
+
+		if (
+			! this.is_valid_id( args.id ) ||
+			! validTypes.includes( args.type )
+		) {
 			throw new Error( 'getSetRelationship call has invalid arguments' );
 		}
 
 		return this.request( {
-			path: `${this.path}/${args['type']}/${args['id']}`,
+			path: `${ this.path }/${ args.type }/${ args.id }`,
 			method: 'GET',
 			signal,
 		} );

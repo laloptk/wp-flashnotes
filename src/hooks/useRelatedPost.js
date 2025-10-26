@@ -37,7 +37,7 @@ const useRelatedPost = ( { postType, postId } ) => {
 							'postType',
 							'studyset',
 							relatedIds.studysetId
-						)
+					  )
 					: null;
 
 				return { studysetRecord: record, originPostRecord: record };
@@ -49,14 +49,14 @@ const useRelatedPost = ( { postType, postId } ) => {
 							'postType',
 							'studyset',
 							relatedIds.studysetId
-						)
+					  )
 					: null,
 				originPostRecord: relatedIds.originPostId
 					? core.getEntityRecord(
 							'postType',
 							derivedOriginType,
 							relatedIds.originPostId
-						)
+					  )
 					: null,
 			};
 		},
