@@ -18,19 +18,19 @@ defined( 'ABSPATH' ) || exit;
 final class BlocksService implements ServiceInterface {
 
 	public function register(): void {
-		add_action( 'init', [ $this, 'register_blocks' ] );
+		add_action( 'init', array( $this, 'register_blocks' ) );
 	}
 
 	/**
 	 * Instantiate and register all plugin blocks.
 	 */
 	public function register_blocks(): void {
-		$blocks = [
+		$blocks = array(
 			new NoteBlock(),
 			new CardBlock(),
 			new SlotBlock(),
 			new InserterBlock(),
-		];
+		);
 
 		foreach ( $blocks as $block ) {
 			if ( method_exists( $block, 'register' ) ) {

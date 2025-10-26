@@ -11,7 +11,7 @@ final class DatabaseService implements ServiceInterface {
 		// Install on activation.
 		register_activation_hook(
 			WPFN_PLUGIN_FILE,
-			[ $this, 'install_schema' ]
+			array( $this, 'install_schema' )
 		);
 
 		// Check schema immediately when service is instantiated.
@@ -23,7 +23,7 @@ final class DatabaseService implements ServiceInterface {
 	}
 
 	public function maybe_upgrade_schema(): void {
-		if ( ! defined('WPFN_PLUGIN_FILE') ) {
+		if ( ! defined( 'WPFN_PLUGIN_FILE' ) ) {
 			return; // safety guard if constants missing
 		}
 
@@ -42,9 +42,9 @@ final class DatabaseService implements ServiceInterface {
 			return;
 		}
 
-		$schema_tasks   = wpfn_schema_tasks();
-		$tasks_by_slug  = [];
-		$completed_tasks = [];
+		$schema_tasks    = wpfn_schema_tasks();
+		$tasks_by_slug   = array();
+		$completed_tasks = array();
 
 		foreach ( $schema_tasks as $task ) {
 			$tasks_by_slug[ $task['slug'] ] = $task;

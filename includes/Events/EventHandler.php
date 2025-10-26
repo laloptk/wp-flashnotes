@@ -3,7 +3,7 @@
 namespace WPFlashNotes\Events;
 
 use WP_Post;
-use WPFlashNotes\DataBase\PropagationService;
+use WPFlashNotes\DataBase\DataPropagation;
 use WPFlashNotes\Helpers\BlockFormatter;
 use WPFlashNotes\Helpers\BlocksMerger;
 use WPFlashNotes\Blocks\Transformers\BlockTransformer;
@@ -13,10 +13,10 @@ use WPFlashNotes\Blocks\Transformers\CardBlockStrategy;
  * Handles WordPress lifecycle events and studyset generation logic.
  */
 class EventHandler {
-	private PropagationService $propagation;
+	private DataPropagation $propagation;
 	private BlockTransformer $transformer;
 
-	public function __construct( PropagationService $propagation ) {
+	public function __construct( DataPropagation $propagation ) {
 		$this->propagation = $propagation;
 
 		// Strategies are UI/domain-level; safe to instantiate directly here.
@@ -31,7 +31,7 @@ class EventHandler {
 	public function register(): void {
 		add_action( 'save_post', array( $this, 'on_save_non_studyset' ), 10, 3 );
 		add_action( 'save_post_studyset', array( $this, 'on_save_studyset' ), 10, 3 );
-		add_action( 'after_delete_post', array($this, 'on_delete_post'), 10, 2);
+		add_action( 'after_delete_post', array( $this, 'on_delete_post' ), 10, 2 );
 	}
 
 	public function on_save_non_studyset( int $post_id, WP_Post $post, bool $update ): void {
@@ -39,7 +39,7 @@ class EventHandler {
 			return;
 		}
 
-		$this->process_flashnotes($post_id, $post, $update);
+		$this->process_flashnotes( $post_id, $post, $update );
 	}
 
 	public function on_save_studyset( int $post_id, WP_Post $post, bool $update ): void {
@@ -52,7 +52,7 @@ class EventHandler {
 			return;
 		}
 
-		$this->process_flashnotes($post_id, $post, $update);
+		$this->process_flashnotes( $post_id, $post, $update );
 	}
 
 	/**
@@ -70,8 +70,8 @@ class EventHandler {
 		do_action( 'wpfn_button_transform_context_start' );
 
 		$existing_set_id = $this->propagation->get_studyset_for_origin_post( $origin_post_id );
-		$origin_post = get_post( $origin_post_id );
-		$studyset_title = $origin_post->post_title;
+		$origin_post     = get_post( $origin_post_id );
+		$studyset_title  = $origin_post->post_title;
 
 		if ( ! $origin_post ) {
 			return array(
@@ -83,21 +83,21 @@ class EventHandler {
 		// Ensure title is never empty.
 		$title = $title ?: get_the_title( $origin_post );
 
-		$parsed_blocks      = BlockFormatter::parse_raw( $origin_post->post_content );
-		$flashnote_blocks   = BlockFormatter::filter_flashnotes_blocks( $parsed_blocks );
-		$only_flashnotes = false;
-		
+		$parsed_blocks    = BlockFormatter::parse_raw( $origin_post->post_content );
+		$flashnote_blocks = BlockFormatter::filter_flashnotes_blocks( $parsed_blocks );
+		$only_flashnotes  = false;
+
 		$merged_blocks = null;
-		if($existing_set_id) {
-			$only_flashnotes = true;
+		if ( $existing_set_id ) {
+			$only_flashnotes        = true;
 			$studyset_post          = get_post( $existing_set_id );
 			$studyset_title         = $studyset_post->post_title;
 			$parsed_studyset_blocks = BlockFormatter::parse_raw( $studyset_post->post_content );
-			$merged_blocks          = BlocksMerger::merge($flashnote_blocks, $parsed_studyset_blocks);
+			$merged_blocks          = BlocksMerger::merge( $flashnote_blocks, $parsed_studyset_blocks );
 		}
 
 		$blocks_tree = $merged_blocks ?: $flashnote_blocks;
-		
+
 		$transformed_blocks = $this->transformer->transformTree( $blocks_tree );
 		$normalized_blocks  = BlockFormatter::normalize_to_objects( $transformed_blocks, $only_flashnotes );
 		$serialized_content = BlockFormatter::serialize( $transformed_blocks );
@@ -159,33 +159,33 @@ class EventHandler {
 		);
 	}
 
-	public function on_delete_post(int $post_id, WP_Post $post): void {
-		$this->propagation->update_post_set_relationship($post_id, $post->post_type);
-		
+	public function on_delete_post( int $post_id, WP_Post $post ): void {
+		$this->propagation->update_post_set_relationship( $post_id, $post->post_type );
+
 		if ( empty( $post->post_content ) ) {
 			$this->propagation->orphan_by_post_id( $post_id );
-			
+
 			return;
 		}
 
-		$normalized_blocks = $this->normalize_post_content($post->post_content);
-		
-		foreach($normalized_blocks as $block) {
-			$this->propagation->tag_as_orphan($block);
+		$normalized_blocks = $this->normalize_post_content( $post->post_content );
+
+		foreach ( $normalized_blocks as $block ) {
+			$this->propagation->tag_as_orphan( $block );
 		}
 	}
 
-	private function process_flashnotes(int $post_id, WP_Post $post, bool $update): void {
-		$normalized_blocks = $this->normalize_post_content($post->post_content);
-		
+	private function process_flashnotes( int $post_id, WP_Post $post, bool $update ): void {
+		$normalized_blocks = $this->normalize_post_content( $post->post_content );
+
 		try {
-			if ($update) {
-				$this->propagation->remove_invalid_relationships($post_id, $normalized_blocks);
+			if ( $update ) {
+				$this->propagation->remove_invalid_relationships( $post_id, $normalized_blocks );
 			}
-			
-			$this->propagation->propagate($post_id, $normalized_blocks);
-		} catch (\Throwable $e) {
-			error_log("[FlashNotes] Propagation error on post {$post_id}: {$e->getMessage()}");
+
+			$this->propagation->propagate( $post_id, $normalized_blocks );
+		} catch ( \Throwable $e ) {
+			error_log( "[FlashNotes] Propagation error on post {$post_id}: {$e->getMessage()}" );
 		}
 	}
 

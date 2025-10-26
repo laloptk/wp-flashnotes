@@ -14,7 +14,7 @@ defined( 'ABSPATH' ) || exit;
 final class CptService implements ServiceInterface {
 
 	public function register(): void {
-		add_action( 'init', [ $this, 'register_cpts' ] );
+		add_action( 'init', array( $this, 'register_cpts' ) );
 	}
 
 	public function register_cpts(): void {

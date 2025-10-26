@@ -4,7 +4,7 @@ namespace WPFlashNotes\Core;
 final class ServiceRegistrar {
 
 	/** @var ServiceInterface[] */
-	private array $services = [];
+	private array $services = array();
 
 	public function add( ServiceInterface $service ): void {
 		$this->services[] = $service;

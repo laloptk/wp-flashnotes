@@ -6,7 +6,7 @@ use WPFlashNotes\Core\ServiceInterface;
 class I18nService implements ServiceInterface {
 
 	public function register(): void {
-		add_action( 'init', [ $this, 'load_textdomain' ] );
+		add_action( 'init', array( $this, 'load_textdomain' ) );
 	}
 
 	public function load_textdomain(): void {

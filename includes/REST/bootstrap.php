@@ -19,7 +19,7 @@ defined( 'ABSPATH' ) || exit;
 function wpfn_default_rest_controllers(): array {
 
 	// Shared dependencies for controllers that need orchestration or data-layer access.
-	$propagation = new \WPFlashNotes\DataBase\PropagationService(
+	$propagation = new \WPFlashNotes\DataBase\DataPropagation(
 		new \WPFlashNotes\Repos\CardsRepository(),
 		new \WPFlashNotes\Repos\NotesRepository(),
 		new \WPFlashNotes\Repos\SetsRepository(),

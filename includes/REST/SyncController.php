@@ -15,7 +15,7 @@ use WP_REST_Server;
  * SyncController
  *
  * Handles orchestration-level REST commands such as creating or syncing studysets.
- * Delegates actual logic to the EventHandler and PropagationService layers.
+ * Delegates actual logic to the EventHandler and DataPropagation layers.
  */
 class SyncController extends BaseController {
 

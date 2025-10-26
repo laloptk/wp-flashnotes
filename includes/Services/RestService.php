@@ -4,7 +4,7 @@ namespace WPFlashNotes\Services;
 use WPFlashNotes\Core\ServiceInterface;
 
 // Data layer
-use WPFlashNotes\DataBase\PropagationService;
+use WPFlashNotes\DataBase\DataPropagation;
 use WPFlashNotes\Repos\CardsRepository;
 use WPFlashNotes\Repos\NotesRepository;
 use WPFlashNotes\Repos\SetsRepository;
@@ -35,7 +35,7 @@ defined( 'ABSPATH' ) || exit;
 final class RestService implements ServiceInterface {
 
 	public function register(): void {
-		add_action( 'rest_api_init', [ $this, 'register_rest_controllers' ] );
+		add_action( 'rest_api_init', array( $this, 'register_rest_controllers' ) );
 	}
 
 	public function register_rest_controllers(): void {
@@ -48,12 +48,12 @@ final class RestService implements ServiceInterface {
 
 		foreach ( $controllers as $entry ) {
 			$cls     = $entry;
-			$args    = [];
+			$args    = array();
 			$enabled = true;
 
 			if ( is_array( $entry ) ) {
 				$cls     = $entry['class'] ?? '';
-				$args    = $entry['args'] ?? [];
+				$args    = $entry['args'] ?? array();
 				$enabled = $entry['enabled'] ?? true;
 			}
 
@@ -83,7 +83,7 @@ final class RestService implements ServiceInterface {
 	}
 
 	private function default_controllers(): array {
-		$propagation = new PropagationService(
+		$propagation = new DataPropagation(
 			new CardsRepository(),
 			new NotesRepository(),
 			new SetsRepository(),
@@ -94,7 +94,7 @@ final class RestService implements ServiceInterface {
 
 		$event_handler = new EventHandler( $propagation );
 
-		return [
+		return array(
 			ObjectUsageController::class,
 			SetsController::class,
 			CardsController::class,
@@ -102,10 +102,10 @@ final class RestService implements ServiceInterface {
 			CardSetRelationsController::class,
 			NoteSetRelationsController::class,
 			TaxonomyRelationsController::class,
-			[
+			array(
 				'class' => SyncController::class,
-				'args'  => [ $event_handler ],
-			],
-		];
+				'args'  => array( $event_handler ),
+			),
+		);
 	}
 }

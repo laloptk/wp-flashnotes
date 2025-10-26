@@ -10,7 +10,7 @@ use WPFlashNotes\Repos\NoteSetRelationsRepository;
 use WPFlashNotes\Repos\ObjectUsageRepository;
 
 
-class PropagationService {
+class DataPropagation {
 	private CardsRepository $cards;
 	private NotesRepository $notes;
 	private SetsRepository $sets;
@@ -91,7 +91,7 @@ class PropagationService {
 					$this->usage->attach( 'inserter', (int) $block['attrs']['id'], $post_id, $block['attrs']['card_block_id'] );
 				}
 
-				$this->tag_as_active($block);
+				$this->tag_as_active( $block );
 
 				continue;
 			}
@@ -100,17 +100,17 @@ class PropagationService {
 
 	public function remove_invalid_relationships( int $post_id, array $parsed_objects ): void {
 		// Build an associative map of [block_id][object_type] => true
-		$blocks_in_post = [];
+		$blocks_in_post = array();
 
 		foreach ( $parsed_objects as $block ) {
-			$block_id    = $block['object_type'] === 'inserter' 
-				? $block['attrs']['card_block_id'] 
-				: ($block['block_id'] ?? null);
-			
+			$block_id = $block['object_type'] === 'inserter'
+				? $block['attrs']['card_block_id']
+				: ( $block['block_id'] ?? null );
+
 			$object_type = $block['object_type'] ?? null;
 
 			if ( $block_id && $object_type ) {
-				$blocks_in_post[$block_id][$object_type] = true;
+				$blocks_in_post[ $block_id ][ $object_type ] = true;
 			}
 		}
 
@@ -122,7 +122,7 @@ class PropagationService {
 			$object_type = $item['object_type'];
 
 			// If the pair doesn’t exist in the new post content, remove it
-			if ( empty( $blocks_in_post[$block_id][$object_type] ) ) {
+			if ( empty( $blocks_in_post[ $block_id ][ $object_type ] ) ) {
 				$this->usage->detach(
 					$object_type,
 					$item['object_id'],
@@ -130,7 +130,7 @@ class PropagationService {
 					$block_id
 				);
 
-				$this->tag_as_orphan($item);
+				$this->tag_as_orphan( $item );
 			}
 		}
 	}
@@ -144,14 +144,14 @@ class PropagationService {
 		return $this->sets->upsert_by_set_post_id( $data );
 	}
 
-	public function update_post_set_relationship(int $post_id, string $post_type): void {
-		if($post_type !== 'studyset') {
-			$relationship = $this->sets->get_by_post_id($post_id);
-			
-			if($relationship) {
+	public function update_post_set_relationship( int $post_id, string $post_type ): void {
+		if ( $post_type !== 'studyset' ) {
+			$relationship = $this->sets->get_by_post_id( $post_id );
+
+			if ( $relationship ) {
 				$this->sets->update(
-					$relationship['id'], 
-					array('post_id' => $relationship['set_post_id'])
+					$relationship['id'],
+					array( 'post_id' => $relationship['set_post_id'] )
 				);
 			}
 		}
@@ -190,7 +190,7 @@ class PropagationService {
 
 		// Object type must come from inserter attributes
 		$object_id = $block['attrs']['id'] ?? null;
-		$is_card = isset($block['attrs']['card_block_id']);
+		$is_card   = isset( $block['attrs']['card_block_id'] );
 
 		if ( empty( $object_id ) ) {
 			return;

@@ -7,7 +7,8 @@ use WPFlashNotes\Services\{
 	RestService,
 	CptService,
 	BlocksService,
-	DatabaseService
+	DatabaseService,
+    PropagationService,
 };
 
 defined( 'ABSPATH' ) || exit;
@@ -37,6 +38,7 @@ final class Plugin {
 		$registrar->add( new RestService() );
 		$registrar->add( new CptService() );
 		$registrar->add( new BlocksService() );
+        $registrar->add( new PropagationService());
 
 		$registrar->register_all();
 	}
@@ -55,14 +57,20 @@ final class Plugin {
 		$composer = WPFN_PLUGIN_DIR . 'vendor/autoload.php';
 		if ( ! file_exists( $composer ) ) {
 			if ( is_admin() ) {
-				add_action( 'admin_notices', function () use ( $composer ) {
-					echo '<div class="notice notice-error"><p><strong>WP FlashNotes</strong> cannot run — missing autoloader:<br><code>' .
+				add_action(
+					'admin_notices',
+					function () use ( $composer ) {
+						echo '<div class="notice notice-error"><p><strong>WP FlashNotes</strong> cannot run — missing autoloader:<br><code>' .
 						esc_html( $composer ) .
 						'</code><br>Run <code>composer install</code>.</p></div>';
-				});
-				add_action( 'admin_init', function () {
-					deactivate_plugins( WPFN_PLUGIN_BASENAME );
-				});
+					}
+				);
+				add_action(
+					'admin_init',
+					function () {
+						deactivate_plugins( WPFN_PLUGIN_BASENAME );
+					}
+				);
 			}
 			return;
 		}

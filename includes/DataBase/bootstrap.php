@@ -2,7 +2,7 @@
 
 
 use WPFlashNotes\Events\EventHandler;
-use WPFlashNotes\DataBase\PropagationService;
+use WPFlashNotes\DataBase\DataPropagation;
 use WPFlashNotes\Repos\CardsRepository;
 use WPFlashNotes\Repos\NotesRepository;
 use WPFlashNotes\Repos\SetsRepository;
@@ -10,7 +10,7 @@ use WPFlashNotes\Repos\CardSetRelationsRepository;
 use WPFlashNotes\Repos\NoteSetRelationsRepository;
 use WPFlashNotes\Repos\ObjectUsageRepository;
 
-$propagation = new PropagationService(
+$propagation = new DataPropagation(
 	new CardsRepository(),
 	new NotesRepository(),
 	new SetsRepository(),
@@ -22,7 +22,7 @@ $propagation = new PropagationService(
 $event_handler = new EventHandler( $propagation );
 $event_handler->register();
 /*
-use WPFlashNotes\DataBase\PropagationService;
+use WPFlashNotes\DataBase\DataPropagation;
 use WPFlashNotes\Repos\CardsRepository;
 use WPFlashNotes\Repos\NotesRepository;
 use WPFlashNotes\Repos\SetsRepository;
@@ -54,7 +54,7 @@ function sync_studyset( $post_id, $post, $update ) {
 		// add NoteBlockStrategy when ready
 	] );
 
-	$propagation = new PropagationService(
+	$propagation = new DataPropagation(
 		new CardsRepository(),
 		new NotesRepository(),
 		new SetsRepository(),
@@ -85,7 +85,7 @@ function sync_post( $post_id, $post, $update ) {
 		return;
 	}
 
-	$propagation = new PropagationService(
+	$propagation = new DataPropagation(
 		new CardsRepository(),
 		new NotesRepository(),
 		new SetsRepository(),
