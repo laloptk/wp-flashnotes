@@ -9,6 +9,7 @@ import { useRelatedPost } from '@wpfn/hooks';
 import apiFetch from '@wordpress/api-fetch';
 
 function FlashNotesSidebar() {
+	const [ hasRelationship, setHasRelationship ] = useState(false);
 	const [ syncBtnText, setSyncBtnText ] = useState(
 		__( 'Sync Study Set', 'wp-flashnotes' )
 	);
@@ -53,6 +54,7 @@ function FlashNotesSidebar() {
 				__( 'Study set synced!', 'wp-flashnotes' ),
 				{ type: 'snackbar' }
 			);
+			setHasRelationship(true);
 		} catch ( e ) {
 			console.error( 'Sync failed:', e );
 			setSyncBtnText( __( 'Error syncing', 'wp-flashnotes' ) );
@@ -73,7 +75,12 @@ function FlashNotesSidebar() {
 		}
 	}, [ postType ] );
 
-	const hasRelationship = Boolean( relationship?.item );
+	useEffect( () => {
+		if( ! loading ) {
+			setHasRelationship(Boolean( relationship?.item ) );
+		}
+	}, [loading, relationship]);
+
 	const studysetId =
 		records.studysetRecord?.id ?? relationship?.item?.set_post_id ?? null;
 	const originPostId =
