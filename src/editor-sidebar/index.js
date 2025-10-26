@@ -1,6 +1,6 @@
 import { registerPlugin } from '@wordpress/plugins';
 import { PluginSidebar, PluginSidebarMoreMenuItem } from '@wordpress/editor';
-import { PanelBody, Button, Spinner } from '@wordpress/components';
+import { PanelBody, Button, Spinner, Notice } from '@wordpress/components';
 import { Annotation } from '@wpfn/components';
 import { __ } from '@wordpress/i18n';
 import { dispatch, useSelect } from '@wordpress/data';
@@ -14,36 +14,32 @@ function FlashNotesSidebar() {
 	);
 	const [ isSyncing, setIsSyncing ] = useState( false );
 
-	const { postId, postType } = useSelect( ( select ) => {
+	const { postId, postType, isSaving, isDirty } = useSelect( ( select ) => {
 		const editor = select( 'core/editor' );
 		return {
 			postId: editor.getCurrentPostId(),
 			postType: editor.getCurrentPostType(),
+			isSaving: editor.isSavingPost(),
+			isDirty: editor.isEditedPostDirty(),
 		};
 	}, [] );
 
-	const { records, relationship, loading, error } = useRelatedPost( {
-		postType,
-		postId,
-	} );
+	const { records, relationship, loading } = useRelatedPost( { postType, postId } );
 
-	/**
-	 * Handles creating or syncing a studyset.
-	 * Sends only origin_post_id to the backend; title logic is handled in PHP.
-	 */
+	const disabledByEditor = isSaving || isDirty;
+
 	const handleSync = useCallback( async () => {
+		if ( disabledByEditor ) return;
+
 		setIsSyncing( true );
 		setSyncBtnText( __( 'Syncing…', 'wp-flashnotes' ) );
 
 		try {
-			const originPostId = 
-				relationship?.item?.post_id 
-				? relationship.item.post_id 
-				: (postType !== 'studyset' ? postId : null);
-			
-			if ( ! originPostId ) {
-				throw new Error( 'Missing origin post ID' );
-			}
+			const originPostId =
+				relationship?.item?.post_id ??
+				( postType !== 'studyset' ? postId : null );
+
+			if ( ! originPostId ) throw new Error( 'Missing origin post ID' );
 
 			await apiFetch( {
 				path: '/wpfn/v1/studyset/sync',
@@ -69,23 +65,26 @@ function FlashNotesSidebar() {
 			setIsSyncing( false );
 			setSyncBtnText( __( 'Sync Study Set', 'wp-flashnotes' ) );
 		}
-	}, [ postId, postType, records ] );
+	}, [ postId, postType, relationship, disabledByEditor ] );
 
 	useEffect( () => {
 		if ( postType === 'post' || postType === 'studyset' ) {
-			dispatch( 'core/edit-post' ).openGeneralSidebar(
-				'wp-flashnotes-sidebar'
-			);
+			dispatch( 'core/edit-post' ).openGeneralSidebar( 'wp-flashnotes-sidebar' );
 		}
 	}, [ postType ] );
 
-	// Relationship and identity logic
 	const hasRelationship = Boolean( relationship?.item );
 	const studysetId =
 		records.studysetRecord?.id ?? relationship?.item?.set_post_id ?? null;
 	const originPostId =
 		records.originPostRecord?.id ?? relationship?.item?.post_id ?? null;
 	const sameIds = studysetId && originPostId && studysetId === originPostId;
+
+	const renderDisabledNotice = disabledByEditor && (
+		<Notice status="info" isDismissible={ false }>
+			{ __( 'You need to save the post before syncing or attaching a Study Set.', 'wp-flashnotes' ) }
+		</Notice>
+	);
 
 	return (
 		<>
@@ -99,173 +98,101 @@ function FlashNotesSidebar() {
 				icon="edit"
 			>
 				<PanelBody>
-					{ /* Global loading spinner */ }
 					{ loading && (
 						<div style={ { textAlign: 'center', margin: '1em 0' } }>
 							<Spinner />
 						</div>
 					) }
 
-					{ /* --- ORIGIN POST CONTEXT --- */ }
+					{ renderDisabledNotice }
+
 					{ postType !== 'studyset' && ! loading && (
 						<>
 							{ ! hasRelationship ? (
 								<div>
 									<Annotation
-										prefix={ __(
-											'Study set not attached:',
-											'wp-flashnotes'
-										) }
+										prefix={ __( 'Study set not attached:', 'wp-flashnotes' ) }
 									>
 										<p>
-											{ __(
-												'This post does not have a study set linked to it.',
-												'wp-flashnotes'
-											) }{ ' ' }
-											{ __(
-												'To generate one, click the button below.',
-												'wp-flashnotes'
-											) }
+											{ __( 'This post does not have a study set linked to it.', 'wp-flashnotes' ) }{' '}
+											{ __( 'To generate one, click the button below.', 'wp-flashnotes' ) }
 										</p>
 									</Annotation>
 
 									<Button
 										variant="primary"
 										onClick={ handleSync }
-										disabled={ isSyncing }
+										disabled={ isSyncing || disabledByEditor }
 									>
-										{ isSyncing ? (
-											<Spinner />
-										) : (
-											__(
-												'Attach Study Set',
-												'wp-flashnotes'
-											)
-										) }
+										{ isSyncing ? <Spinner /> : __( 'Attach Study Set', 'wp-flashnotes' ) }
 									</Button>
 								</div>
 							) : (
 								<div>
 									<Annotation
-										prefix={ __(
-											'Study set attached:',
-											'wp-flashnotes'
-										) }
+										prefix={ __( 'Study set attached:', 'wp-flashnotes' ) }
 									>
 										<p>
-											{ __(
-												'A study set is related to this post.',
-												'wp-flashnotes'
-											) }{ ' ' }
+											{ __( 'A study set is related to this post.', 'wp-flashnotes' ) }{' '}
 											<a
-												href={
-													records.studysetRecord
-														?.link || '#'
-												}
+												href={ records.studysetRecord?.link || '#' }
 												target="_blank"
 												rel="noopener noreferrer"
 											>
-												{ records.studysetRecord?.title
-													?.rendered ||
-													__(
-														'View study set',
-														'wp-flashnotes'
-													) }
+												{ records.studysetRecord?.title?.rendered ||
+													__( 'View study set', 'wp-flashnotes' ) }
 											</a>
 										</p>
 										<p>
-											{ __(
-												'You can sync the FlashNotes blocks in this post to the study set below.',
-												'wp-flashnotes'
-											) }
+											{ __( 'You can sync the FlashNotes blocks in this post to the study set below.', 'wp-flashnotes' ) }
 										</p>
 									</Annotation>
 
 									<Button
 										variant="secondary"
 										onClick={ handleSync }
-										disabled={ isSyncing }
+										disabled={ isSyncing || disabledByEditor }
 									>
-										{ isSyncing ? (
-											<Spinner />
-										) : (
-											syncBtnText
-										) }
+										{ isSyncing ? <Spinner /> : syncBtnText }
 									</Button>
 								</div>
 							) }
 						</>
 					) }
 
-					{ /* --- STUDYSET CONTEXT --- */ }
 					{ postType === 'studyset' && ! loading && (
 						<>
 							{ ! hasRelationship || sameIds ? (
-								<div>
-									<Annotation
-										prefix={ __(
-											'Direct study set:',
-											'wp-flashnotes'
-										) }
-									>
-										<p>
-											{ __(
-												'This study set was created directly and does not have an origin post.',
-												'wp-flashnotes'
-											) }
-										</p>
-									</Annotation>
-								</div>
+								<Annotation prefix={ __( 'Direct study set:', 'wp-flashnotes' ) }>
+									<p>{ __( 'This study set was created directly and does not have an origin post.', 'wp-flashnotes' ) }</p>
+								</Annotation>
 							) : (
 								<div>
 									<Annotation
-										prefix={ __(
-											'Origin post attached:',
-											'wp-flashnotes'
-										) }
+										prefix={ __( 'Origin post attached:', 'wp-flashnotes' ) }
 									>
 										<p>
-											{ __(
-												'This study set was created from another post.',
-												'wp-flashnotes'
-											) }{ ' ' }
+											{ __( 'This study set was created from another post.', 'wp-flashnotes' ) }{' '}
 											<a
-												href={
-													records.originPostRecord
-														?.link || '#'
-												}
+												href={ records.originPostRecord?.link || '#' }
 												target="_blank"
 												rel="noopener noreferrer"
 											>
-												{ records.originPostRecord
-													?.title?.rendered ||
-													__(
-														'View origin post',
-														'wp-flashnotes'
-													) }
+												{ records.originPostRecord?.title?.rendered ||
+													__( 'View origin post', 'wp-flashnotes' ) }
 											</a>
 										</p>
 										<p>
-											{ __(
-												'You can sync the FlashNotes from the origin post into this study set below.',
-												'wp-flashnotes'
-											) }
+											{ __( 'You can sync the FlashNotes from the origin post into this study set below.', 'wp-flashnotes' ) }
 										</p>
 									</Annotation>
 
 									<Button
 										variant="secondary"
 										onClick={ handleSync }
-										disabled={ isSyncing }
+										disabled={ isSyncing || disabledByEditor }
 									>
-										{ isSyncing ? (
-											<Spinner />
-										) : (
-											__(
-												'Sync from Origin Post',
-												'wp-flashnotes'
-											)
-										) }
+										{ isSyncing ? <Spinner /> : __( 'Sync from Origin Post', 'wp-flashnotes' ) }
 									</Button>
 								</div>
 							) }

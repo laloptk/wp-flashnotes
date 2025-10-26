@@ -26,7 +26,11 @@ class BlockFormatter {
 		);
 	}
 
-	public static function normalize_to_objects( array $blocks ): array {
+	public static function normalize_to_objects( array $blocks, bool $filter_blocks = false ): array {
+		if( $filter_blocks ) {
+			$blocks = self::filter_flashnotes_blocks($blocks);
+		}
+		
 		$result = array();
 
 		foreach ( $blocks as $block ) {

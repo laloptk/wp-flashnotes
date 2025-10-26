@@ -5,6 +5,7 @@ namespace WPFlashNotes\Events;
 use WP_Post;
 use WPFlashNotes\DataBase\PropagationService;
 use WPFlashNotes\Helpers\BlockFormatter;
+use WPFlashNotes\Helpers\BlocksMerger;
 use WPFlashNotes\Blocks\Transformers\BlockTransformer;
 use WPFlashNotes\Blocks\Transformers\CardBlockStrategy;
 
@@ -68,7 +69,9 @@ class EventHandler {
 	public function generate_studyset_from_origin( int $origin_post_id, string $title, int $author_id, string $status = 'publish' ): array {
 		do_action( 'wpfn_button_transform_context_start' );
 
+		$existing_set_id = $this->propagation->get_studyset_for_origin_post( $origin_post_id );
 		$origin_post = get_post( $origin_post_id );
+		$studyset_title = $origin_post->post_title;
 
 		if ( ! $origin_post ) {
 			return array(
@@ -82,17 +85,24 @@ class EventHandler {
 
 		$parsed_blocks      = BlockFormatter::parse_raw( $origin_post->post_content );
 		$flashnote_blocks   = BlockFormatter::filter_flashnotes_blocks( $parsed_blocks );
-		$transformed_blocks = $this->transformer->transformTree( $flashnote_blocks );
-		$normalized_blocks  = BlockFormatter::normalize_to_objects( $transformed_blocks );
+		$only_flashnotes = false;
+		
+		$merged_blocks = null;
+		if($existing_set_id) {
+			$only_flashnotes = true;
+			$studyset_post          = get_post( $existing_set_id );
+			$studyset_title         = $studyset_post->post_title;
+			$parsed_studyset_blocks = BlockFormatter::parse_raw( $studyset_post->post_content );
+			$merged_blocks          = BlocksMerger::merge($flashnote_blocks, $parsed_studyset_blocks);
+		}
+
+		$blocks_tree = $merged_blocks ?: $flashnote_blocks;
+		
+		$transformed_blocks = $this->transformer->transformTree( $blocks_tree );
+		$normalized_blocks  = BlockFormatter::normalize_to_objects( $transformed_blocks, $only_flashnotes );
 		$serialized_content = BlockFormatter::serialize( $transformed_blocks );
 
-		$existing_set_id = $this->propagation->get_studyset_for_origin_post( $origin_post_id );
-
 		if ( $existing_set_id ) {
-			// Studyset exists – preserve its title.
-			$existing_set_post = get_post( $existing_set_id );
-			$studyset_title    = $existing_set_post ? $existing_set_post->post_title : get_the_title( $origin_post );
-
 			wp_update_post(
 				array(
 					'ID'           => (int) $existing_set_id,
