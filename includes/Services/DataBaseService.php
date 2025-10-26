@@ -5,36 +5,35 @@ use WPFlashNotes\Core\ServiceInterface;
 
 defined( 'ABSPATH' ) || exit;
 
+/**
+ * DatabaseService
+ *
+ * Handles all database schema creation at plugin activation.
+ * Simplified version — no version checks or migrations.
+ */
 final class DatabaseService implements ServiceInterface {
 
+	/**
+	 * Register service hooks.
+	 * No runtime hooks needed beyond activation.
+	 */
 	public function register(): void {
-		// Install on activation.
-		register_activation_hook(
-			WPFN_PLUGIN_FILE,
-			array( $this, 'install_schema' )
-		);
-
-		// Check schema immediately when service is instantiated.
-		$this->maybe_upgrade_schema();
+		// Intentionally empty — schema is only created on activation.
 	}
 
-	public function install_schema(): void {
-		$this->run_schema_tasks();
+	/**
+	 * Static method for plugin activation.
+	 * Called directly by register_activation_hook() in the main plugin file.
+	 */
+	public static function install_schema(): void {
+		$instance = new self();
+		$instance->run_schema_tasks();
 	}
 
-	public function maybe_upgrade_schema(): void {
-		if ( ! defined( 'WPFN_PLUGIN_FILE' ) ) {
-			return; // safety guard if constants missing
-		}
-
-		$stored = get_option( 'wpfn_schema_version' );
-
-		if ( $stored !== WPFN_VERSION ) {
-			$this->run_schema_tasks();
-			update_option( 'wpfn_schema_version', WPFN_VERSION );
-		}
-	}
-
+	/**
+	 * Executes schema tasks in dependency order.
+	 * Equivalent to the old run_schema_bootstrap() logic.
+	 */
 	private function run_schema_tasks(): void {
 		require_once WPFN_PLUGIN_DIR . 'includes/DataBase/Schema/tasks.php';
 
@@ -43,8 +42,8 @@ final class DatabaseService implements ServiceInterface {
 		}
 
 		$schema_tasks    = wpfn_schema_tasks();
-		$tasks_by_slug   = array();
-		$completed_tasks = array();
+		$tasks_by_slug   = [];
+		$completed_tasks = [];
 
 		foreach ( $schema_tasks as $task ) {
 			$tasks_by_slug[ $task['slug'] ] = $task;
@@ -54,15 +53,18 @@ final class DatabaseService implements ServiceInterface {
 			if ( in_array( $slug, $completed_tasks, true ) ) {
 				return;
 			}
+
 			$task = $tasks_by_slug[ $slug ] ?? null;
 			if ( ! $task ) {
 				return;
 			}
 
+			// Run dependencies first
 			foreach ( $task['deps'] as $dependency ) {
 				$execute_task( $dependency );
 			}
 
+			// Execute this task
 			if ( is_callable( $task['run'] ) ) {
 				call_user_func( $task['run'] );
 			}
@@ -72,6 +74,10 @@ final class DatabaseService implements ServiceInterface {
 
 		foreach ( $schema_tasks as $task ) {
 			$execute_task( $task['slug'] );
+		}
+
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			error_log( '[WPFlashNotes] Database schema installed successfully.' );
 		}
 	}
 }

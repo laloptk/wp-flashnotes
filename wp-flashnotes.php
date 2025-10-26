@@ -11,17 +11,16 @@
 
 defined( 'ABSPATH' ) || exit;
 
-use WPFlashNotes\Core\Plugin;
-
 if ( file_exists( __DIR__ . '/vendor/autoload.php' ) ) {
 	require_once __DIR__ . '/vendor/autoload.php';
 }
 
+use WPFlashNotes\Services\DataBaseService;
+use WPFlashNotes\Core\Plugin;
+
 register_activation_hook(
 	__FILE__,
-	function () {
-		require_once __DIR__ . '/includes/DataBase/Schema/bootstrap.php';
-	}
+	array( DataBaseService::class, 'install_schema' )
 );
 
 add_action( 'plugins_loaded', array( Plugin::instance(), 'init' ) );
