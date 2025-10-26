@@ -1,6 +1,6 @@
 import { useState, useEffect } from '@wordpress/element';
 import { useBlockProps, InspectorControls } from '@wordpress/block-editor';
-import { PanelBody, Spinner } from '@wordpress/components';
+import { PanelBody, Spinner, Button } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 import { normalizeStyle } from '@wpfn/styles';
 import {
@@ -14,6 +14,9 @@ import { useFetch } from '@wpfn/hooks';
 import { assembleContent } from '../../utils';
 
 const Edit = ( { attributes, setAttributes, clientId } ) => {
+	const [ stage, setStage ] = useState(0);
+	const nextStage = () => setStage( ( stage + 1 ) % 3 );
+	
 	const {
 		id,
 		block_id,
@@ -59,7 +62,7 @@ const Edit = ( { attributes, setAttributes, clientId } ) => {
 		if ( ! item ) {
 			return;
 		}
-
+		console.log(data);
 		setAttributes( { id: item.id } );
 		setContent( assembleContent( item ) );
 	}, [ data ] );
@@ -76,7 +79,7 @@ const Edit = ( { attributes, setAttributes, clientId } ) => {
 	};
 
 	return (
-		<div { ...blockProps }>
+		<>
 			<InspectorControls>
 				<PanelBody title={ __( 'Search Controls', 'wp-flashnotes' ) }>
 					<CardsNotesSearch
@@ -97,21 +100,30 @@ const Edit = ( { attributes, setAttributes, clientId } ) => {
 					setAttributes={ setAttributes }
 				/>
 			</InspectorControls>
-
-			<div className="wpfn-rendered-card">
-				{ error && <p className="error">{ String( error ) }</p> }
-				{ loading && <Spinner /> }
-				{ ! loading && ! content && (
-					<p>{ __( 'No content available.', 'wp-flashnotes' ) }</p>
-				) }
-				{ content && (
-					<SafeHTMLContent
-						content={ content }
-						classes="wpfn-card-html"
-					/>
-				) }
+			<div { ...blockProps } data-stage={ stage } >
+				<div className="wpfn-rendered-card">
+					{ error && <p className="error">{ String( error ) }</p> }
+					{ loading && <Spinner /> }
+					{ ! loading && ! content && (
+						<p>{ __( 'No content available.', 'wp-flashnotes' ) }</p>
+					) }
+					{ content && (
+						<SafeHTMLContent
+							content={ content }
+							classes="wpfn-card-html"
+						/>
+					) }
+				</div>
+				<Button onClick={ nextStage }>
+					{ stage === 0
+						? 'Show Answer'
+						: stage === 1
+						? 'Show Explanation'
+						: 'Back to Question' 
+					}
+				</Button>
 			</div>
-		</div>
+		</>
 	);
 };
 

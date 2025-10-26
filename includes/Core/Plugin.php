@@ -22,6 +22,7 @@ final class Plugin {
 		if ( self::$instance === null ) {
 			self::$instance = new self();
 		}
+        
 		return self::$instance;
 	}
 
