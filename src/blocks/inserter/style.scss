@@ -1,0 +1,22 @@
+.wpfn-inserter {
+	&[data-stage="0"] {
+		.role-answer,
+		.role-explanation {
+			display: none;
+		}
+	}
+
+	&[data-stage="1"] {
+		.role-question,
+		.role-explanation {
+			display: none;
+		}
+	}
+
+	&[data-stage="2"] {
+		.role-question,
+		.role-answer {
+			display: none;
+		}
+	}
+}

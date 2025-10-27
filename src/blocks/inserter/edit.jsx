@@ -62,7 +62,7 @@ const Edit = ( { attributes, setAttributes, clientId } ) => {
 		if ( ! item ) {
 			return;
 		}
-		console.log(data);
+		
 		setAttributes( { id: item.id } );
 		setContent( assembleContent( item ) );
 	}, [ data ] );

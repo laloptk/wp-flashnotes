@@ -26,15 +26,17 @@ export const assembleContent = ( item ) => {
 	if ( ! item ) {
 		return '';
 	}
-	let out = item.question || '';
+	let out = item.question 
+	? `<div class="role-question">${item.question}</div>`
+	: '';
 	try {
 		const answers = JSON.parse( item.answers_json || '[]' );
 		for ( const ans of answers ) {
-			out += ans || '';
+			out += ans ? `<div class="role-answer">${ ans }</div>` : '';
 		}
 	} catch {
 		/* ignore */
 	}
-	out += item.explanation || '';
+	out += item.explanation ? `<div class="role-explanation">${item.explanation}</div>` : '';
 	return out;
 };
