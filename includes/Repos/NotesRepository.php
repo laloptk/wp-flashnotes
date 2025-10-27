@@ -46,7 +46,7 @@ class NotesRepository extends BaseRepository {
 					$sanitized_data['user_id'] = $uid;
 					break;
 				case 'title':
-					$title = trim( wp_strip_all_tags( (string) $field_value ) );
+					$title = trim( (string) $field_value );
 					if ( $title === '' ) {
 						throw new \Exception( 'Title cannot be empty.' );
 					}

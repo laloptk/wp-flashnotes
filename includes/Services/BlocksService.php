@@ -6,6 +6,7 @@ use WPFlashNotes\Blocks\NoteBlock;
 use WPFlashNotes\Blocks\CardBlock;
 use WPFlashNotes\Blocks\SlotBlock;
 use WPFlashNotes\Blocks\InserterBlock;
+use WPFlashNotes\Blocks\NoteInserterBlock;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -30,6 +31,7 @@ final class BlocksService implements ServiceInterface {
 			new CardBlock(),
 			new SlotBlock(),
 			new InserterBlock(),
+            new NoteInserterBlock(),
 		);
 
 		foreach ( $blocks as $block ) {

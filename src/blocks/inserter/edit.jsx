@@ -52,7 +52,7 @@ const Edit = ( { attributes, setAttributes, clientId } ) => {
 
 	const query = id ? { id } : { block_id: card_block_id };
 	const { data, loading, error } = useFetch( 'cards', query );
-
+	
 	useEffect( () => {
 		if ( ! data?.items?.length ) {
 			return;

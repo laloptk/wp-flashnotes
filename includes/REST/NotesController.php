@@ -68,6 +68,19 @@ class NotesController extends BaseController {
 			)
 		);
 
+		// GET /wpfn/v1/notes/find
+		register_rest_route(
+			$this->namespace,
+			'/' . $this->rest_base . '/find',
+			array(
+				array(
+					'methods'             => 'GET',
+					'callback'            => array( $this, 'find_notes' ),
+					'permission_callback' => array( $this, 'require_logged_in' ),
+				),
+			)
+		);
+
 		// POST /wpfn/v1/notes
 		register_rest_route(
 			$this->namespace,
@@ -172,6 +185,64 @@ class NotesController extends BaseController {
 		$id  = absint( $req['id'] );
 		$row = $this->repo->read( $id );
 		return $row ? $this->ok( array( 'item' => $row ) ) : $this->err( 'not_found', 'Note not found.', 404 );
+	}
+
+	public function find_notes( \WP_REST_Request $request ) {
+		$params = $request->get_params();
+
+		$args = array(
+			'where'  => array(),
+			'search' => array(),
+			'limit'  => null,
+			'offset' => null,
+		);
+
+		foreach ( $params as $param_key => $param_value ) {
+			if ( 'limit' === $param_key ) {
+				$limit = absint( $param_value );
+				if ( $limit > 0 ) {
+					$args['limit'] = $limit;
+				}
+				continue;
+			}
+
+			if ( 'offset' === $param_key ) {
+				$offset = absint( $param_value );
+				if ( $offset > 0 ) { // do not include OFFSET 0
+					$args['offset'] = $offset;
+				}
+				continue;
+			}
+
+			if ( 's' === $param_key && is_string( $param_value ) ) {
+				$term = trim( $param_value );
+				if ( '' !== $term ) {
+					$args['search'] = array(
+						'title'    => $term,
+						'content'  => $term,
+					);
+				}
+				continue;
+			}
+
+			if ( '' === $param_value || null === $param_value ) {
+				continue;
+			}
+
+			if ( is_string( $param_value ) && preg_match( '/^-?\d+$/', $param_value ) ) {
+				$param_value = (int) $param_value;
+			}
+
+			$args['where'][ $param_key ] = $param_value;
+		}
+
+		$rows = $this->repo->find( $args );
+
+		return $this->ok(
+			array(
+				'items' => $rows,
+			)
+		);
 	}
 
 	public function create_item( $req ) {

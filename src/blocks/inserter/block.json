@@ -2,7 +2,7 @@
   "$schema": "https://schemas.wp.org/trunk/block.json",
   "apiVersion": 3,
   "name": "wpfn/inserter",
-  "title": "FlashNotes Inserter",
+  "title": "FlashNotes: Card Inserter",
   "category": "widgets",
   "icon": "index-card",
   "description": "Insert a FlashNotes card into a post.",
@@ -43,7 +43,7 @@
     },
     "backgroundColor": {
       "type": "string",
-      "default": "#ddd"
+      "default": "#fff"
     },
     "borderRadius": {
       "type": "object",

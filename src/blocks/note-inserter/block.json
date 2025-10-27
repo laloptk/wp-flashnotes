@@ -1,0 +1,68 @@
+{
+    "$schema": "https://schemas.wp.org/trunk/block.json",
+    "apiVersion": 3,
+    "name": "wpfn/note-inserter",
+    "title": "FlashNotes: Note Inserter",
+    "category": "widgets",
+    "icon": "index-card",
+    "description": "Insert a FlashNotes note into a post.",
+    "attributes": {
+        "id": {
+            "type": "string"
+        },
+        "block_id": {
+            "type": "string"
+        },
+        "note_block_id": {
+            "type": "string"
+        },
+        "object_type": {
+            "type": "string",
+            "default": "note"
+        },
+        "margin": {
+            "type": "object",
+            "default": {}
+        },
+        "padding": {
+            "type": "object",
+            "default": {
+                "top": "15px",
+                "right": "15px",
+                "bottom": "15px",
+                "left": "15px"
+            }
+        },
+        "border": {
+                "type": "object",
+                "default": {
+                "color": "#aaa",
+                "style": "solid",
+                "width": "1px"
+            }
+        },
+        "backgroundColor": {
+            "type": "string",
+            "default": "#fff"
+        },
+        "borderRadius": {
+            "type": "object",
+            "default": {
+                "top": "25px",
+                "right": "25px",
+                "bottom": "25px",
+                "left": "25px"
+            }
+        },
+        "hidden": {
+            "type": "boolean",
+            "default": false
+        }
+    },
+    "supports": {
+        "html": false
+    },
+    "editorScript": "file:./index.js",
+    "style": "file:../../style-index.css",
+    "editorStyle": "file:../../index.css"
+}

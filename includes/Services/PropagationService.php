@@ -57,9 +57,5 @@ final class PropagationService implements ServiceInterface {
 
 		$event_handler = new EventHandler($propagation);
 		$event_handler->register();
-
-		if (defined('WP_DEBUG') && WP_DEBUG) {
-			error_log('PropagationService initialized (EventHandler registered) at: init');
-		}
 	}
 }
