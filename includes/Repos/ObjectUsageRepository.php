@@ -4,8 +4,8 @@ namespace WPFlashNotes\Repos;
 
 defined( 'ABSPATH' ) || exit;
 
-use Exception;
 use wpdb;
+use WPFlashNotes\Errors\WPFlashNotesError;
 
 /**
  * ObjectUsageRepository
@@ -33,6 +33,8 @@ class ObjectUsageRepository {
 
 	/**
 	 * Attach usage idempotently.
+	 *
+	 * @throws WPFlashNotesError
 	 */
 	public function attach( string $object_type, int $object_id, int $post_id, string $block_id ): bool {
 		$object_type = $this->validate_arg( 'type', $object_type );
@@ -41,7 +43,8 @@ class ObjectUsageRepository {
 		$block_id    = $this->validate_arg( 'block_id', $block_id );
 
 		$insert_sql = $this->db->prepare(
-			"INSERT IGNORE INTO {$this->table} (object_type, object_id, post_id, block_id) VALUES (%s, %d, %d, %s)",
+			"INSERT IGNORE INTO {$this->table} (object_type, object_id, post_id, block_id)
+			 VALUES (%s, %d, %d, %s)",
 			$object_type,
 			$object_id,
 			$post_id,
@@ -50,13 +53,20 @@ class ObjectUsageRepository {
 
 		$query_result = $this->db->query( $insert_sql );
 		if ( $query_result === false ) {
-			throw new Exception( 'Attach failed: ' . ( $this->db->last_error ?: 'unknown DB error' ) );
+			throw new WPFlashNotesError(
+				'db',
+				'Attach failed: ' . ( $this->db->last_error ?: 'unknown DB error' ),
+				500
+			);
 		}
+
 		return $query_result >= 0;
 	}
 
 	/**
 	 * Detach usage.
+	 *
+	 * @throws WPFlashNotesError
 	 */
 	public function detach( string $object_type, int $object_id, int $post_id, string $block_id ): bool {
 		$object_type = $this->validate_arg( 'type', $object_type );
@@ -74,20 +84,22 @@ class ObjectUsageRepository {
 			),
 			array( '%s', '%d', '%d', '%s' )
 		);
+
 		if ( $delete_result === false ) {
-			throw new Exception( 'Detach failed: ' . ( $this->db->last_error ?: 'unknown DB error' ) );
+			throw new WPFlashNotesError(
+				'db',
+				'Detach failed: ' . ( $this->db->last_error ?: 'unknown DB error' ),
+				500
+			);
 		}
+
 		return $delete_result > 0;
 	}
 
 	/**
 	 * Get relationships for an object type in a post (optionally within a block).
 	 *
-	 * @param string      $object_type  Object type (card|note).
-	 * @param int         $post_id      Post ID.
-	 * @param string|null $block_id     Optional block ID to filter.
-	 * @return int[]                   List of object IDs.
-	 * @throws Exception
+	 * @throws WPFlashNotesError
 	 */
 	public function get_relationships( string $object_type, int $post_id, ?string $block_id = null ): array {
 		$object_type = $this->validate_arg( 'type', $object_type );
@@ -97,8 +109,8 @@ class ObjectUsageRepository {
 			$block_id = $this->validate_arg( 'block_id', $block_id );
 			$sql      = $this->db->prepare(
 				"SELECT object_id FROM {$this->table}
-				WHERE object_type = %s AND post_id = %d AND block_id = %s
-				ORDER BY object_id ASC",
+				 WHERE object_type = %s AND post_id = %d AND block_id = %s
+				 ORDER BY object_id ASC",
 				$object_type,
 				$post_id,
 				$block_id
@@ -106,18 +118,31 @@ class ObjectUsageRepository {
 		} else {
 			$sql = $this->db->prepare(
 				"SELECT DISTINCT object_id FROM {$this->table}
-				WHERE object_type = %s AND post_id = %d
-				ORDER BY object_id ASC",
+				 WHERE object_type = %s AND post_id = %d
+				 ORDER BY object_id ASC",
 				$object_type,
 				$post_id
 			);
 		}
 
-		$result_rows = $this->db->get_col( $sql ) ?: array();
-		return array_map( 'intval', $result_rows );
+		$result_rows = $this->db->get_col( $sql );
+		if ( $result_rows === null ) {
+			throw new WPFlashNotesError(
+				'db',
+				'Failed to fetch relationships: ' . ( $this->db->last_error ?: 'unknown DB error' ),
+				500
+			);
+		}
+
+		return array_map( 'intval', $result_rows ?: array() );
 	}
 
-	public function get_relationships_by_column( string $column, $column_val ) {
+	/**
+	 * Get relationships filtered by column.
+	 *
+	 * @throws WPFlashNotesError
+	 */
+	public function get_relationships_by_column( string $column, $column_val ): array {
 		$column_validation_map = array(
 			'object_type' => 'type',
 			'object_id'   => 'id',
@@ -126,25 +151,33 @@ class ObjectUsageRepository {
 		);
 
 		if ( ! isset( $column_validation_map[ $column ] ) ) {
-			throw new Exception( 'Invalid column name.' );
+			throw new WPFlashNotesError( 'validation', 'Invalid column name.', 400 );
 		}
 
 		$validated_val = $this->validate_arg( $column_validation_map[ $column ], $column_val );
-
-		$placeholder = is_int( $validated_val ) ? '%d' : '%s';
+		$placeholder   = is_int( $validated_val ) ? '%d' : '%s';
 
 		$sql = $this->db->prepare(
 			"SELECT * FROM {$this->table} WHERE {$column} = {$placeholder}",
 			$validated_val
 		);
 
-		$result_rows = $this->db->get_results( $sql, ARRAY_A ) ?: array();
+		$result_rows = $this->db->get_results( $sql, ARRAY_A );
+		if ( $result_rows === null ) {
+			throw new WPFlashNotesError(
+				'db',
+				'Failed to fetch relationships: ' . ( $this->db->last_error ?: 'unknown DB error' ),
+				500
+			);
+		}
 
-		return $result_rows;
+		return $result_rows ?: array();
 	}
 
 	/**
 	 * Bulk attach objects to a block.
+	 *
+	 * @throws WPFlashNotesError
 	 */
 	public function bulk_attach_objects_to_block( int $post_id, string $block_id, string $object_type, array $object_ids ): int {
 		$post_id     = $this->validate_arg( 'id', $post_id );
@@ -157,9 +190,11 @@ class ObjectUsageRepository {
 		}
 
 		$total_inserted = 0;
+
 		foreach ( array_chunk( $object_ids, 200 ) as $object_chunk ) {
 			$values       = array();
 			$placeholders = array();
+
 			foreach ( $object_chunk as $object_id ) {
 				$values[]       = $object_type;
 				$values[]       = $object_id;
@@ -167,18 +202,31 @@ class ObjectUsageRepository {
 				$values[]       = $block_id;
 				$placeholders[] = '(%s,%d,%d,%s)';
 			}
-			$insert_sql   = "INSERT IGNORE INTO {$this->table} (object_type, object_id, post_id, block_id) VALUES " . implode( ',', $placeholders );
+
+			$insert_sql   = "INSERT IGNORE INTO {$this->table}
+				(object_type, object_id, post_id, block_id)
+				VALUES " . implode( ',', $placeholders );
+
 			$query_result = $this->db->query( $this->db->prepare( $insert_sql, ...$values ) );
+
 			if ( $query_result === false ) {
-				throw new Exception( 'Bulk attach failed: ' . ( $this->db->last_error ?: 'unknown DB error' ) );
+				throw new WPFlashNotesError(
+					'db',
+					'Bulk attach failed: ' . ( $this->db->last_error ?: 'unknown DB error' ),
+					500
+				);
 			}
+
 			$total_inserted += (int) $query_result;
 		}
+
 		return $total_inserted;
 	}
 
 	/**
 	 * Sync block objects with desired set.
+	 *
+	 * @throws WPFlashNotesError
 	 */
 	public function sync_block_objects( int $post_id, string $block_id, string $object_type, array $desired_object_ids ): array {
 		$post_id     = $this->validate_arg( 'id', $post_id );
@@ -197,15 +245,21 @@ class ObjectUsageRepository {
 				$placeholders  = implode( ',', array_fill( 0, count( $remove_chunk ), '%d' ) );
 				$delete_sql    = $this->db->prepare(
 					"DELETE FROM {$this->table}
-					WHERE post_id = %d AND block_id = %s AND object_type = %s AND object_id IN ($placeholders)",
+					 WHERE post_id = %d AND block_id = %s AND object_type = %s AND object_id IN ($placeholders)",
 					$post_id,
 					$block_id,
 					$object_type,
 					...$remove_chunk
 				);
+
 				$delete_result = $this->db->query( $delete_sql );
+
 				if ( $delete_result === false ) {
-					throw new Exception( 'Sync remove failed: ' . ( $this->db->last_error ?: 'unknown DB error' ) );
+					throw new WPFlashNotesError(
+						'db',
+						'Sync remove failed: ' . ( $this->db->last_error ?: 'unknown DB error' ),
+						500
+					);
 				}
 			}
 		}
@@ -235,26 +289,34 @@ class ObjectUsageRepository {
 		return $list;
 	}
 
-	protected function validate_arg( $arg_type, $arg_val ) {
+	/**
+	 * Validate argument by type and value.
+	 *
+	 * @throws WPFlashNotesError
+	 */
+	protected function validate_arg( string $arg_type, $arg_val ) {
 		switch ( $arg_type ) {
 			case 'id':
 				$validated_id = absint( $arg_val );
 				if ( $validated_id <= 0 ) {
-					throw new Exception( 'ID must be positive.' );
+					throw new WPFlashNotesError( 'validation', 'ID must be positive.', 400 );
 				}
 				return $validated_id;
+
 			case 'block_id':
-				$block_id = trim( $arg_val );
+				$block_id = trim( (string) $arg_val );
 				if ( $block_id === '' || strlen( $block_id ) > 128 || ! preg_match( '/^[A-Za-z0-9_-]+$/', $block_id ) ) {
-					throw new Exception( 'Invalid block_id.' );
+					throw new WPFlashNotesError( 'validation', 'Invalid block_id.', 400 );
 				}
 				return $block_id;
+
 			case 'type':
-				$type = strtolower( trim( $arg_val ) );
+				$type = strtolower( trim( (string) $arg_val ) );
 				if ( ! isset( $this->allowed_types[ $type ] ) ) {
-					throw new Exception( 'Invalid object_type.' );
+					throw new WPFlashNotesError( 'validation', 'Invalid object_type.', 400 );
 				}
 				return $type;
+
 			default:
 				return null;
 		}
