@@ -115,7 +115,7 @@ class CardsController extends BaseController {
 			)
 		);
 
-		// DELETE /wpfn/v1/cards/{id}?hard=1
+		// DELETE /wpfn/v1/cards/{id}
 		register_rest_route(
 			$this->namespace,
 			'/' . $this->rest_base . '/(?P<id>\d+)',
@@ -124,12 +124,6 @@ class CardsController extends BaseController {
 					'methods'             => 'DELETE',
 					'callback'            => array( $this, 'delete_item' ),
 					'permission_callback' => array( $this, 'perm_row_from_id' ),
-					'args'                => array(
-						'hard' => array(
-							'type'     => 'boolean',
-							'required' => false,
-						),
-					),
 				),
 			)
 		);
@@ -354,13 +348,11 @@ class CardsController extends BaseController {
 
 	public function delete_item( $req ) {
 		$id   = absint( $req['id'] );
-		$hard = (bool) $req->get_param( 'hard' );
 
-		$ok = $hard ? $this->repo->delete( $id ) : $this->repo->soft_delete( $id );
+		$ok = $this->repo->delete( $id );
 		return $this->ok(
 			array(
 				'deleted' => (int) $ok,
-				'hard'    => (int) $hard,
 			)
 		);
 	}

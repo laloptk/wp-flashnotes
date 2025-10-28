@@ -169,34 +169,6 @@ abstract class BaseRepository {
 	}
 
 	/**
-	 * Soft delete by setting the soft-delete column (default: deleted_at).
-	 *
-	 * @param int $id
-	 * @return bool True if updated; false if already soft-deleted or not found.
-	 * @throws Exception On validation or DB error.
-	 */
-	public function soft_delete( int $id ): bool {
-		$id  = $this->validate_id( $id );
-		$col = $this->soft_delete_column();
-		if ( $col === null ) {
-			// Table does not support soft deletes.
-			return $this->delete( $id );
-		}
-
-		$data = array(
-			$col         => current_time( 'mysql' ),
-			'updated_at' => current_time( 'mysql' ),
-		);
-
-		// Only include updated_at if table actually has it.
-		if ( ! $this->column_exists( 'updated_at' ) ) {
-			unset( $data['updated_at'] );
-		}
-
-		return $this->update( $id, $data );
-	}
-
-	/**
 	 * Fetch multiple rows with a simple WHERE map and optional limit/offset.
 	 * Not over-engineered: basic equals matches only; extend in child if needed.
 	 *
@@ -303,17 +275,6 @@ abstract class BaseRepository {
 	 * @throws Exception
 	 */
 	abstract protected function sanitize_data( array $data ): array;
-
-	/**
-	 * Optional: override to indicate the soft-delete column.
-	 * Return null to disable soft deletes (fall back to hard delete).
-	 *
-	 * @return string|null
-	 */
-	protected function soft_delete_column(): ?string {
-		// Your schemas use `deleted_at` on cards/notes; relation tables have no soft delete.
-		return 'deleted_at';
-	}
 
 	/**
 	 * Build wpdb format array from sanitized data.

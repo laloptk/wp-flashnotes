@@ -106,7 +106,7 @@ export default class ResourceAPIService {
 			return;
 		}
 		return this.request( {
-			path: addQueryArgs( `${ this.path }/${ item_id }`, { hard: 1 } ),
+			path: `${ this.path }/${ item_id }`,
 			method: 'DELETE',
 		} );
 	}
