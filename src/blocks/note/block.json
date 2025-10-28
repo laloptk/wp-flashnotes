@@ -3,7 +3,7 @@
   "name": "wpfn/note",
   "title": "FlashNotes: Note",
   "category": "widgets",
-  "icon": "sticky",
+  "icon": "clipboard",
   "description": "Create or reference a study note and display it.",
   "supports": {
     "html": false,

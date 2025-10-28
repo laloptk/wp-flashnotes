@@ -114,7 +114,7 @@ function FlashNotesSidebar() {
 			<PluginSidebar
 				name="wp-flashnotes-sidebar"
 				title={ __( 'FlashNotes', 'wp-flashnotes' ) }
-				icon="edit"
+				icon="admin-settings"
 			>
 				<PanelBody>
 					{ loading && (
@@ -185,12 +185,12 @@ function FlashNotesSidebar() {
 												target="_blank"
 												rel="noopener noreferrer"
 											>
-												{ records.studysetRecord?.title
-													?.rendered ||
+												{
 													__(
 														'View study set',
 														'wp-flashnotes'
-													) }
+													) 
+												}
 											</a>
 										</p>
 										<p>

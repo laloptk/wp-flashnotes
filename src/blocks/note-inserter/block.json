@@ -4,7 +4,7 @@
     "name": "wpfn/note-inserter",
     "title": "FlashNotes: Note Inserter",
     "category": "widgets",
-    "icon": "index-card",
+    "icon": "migrate",
     "description": "Insert a FlashNotes note into a post.",
     "attributes": {
         "id": {
