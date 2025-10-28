@@ -8,6 +8,7 @@ use WPFlashNotes\Helpers\BlockFormatter;
 use WPFlashNotes\Helpers\BlocksMerger;
 use WPFlashNotes\Blocks\Transformers\BlockTransformer;
 use WPFlashNotes\Blocks\Transformers\CardBlockStrategy;
+use WPFlashNotes\Blocks\Transformers\NoteBlockStrategy;
 
 /**
  * Handles WordPress lifecycle events and studyset generation logic.
@@ -23,7 +24,7 @@ class EventHandler {
 		$this->transformer = new BlockTransformer(
 			array(
 				new CardBlockStrategy(),
-			// Add NoteBlockStrategy when ready.
+				new NoteBlockStrategy(),
 			)
 		);
 	}
