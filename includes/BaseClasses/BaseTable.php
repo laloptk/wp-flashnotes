@@ -37,18 +37,32 @@ abstract class BaseTable {
 	 * @throws \RuntimeException If the table slug is missing or invalid.
 	 * @return void
 	 */
-	public function install_table(): void {
+	public function install_table(): bool {
 		$table_name = $this->get_table_name();
 
 		do_action( 'wpfn_before_table_install', $table_name );
 
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 
-		$sql    = $this->get_schema();
-		$result = dbDelta( $sql );
+		try {
+			$sql    = $this->get_schema();
+			$result = dbDelta( $sql );
 
-		do_action( 'wpfn_after_table_install', $table_name, $result ?? array() );
+			do_action( 'wpfn_after_table_install', $table_name, $result ?? array() );
+			return true;
+		} catch ( \Throwable $e ) {
+			error_log(sprintf(
+				'[WPFlashNotes] Table install failed for %s: %s',
+				$table_name,
+				$e->getMessage()
+			));
+
+			do_action( 'wpfn_table_install_error', $table_name, $e );
+
+			return false;
+		}
 	}
+
 
 	/**
 	 * Returns the full table name with the WordPress prefix.
