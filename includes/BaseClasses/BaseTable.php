@@ -1,137 +1,111 @@
 <?php
-
 namespace WPFlashNotes\BaseClasses;
 
 defined( 'ABSPATH' ) || exit;
 
+use Throwable;
+use WPFlashNotes\DataBase\Schema\SchemaStrategyInterface;
+use WPFlashNotes\DataBase\TableBuilder;
+
+/**
+ * BaseTable
+ *
+ * Abstract base for all custom tables.
+ * Uses a pluggable schema strategy (dbDelta or TableBuilder).
+ */
 abstract class BaseTable {
 
-	/**
-	 * WordPress database instance.
-	 *
-	 * @var \wpdb
-	 */
 	protected \wpdb $wpdb;
 
 	/**
-	 * Table slug without prefix.
+	 * Un-prefixed table slug, e.g. 'wpfn_cards'.
+	 * Subclasses must override this.
 	 *
 	 * @var string|null
 	 */
 	protected ?string $slug = null;
 
 	/**
-	 * Constructor.
-	 * Assigns the global $wpdb instance.
+	 * Strategy responsible for installing/updating the schema.
+	 *
+	 * @var SchemaStrategyInterface|null
 	 */
+	protected ?SchemaStrategyInterface $strategy = null;
+
 	public function __construct() {
 		global $wpdb;
 		$this->wpdb = $wpdb;
 	}
 
 	/**
-	 * Creates or updates the table schema using dbDelta().
-	 *
-	 * Executes before/after hooks and logs the dbDelta result.
-	 *
-	 * @throws \RuntimeException If the table slug is missing or invalid.
-	 * @return void
+	 * Inject the schema strategy (DbDeltaStrategy, TableBuilderStrategy, etc.).
+	 */
+	public function set_strategy( SchemaStrategyInterface $strategy ): void {
+		$this->strategy = $strategy;
+	}
+
+	/**
+	 * Install or update table using the configured strategy.
 	 */
 	public function install_table(): bool {
-		$table_name = $this->get_table_name();
-
-		do_action( 'wpfn_before_table_install', $table_name );
-
-		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+		$table = $this->get_table_name();
+		do_action( 'wpfn_before_table_install', $table );
 
 		try {
-			$sql    = $this->get_schema();
-			$result = dbDelta( $sql );
+			if ( ! $this->strategy ) {
+				throw new \RuntimeException( static::class . ' has no schema strategy.' );
+			}
 
-			do_action( 'wpfn_after_table_install', $table_name, $result ?? array() );
-			return true;
-		} catch ( \Throwable $e ) {
-			error_log(sprintf(
-				'[WPFlashNotes] Table install failed for %s: %s',
-				$table_name,
+			$ok = $this->strategy->install( $this );
+
+			do_action( 'wpfn_after_table_install', $table, $ok );
+
+			return $ok;
+		} catch ( Throwable $e ) {
+			error_log( sprintf(
+				'[WPFlashNotes] Table install failed for %s (%s): %s',
+				$table,
+				static::class,
 				$e->getMessage()
-			));
+			) );
 
-			do_action( 'wpfn_table_install_error', $table_name, $e );
+			do_action( 'wpfn_table_install_error', $table, $e );
 
 			return false;
 		}
 	}
 
-
 	/**
-	 * Returns the full table name with the WordPress prefix.
-	 *
-	 * @throws \RuntimeException If the slug is missing or invalid.
-	 * @return string
+	 * Full table name with WordPress prefix.
 	 */
 	public function get_table_name(): string {
-		if ( empty( $this->slug ) || ! is_string( $this->slug ) ) {
-			throw new \RuntimeException(
-				sprintf(
-					'%s: $slug must be a non-empty string in the child class.',
-					static::class
-				)
-			);
-		}
-
-		if ( ! $this->is_valid_identifier( $this->slug ) ) {
-			throw new \RuntimeException(
-				sprintf(
-					'%s: Invalid table slug "%s".',
-					static::class,
-					$this->slug
-				)
-			);
+		if ( empty( $this->slug ) || ! $this->is_valid_identifier( $this->slug ) ) {
+			throw new \RuntimeException( sprintf( 'Invalid $slug in %s', static::class ) );
 		}
 
 		return $this->wpdb->prefix . $this->slug;
 	}
 
 	/**
-	 * Returns the charset and collation string for CREATE TABLE.
-	 *
-	 * @return string
+	 * Simple SQL identifier validator (table/column/index names).
 	 */
-	protected function get_charset_collate(): string {
+	protected function is_valid_identifier( string $n ): bool {
+		return (bool) preg_match( '/^[A-Za-z_][A-Za-z0-9_]{0,63}$/', $n );
+	}
+
+	public function get_charset_collate(): string {
 		return $this->wpdb->get_charset_collate();
 	}
 
-	/**
-	 * Checks whether the table exists in the current database.
-	 *
-	 * @return bool
-	 */
-	protected function table_exists(): bool {
-		$table = $this->get_table_name();
-		$found = $this->wpdb->get_var(
-			$this->wpdb->prepare( 'SHOW TABLES LIKE %s', $table )
+	public function define_dbdelta_schema(): string {
+		throw new \RuntimeException(
+			static::class . ' does not support dbDelta schema strategy.'
 		);
-
-		return $found === $table;
 	}
 
-	/**
-	 * Validates a SQL identifier (table, column, index name).
-	 *
-	 * @param string $name
-	 * @return bool
-	 */
-	protected function is_valid_identifier( string $name ): bool {
-		return (bool) preg_match( '/^[A-Za-z_][A-Za-z0-9_]{0,63}$/', $name );
+	public function define_builder_schema( TableBuilder $builder ): void {
+		throw new \RuntimeException(
+			static::class . ' does not support TableBuilder schema strategy.'
+		);
 	}
-
-	/**
-	 * Returns the CREATE TABLE statement for dbDelta().
-	 * Must include the full table name via get_table_name()
-	 * and end with ENGINE and charset/collation.
-	 *
-	 * @return string
-	 */
-	abstract protected function get_schema(): string;
 }
