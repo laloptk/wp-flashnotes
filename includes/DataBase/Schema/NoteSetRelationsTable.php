@@ -2,7 +2,8 @@
 namespace WPFlashNotes\DataBase\Schema;
 
 use WPFlashNotes\BaseClasses\BaseTable;
-use WPFlashNotes\Schema\TableBuilderStrategy;
+use WPFlashNotes\DataBase\Schema\TableBuilderStrategy;
+use WPFlashNotes\DataBase\TableBuilder;
 
 defined('ABSPATH') || exit;
 
@@ -15,7 +16,7 @@ final class NoteSetRelationsTable extends BaseTable {
 		$this->strategy = new TableBuilderStrategy();
 	}
 
-	public function define_schema($builder): void {
+	public function define_builder_schema(TableBuilder $builder): void {
 		$notes = $this->wpdb->prefix . 'wpfn_notes';
 		$sets  = $this->wpdb->prefix . 'wpfn_sets';
 

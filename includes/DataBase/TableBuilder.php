@@ -10,8 +10,11 @@ defined( 'ABSPATH' ) || exit;
  *
  * A utility class to create custom MySQL tables with foreign key support.
  * Intended as an alternative to dbDelta() for strict relational schemas.
+ *
+ * IMPORTANT: The constructor expects the FULL table name, including $wpdb->prefix.
  */
 class TableBuilder {
+
 	protected wpdb $db;
 	protected string $table_name;
 	protected array $columns      = array();
@@ -22,9 +25,6 @@ class TableBuilder {
 	protected ?string $version = null;
 	protected array $errors    = array();
 
-	/**
-	 * Constructor
-	 */
 	public function __construct( string $table_name ) {
 		global $wpdb;
 		$this->db = $wpdb;
@@ -33,13 +33,15 @@ class TableBuilder {
 			throw new \InvalidArgumentException( "Invalid table name: $table_name" );
 		}
 
-		$this->table_name = $wpdb->prefix . $table_name;
+		// FULL name; no extra prefix here.
+		$this->table_name = $table_name;
+
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 		$this->charset_collate = $wpdb->get_charset_collate();
 	}
 
 	/**
-	 * Add a column definition
+	 * Add a column definition.
 	 */
 	public function add_column( string $name, string $definition ): self {
 		if ( ! $this->is_valid_identifier( $name ) ) {
@@ -54,11 +56,12 @@ class TableBuilder {
 			'definition' => sprintf( '`%s` %s', $name, trim( $definition ) ),
 			'name'       => $name,
 		);
+
 		return $this;
 	}
 
 	/**
-	 * Set primary key
+	 * Set primary key (single column).
 	 */
 	public function add_primary( string $column ): self {
 		if ( ! $this->is_valid_identifier( $column ) ) {
@@ -74,7 +77,26 @@ class TableBuilder {
 	}
 
 	/**
-	 * Add an index
+	 * Set primary key (compound).
+	 */
+	public function add_primary_compound( array $columns ): self {
+		foreach ( $columns as $c ) {
+			if ( ! $this->is_valid_identifier( $c ) ) {
+				throw new \InvalidArgumentException( "Invalid column in PK: $c" );
+			}
+		}
+
+		$cols                     = implode( '`,`', $columns );
+		$this->indexes['PRIMARY'] = array(
+			'definition' => sprintf( 'PRIMARY KEY (`%s`)', $cols ),
+			'columns'    => $columns,
+		);
+
+		return $this;
+	}
+
+	/**
+	 * Add a non-unique index.
 	 */
 	public function add_index( string $name, array $columns ): self {
 		if ( ! $this->is_valid_identifier( $name ) ) {
@@ -87,28 +109,67 @@ class TableBuilder {
 			}
 		}
 
-		$cols                   = implode( '`,`', $columns );
+		$cols = implode( '`,`', $columns );
+
 		$this->indexes[ $name ] = array(
 			'definition' => sprintf( 'KEY `%s` (`%s`)', $name, $cols ),
 			'columns'    => $columns,
 		);
+
 		return $this;
 	}
 
 	/**
-	 * Add a foreign key constraint
+	 * Add a unique index.
 	 */
-	public function add_foreign_key( string $column, string $ref_table, string $ref_column, string $on_delete = 'CASCADE', string $on_update = 'RESTRICT' ): self {
-		if ( ! $this->is_valid_identifier( $column ) ||
+	public function add_unique( string $name, array $columns ): self {
+		if ( ! $this->is_valid_identifier( $name ) ) {
+			throw new \InvalidArgumentException( "Invalid unique name: $name" );
+		}
+
+		foreach ( $columns as $c ) {
+			if ( ! $this->is_valid_identifier( $c ) ) {
+				throw new \InvalidArgumentException( "Invalid column in UNIQUE: $c" );
+			}
+		}
+
+		$cols = implode( '`,`', $columns );
+
+		$this->indexes[ $name ] = array(
+			'definition' => sprintf( 'UNIQUE KEY `%s` (`%s`)', $name, $cols ),
+			'columns'    => $columns,
+		);
+
+		return $this;
+	}
+
+	/**
+	 * Add a foreign key constraint.
+	 */
+	public function add_foreign_key(
+		string $column,
+		string $ref_table,
+		string $ref_column,
+		string $on_delete = 'CASCADE',
+		string $on_update = 'RESTRICT'
+	): self {
+		if (
+			! $this->is_valid_identifier( $column ) ||
 			! $this->is_valid_identifier( $ref_table ) ||
-			! $this->is_valid_identifier( $ref_column ) ) {
+			! $this->is_valid_identifier( $ref_column )
+		) {
 			throw new \InvalidArgumentException( 'Invalid identifier in foreign key definition' );
 		}
 
 		$on_delete = $this->sanitize_fk_action( $on_delete );
 		$on_update = $this->sanitize_fk_action( $on_update );
 
-		$constraint_name = sprintf( 'fk_%s_%s_%s', $this->get_short_table_name(), $column, substr( md5( $ref_table . $ref_column ), 0, 6 ) );
+		$constraint_name = sprintf(
+			'fk_%s_%s_%s',
+			$this->get_short_table_name(),
+			$column,
+			substr( md5( $ref_table . $ref_column ), 0, 6 )
+		);
 
 		$this->foreign_keys[ $constraint_name ] = array(
 			'definition' => sprintf(
@@ -125,67 +186,40 @@ class TableBuilder {
 			'ref_table'  => $ref_table,
 			'ref_column' => $ref_column,
 		);
+
 		return $this;
 	}
-
-	// NUEVO: PRIMARY KEY compuesta
-	public function add_primary_compound( array $columns ): self {
-		foreach ( $columns as $c ) {
-			if ( ! $this->is_valid_identifier( $c ) ) {
-				throw new \InvalidArgumentException( "Invalid column in PK: $c" );
-			}
-		}
-		$cols                     = implode( '`,`', $columns );
-		$this->indexes['PRIMARY'] = array(
-			'definition' => sprintf( 'PRIMARY KEY (`%s`)', $cols ),
-			'columns'    => $columns,
-		);
-		return $this;
-	}
-
-	public function add_unique( string $name, array $columns ): self {
-		if ( ! $this->is_valid_identifier( $name ) ) {
-			throw new \InvalidArgumentException( "Invalid unique name: $name" );
-		}
-		foreach ( $columns as $c ) {
-			if ( ! $this->is_valid_identifier( $c ) ) {
-				throw new \InvalidArgumentException( "Invalid column in UNIQUE: $c" );
-			}
-		}
-		$cols                   = implode( '`,`', $columns );
-		$this->indexes[ $name ] = array(
-			'definition' => sprintf( 'UNIQUE KEY `%s` (`%s`)', $name, $cols ),
-			'columns'    => $columns,
-		);
-		return $this;
-	}
-
 
 	/**
-	 * Set storage engine
+	 * Set storage engine.
 	 */
 	public function set_engine( string $engine ): self {
 		$allowed_engines = array( 'InnoDB', 'MyISAM', 'MEMORY', 'ARCHIVE' );
-		if ( ! in_array( $engine, $allowed_engines ) ) {
+
+		if ( ! in_array( $engine, $allowed_engines, true ) ) {
 			throw new \InvalidArgumentException( "Unsupported engine: $engine" );
 		}
+
 		$this->engine = $engine;
+
 		return $this;
 	}
 
 	/**
-	 * Set schema version
+	 * Set schema version (x.y.z).
 	 */
 	public function set_version( string $version ): self {
 		if ( ! preg_match( '/^\d+\.\d+\.\d+$/', $version ) ) {
 			throw new \InvalidArgumentException( 'Version must be in format x.y.z' );
 		}
+
 		$this->version = $version;
+
 		return $this;
 	}
 
 	/**
-	 * Create or update the table
+	 * Create or update the table.
 	 */
 	public function createOrUpdate(): bool {
 		$this->errors = array();
@@ -210,7 +244,7 @@ class TableBuilder {
 	}
 
 	/**
-	 * Get recorded errors
+	 * Get recorded errors.
 	 */
 	public function getErrors(): array {
 		return $this->errors;
@@ -220,6 +254,7 @@ class TableBuilder {
 		$table = $this->db->get_var(
 			$this->db->prepare( 'SHOW TABLES LIKE %s', $this->table_name )
 		);
+
 		return $table === $this->table_name;
 	}
 
@@ -231,7 +266,7 @@ class TableBuilder {
 		$allowed_actions = array( 'RESTRICT', 'CASCADE', 'SET NULL', 'NO ACTION', 'SET DEFAULT' );
 		$action          = strtoupper( trim( $action ) );
 
-		if ( in_array( $action, $allowed_actions ) ) {
+		if ( in_array( $action, $allowed_actions, true ) ) {
 			return $action;
 		}
 
@@ -245,6 +280,7 @@ class TableBuilder {
 
 	protected function create_table(): bool {
 		$this->db->query( 'START TRANSACTION' );
+
 		try {
 			$definitions = array_merge(
 				array_column( $this->columns, 'definition' ),
@@ -273,6 +309,7 @@ class TableBuilder {
 			}
 
 			$this->db->query( 'COMMIT' );
+
 			return true;
 		} catch ( \Exception $e ) {
 			$this->db->query( 'ROLLBACK' );
@@ -291,24 +328,47 @@ class TableBuilder {
 				'Key_name'
 			);
 			$existing_fks     = $this->db->get_col(
-				$this->db->prepare( 'SELECT CONSTRAINT_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s AND REFERENCED_TABLE_NAME IS NOT NULL', $this->table_name )
+				$this->db->prepare(
+					'SELECT CONSTRAINT_NAME 
+					FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE 
+					WHERE TABLE_SCHEMA = DATABASE() 
+						AND TABLE_NAME = %s 
+						AND REFERENCED_TABLE_NAME IS NOT NULL',
+					$this->table_name
+				)
 			);
 
 			foreach ( $this->columns as $col ) {
-				if ( ! in_array( $col['name'], $existing_columns ) ) {
-					$sql = sprintf( 'ALTER TABLE `%s` ADD COLUMN %s', $this->table_name, $col['definition'] );
+				if ( ! in_array( $col['name'], $existing_columns, true ) ) {
+					$sql = sprintf(
+						'ALTER TABLE `%s` ADD COLUMN %s',
+						$this->table_name,
+						$col['definition']
+					);
+
 					if ( $this->db->query( $sql ) === false ) {
-						throw new \RuntimeException( "Failed to add column {$col['name']}: " . $this->db->last_error );
+						throw new \RuntimeException(
+							"Failed to add column {$col['name']}: " . $this->db->last_error
+						);
 					}
+
 					$altered = true;
 				}
 			}
 
 			foreach ( $this->indexes as $name => $index ) {
-				if ( ! in_array( $name, $existing_indexes ) ) {
-					$sql = sprintf( 'ALTER TABLE `%s` ADD %s', $this->table_name, $index['definition'] );
+				if ( ! in_array( $name, $existing_indexes, true ) ) {
+					$sql = sprintf(
+						'ALTER TABLE `%s` ADD %s',
+						$this->table_name,
+						$index['definition']
+					);
+
 					if ( $this->db->query( $sql ) === false ) {
-						error_log( "Warning: Failed to add index $name: " . $this->db->last_error );
+						// Index failures are non-fatal but logged.
+						error_log(
+							"[WPFlashNotes] Warning: Failed to add index $name: " . $this->db->last_error
+						);
 					} else {
 						$altered = true;
 					}
@@ -316,11 +376,19 @@ class TableBuilder {
 			}
 
 			foreach ( $this->foreign_keys as $name => $fk ) {
-				if ( ! in_array( $name, $existing_fks ) ) {
-					$sql = sprintf( 'ALTER TABLE `%s` ADD %s', $this->table_name, $fk['definition'] );
+				if ( ! in_array( $name, $existing_fks, true ) ) {
+					$sql = sprintf(
+						'ALTER TABLE `%s` ADD %s',
+						$this->table_name,
+						$fk['definition']
+					);
+
 					if ( $this->db->query( $sql ) === false ) {
-						throw new \RuntimeException( "Failed to add foreign key $name: " . $this->db->last_error );
+						throw new \RuntimeException(
+							"Failed to add foreign key $name: " . $this->db->last_error
+						);
 					}
+
 					$altered = true;
 				}
 			}
@@ -330,6 +398,7 @@ class TableBuilder {
 			}
 
 			$this->db->query( 'COMMIT' );
+
 			return $altered;
 		} catch ( \Exception $e ) {
 			$this->db->query( 'ROLLBACK' );

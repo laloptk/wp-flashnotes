@@ -1,14 +1,18 @@
 <?php
-namespace WPFlashNotes\BaseClasses;
+namespace WPFlashNotes\DataBase\Schema;
 
-use WPFlashNotes\DataBase\TableBuilder;
+defined( 'ABSPATH' ) || exit;
+
 use WPFlashNotes\BaseClasses\BaseTable;
+use WPFlashNotes\DataBase\TableBuilder;
 
-class TableBuilderStrategy {
+class TableBuilderStrategy implements SchemaStrategyInterface {
 
-	public function install(BaseTable $table): void {
-		$builder = new TableBuilder($table->get_table_name());
-		$table->define_schema($builder);
-		$builder->createOrUpdate();
+	public function install( BaseTable $table ): bool {
+		$builder = new TableBuilder( $table->get_table_name() );
+
+		$table->define_builder_schema( $builder );
+
+		return $builder->createOrUpdate();
 	}
 }

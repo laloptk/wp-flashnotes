@@ -2,7 +2,8 @@
 namespace WPFlashNotes\DataBase\Schema;
 
 use WPFlashNotes\BaseClasses\BaseTable;
-use WPFlashNotes\Schema\TableBuilderStrategy;
+use WPFlashNotes\DataBase\TableBuilder;
+use WPFlashNotes\DataBase\Schema\TableBuilderStrategy;
 
 defined('ABSPATH') || exit;
 
@@ -15,7 +16,7 @@ final class SetsTable extends BaseTable {
 		$this->strategy = new TableBuilderStrategy();
 	}
 
-	public function define_schema($builder): void {
+	public function define_builder_schema(TableBuilder $builder): void {
         $posts_table = $this->wpdb->prefix . 'posts';
 		$users_table = $this->wpdb->prefix . 'users';
 

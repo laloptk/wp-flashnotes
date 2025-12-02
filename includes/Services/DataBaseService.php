@@ -30,6 +30,7 @@ final class DatabaseService implements ServiceInterface {
 	 * Called by register_activation_hook().
 	 */
 	public static function install_schema(): void {
+		error_log('This is triggering');
 		try {
 			$tables = [
 				new CardsTable(),

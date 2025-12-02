@@ -1,16 +1,29 @@
 <?php
-namespace WPFlashNotes\BaseClasses;
+namespace WPFlashNotes\DataBase\Schema;
 
-class DbDeltaStrategy {
+defined( 'ABSPATH' ) || exit;
 
-	public function install(BaseTable $table): void {
+use WPFlashNotes\BaseClasses\BaseTable;
+
+class DbDeltaStrategy implements SchemaStrategyInterface {
+
+	public function install( BaseTable $table ): bool {
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 
-		$sql = $table->define_schema(); // expects SQL string
-		if (! is_string($sql) || trim($sql) === '') {
-			throw new \RuntimeException(get_class($table) . '::define_schema() must return a SQL string for DbDeltaStrategy.');
+		$sql = $table->define_dbdelta_schema();
+
+		if ( ! is_string( $sql ) || trim( $sql ) === '' ) {
+			throw new \RuntimeException(
+				get_class( $table ) . '::define_dbdelta_schema() must return a SQL string for DbDeltaStrategy.'
+			);
 		}
 
-		dbDelta($sql);
+		$result = dbDelta( $sql );
+
+		if ( is_array( $result ) ) {
+			return ! empty( $result );
+		}
+
+		return (bool) $result;
 	}
 }

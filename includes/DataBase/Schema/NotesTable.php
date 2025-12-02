@@ -2,7 +2,7 @@
 namespace WPFlashNotes\DataBase\Schema;
 
 use WPFlashNotes\BaseClasses\BaseTable;
-use WPFlashNotes\Schema\DbDeltaStrategy;
+use WPFlashNotes\DataBase\Schema\DbDeltaStrategy;
 
 defined('ABSPATH') || exit;
 
@@ -15,7 +15,7 @@ final class NotesTable extends BaseTable {
 		$this->strategy = new DbDeltaStrategy();
 	}
 
-	public function define_schema(mixed $builder = null): string {
+	public function define_dbdelta_schema(): string {
 		$table   = $this->get_table_name();
 		$charset = $this->get_charset_collate();
 
