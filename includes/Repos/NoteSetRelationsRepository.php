@@ -4,20 +4,21 @@ namespace WPFlashNotes\Repos;
 
 defined( 'ABSPATH' ) || exit;
 
-use Exception;
 use wpdb;
+use WPFlashNotes\Errors\WPFlashNotesError;
 
 /**
  * NoteSetRelationsRepository
  *
  * Table: {prefix}wpfn_note_set_relations
- * Columns / PK: (note_id BIGINT UNSIGNED, set_id BIGINT UNSIGNED) PRIMARY KEY(note_id,set_id)
- * FKs: note_id -> {prefix}wpfn_notes.id, set_id -> {prefix}wpfn_sets.id
+ * Composite PK: (note_id, set_id)
+ * - note_id → wpfn_notes.id
+ * - set_id  → wpfn_sets.id
  *
- * WHY NOT BaseRepository?
- * - BaseRepository is built around a single 'id' PK, optional soft deletes, and timestamp fields.
- * - This pivot uses a composite PK, has no timestamps/soft-delete, and needs idempotent attach/detach
- *   plus bulk/sync operations—cleaner with a dedicated repo.
+ * Not using BaseRepository because this pivot:
+ *  - has a composite PK
+ *  - has no timestamps or soft deletes
+ *  - requires idempotent attach/detach and sync operations
  */
 class NoteSetRelationsRepository {
 
@@ -30,7 +31,7 @@ class NoteSetRelationsRepository {
 		$this->table = $wpdb->prefix . 'wpfn_note_set_relations';
 	}
 
-	/** Idempotent link: (note_id, set_id). */
+	/** Idempotent link (note_id, set_id). */
 	public function attach( int $note_id, int $set_id ): bool {
 		$note_id = $this->validate_id( $note_id );
 		$set_id  = $this->validate_id( $set_id );
@@ -40,10 +41,14 @@ class NoteSetRelationsRepository {
 			$note_id,
 			$set_id
 		);
-        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+
 		$res = $this->wpdb->query( $sql );
 		if ( $res === false ) {
-			throw new Exception( 'Attach failed: ' . ( $this->wpdb->last_error ?: 'unknown DB error' ) );
+			throw new WPFlashNotesError(
+				'db',
+				'Attach failed: ' . ( $this->wpdb->last_error ?: 'unknown DB error' ),
+				500
+			);
 		}
 		return $res >= 0;
 	}
@@ -55,14 +60,16 @@ class NoteSetRelationsRepository {
 
 		$res = $this->wpdb->delete(
 			$this->table,
-			array(
-				'note_id' => $note_id,
-				'set_id'  => $set_id,
-			),
+			array( 'note_id' => $note_id, 'set_id' => $set_id ),
 			array( '%d', '%d' )
 		);
+
 		if ( $res === false ) {
-			throw new Exception( 'Detach failed: ' . ( $this->wpdb->last_error ?: 'unknown DB error' ) );
+			throw new WPFlashNotesError(
+				'db',
+				'Detach failed: ' . ( $this->wpdb->last_error ?: 'unknown DB error' ),
+				500
+			);
 		}
 		return $res > 0;
 	}
@@ -77,74 +84,116 @@ class NoteSetRelationsRepository {
 			$note_id,
 			$set_id
 		);
-        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+
 		return (bool) $this->wpdb->get_var( $sql );
 	}
 
 	/** @return int[] Notes in set. */
 	public function get_note_ids_for_set( int $set_id ): array {
 		$set_id = $this->validate_id( $set_id );
-		$sql    = $this->wpdb->prepare(
+
+		$sql  = $this->wpdb->prepare(
 			"SELECT note_id FROM {$this->table} WHERE set_id = %d ORDER BY note_id ASC",
 			$set_id
 		);
-        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		$rows = $this->wpdb->get_col( $sql );
+
+		if ( $rows === null && $this->wpdb->last_error ) {
+			throw new WPFlashNotesError(
+				'db',
+				'Failed to fetch note IDs: ' . $this->wpdb->last_error,
+				500
+			);
+		}
+
 		return array_map( 'intval', $rows ?: array() );
 	}
 
 	/** @return int[] Sets containing note. */
 	public function get_set_ids_for_note( int $note_id ): array {
 		$note_id = $this->validate_id( $note_id );
-		$sql     = $this->wpdb->prepare(
+
+		$sql  = $this->wpdb->prepare(
 			"SELECT set_id FROM {$this->table} WHERE note_id = %d ORDER BY set_id ASC",
 			$note_id
 		);
-        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		$rows = $this->wpdb->get_col( $sql );
+
+		if ( $rows === null && $this->wpdb->last_error ) {
+			throw new WPFlashNotesError(
+				'db',
+				'Failed to fetch set IDs: ' . $this->wpdb->last_error,
+				500
+			);
+		}
+
 		return array_map( 'intval', $rows ?: array() );
 	}
 
 	public function count_for_set( int $set_id ): int {
 		$set_id = $this->validate_id( $set_id );
 		$sql    = $this->wpdb->prepare( "SELECT COUNT(*) FROM {$this->table} WHERE set_id = %d", $set_id );
-        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-		return (int) $this->wpdb->get_var( $sql );
+
+		$count = $this->wpdb->get_var( $sql );
+		if ( $count === null && $this->wpdb->last_error ) {
+			throw new WPFlashNotesError(
+				'db',
+				'Count failed: ' . $this->wpdb->last_error,
+				500
+			);
+		}
+		return (int) $count;
 	}
 
 	public function count_for_note( int $note_id ): int {
 		$note_id = $this->validate_id( $note_id );
 		$sql     = $this->wpdb->prepare( "SELECT COUNT(*) FROM {$this->table} WHERE note_id = %d", $note_id );
-        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-		return (int) $this->wpdb->get_var( $sql );
+
+		$count = $this->wpdb->get_var( $sql );
+		if ( $count === null && $this->wpdb->last_error ) {
+			throw new WPFlashNotesError(
+				'db',
+				'Count failed: ' . $this->wpdb->last_error,
+				500
+			);
+		}
+		return (int) $count;
 	}
 
 	/** Bulk attach (idempotent). */
 	public function bulk_attach( int $set_id, array $note_ids ): int {
 		$set_id   = $this->validate_id( $set_id );
 		$note_ids = $this->normalize_ids( $note_ids );
+
 		if ( ! $note_ids ) {
 			return 0;
 		}
 
-		$inserted = 0;
+		$total = 0;
 		foreach ( array_chunk( $note_ids, 200 ) as $chunk ) {
 			$values = array();
 			$ph     = array();
+
 			foreach ( $chunk as $nid ) {
 				$values[] = $nid;
 				$values[] = $set_id;
 				$ph[]     = '(%d,%d)';
 			}
+
 			$sql = "INSERT IGNORE INTO {$this->table} (note_id,set_id) VALUES " . implode( ',', $ph );
-            // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 			$res = $this->wpdb->query( $this->wpdb->prepare( $sql, ...$values ) );
+
 			if ( $res === false ) {
-				throw new Exception( 'Bulk attach failed: ' . ( $this->wpdb->last_error ?: 'unknown DB error' ) );
+				throw new WPFlashNotesError(
+					'db',
+					'Bulk attach failed: ' . ( $this->wpdb->last_error ?: 'unknown DB error' ),
+					500
+				);
 			}
-			$inserted += (int) $res;
+
+			$total += (int) $res;
 		}
-		return $inserted;
+		return $total;
 	}
 
 	/** Sync to exactly $desired_note_ids for a set. */
@@ -165,10 +214,14 @@ class NoteSetRelationsRepository {
 					$set_id,
 					...$chunk
 				);
-                // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+
 				$res = $this->wpdb->query( $sql );
 				if ( $res === false ) {
-					throw new Exception( 'Sync remove failed: ' . ( $this->wpdb->last_error ?: 'unknown DB error' ) );
+					throw new WPFlashNotesError(
+						'db',
+						'Sync remove failed: ' . ( $this->wpdb->last_error ?: 'unknown DB error' ),
+						500
+					);
 				}
 			}
 		}
@@ -186,18 +239,26 @@ class NoteSetRelationsRepository {
 	public function clear_set( int $set_id ): int {
 		$set_id = $this->validate_id( $set_id );
 		$res    = $this->wpdb->delete( $this->table, array( 'set_id' => $set_id ), array( '%d' ) );
+
 		if ( $res === false ) {
-			throw new Exception( 'Clear set failed: ' . ( $this->wpdb->last_error ?: 'unknown DB error' ) );
+			throw new WPFlashNotesError(
+				'db',
+				'Clear set failed: ' . ( $this->wpdb->last_error ?: 'unknown DB error' ),
+				500
+			);
 		}
 		return (int) $res;
 	}
 
 	// Helpers
-
 	protected function validate_id( int $id ): int {
 		$id = absint( $id );
 		if ( $id <= 0 ) {
-			throw new Exception( 'ID must be a positive integer.' );
+			throw new WPFlashNotesError(
+				'validation',
+				'ID must be a positive integer.',
+				400
+			);
 		}
 		return $id;
 	}
