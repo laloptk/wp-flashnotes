@@ -2,19 +2,52 @@
 
 namespace WPFlashNotes\BaseClasses;
 
+/**
+ * BaseCPT
+ *
+ * Abstract base class for registering custom post types with
+ * reusable capability and labels logic.
+ */
 abstract class BaseCPT {
-	protected string $type;
-	protected string $singular_label;
-	protected string $plural_label;
-	protected string $textdomain = 'wp-flashnotes';
 
+	/**
+	 * CPT slug (non-translated).
+	 *
+	 * @var string
+	 */
+	protected string $type;
+
+	/**
+	 * Singular label (already translated in concrete class).
+	 *
+	 * @var string
+	 */
+	protected string $singular_label;
+
+	/**
+	 * Plural label (already translated in concrete class).
+	 *
+	 * @var string
+	 */
+	protected string $plural_label;
+
+	/**
+	 * BaseCPT constructor.
+	 *
+	 * Concrete classes must implement set_type(), set_singular(), set_plural()
+	 * and should call register() on 'init'.
+	 */
 	public function __construct() {
 		$this->type           = $this->set_type();
 		$this->singular_label = $this->set_singular();
 		$this->plural_label   = $this->set_plural();
 	}
 
-	/** Llamar en 'init' */
+	/**
+	 * Register the post type.
+	 *
+	 * Should be called on the 'init' hook.
+	 */
 	public function register(): void {
 		$base_args = array(
 			'labels'        => $this->labels(),
@@ -36,19 +69,51 @@ abstract class BaseCPT {
 		);
 
 		$final_args = array_replace_recursive( $base_args, $this->args() );
+
 		register_post_type( $this->type, $final_args );
 	}
 
+	/**
+	 * Return the CPT slug (non-translated).
+	 *
+	 * Example: 'studyset'.
+	 *
+	 * @return string
+	 */
 	abstract protected function set_type(): string;
+
+	/**
+	 * Return the singular label (already translated).
+	 *
+	 * Example: return __( 'Study Set', 'wp-flashnotes' );
+	 *
+	 * @return string
+	 */
 	abstract protected function set_singular(): string;
+
+	/**
+	 * Return the plural label (already translated).
+	 *
+	 * Example: return __( 'Study Sets', 'wp-flashnotes' );
+	 *
+	 * @return string
+	 */
 	abstract protected function set_plural(): string;
 
-	/** Ajustes específicos del CPT concreto */
+	/**
+	 * Per-CPT specific args merged into the base args.
+	 *
+	 * @return array
+	 */
 	protected function args(): array {
 		return array();
 	}
 
-	/** Capacidades por defecto en base al $type */
+	/**
+	 * Capabilities derived from the CPT type.
+	 *
+	 * @return array
+	 */
 	protected function capabilities(): array {
 		$singular_key = $this->type;
 		$plural_key   = $this->type . 's';
@@ -73,34 +138,77 @@ abstract class BaseCPT {
 		);
 	}
 
-	/** Labels genéricos traducibles */
+	/**
+	 * Generic labels.
+	 *
+	 * The singular and plural labels are already translated by the concrete class.
+	 *
+	 * @return array
+	 */
 	protected function labels(): array {
 		$singular = $this->singular_label;
 		$plural   = $this->plural_label;
 
 		return array(
-			'name'               => _x( $plural, 'Post type general name', $this->textdomain ),
-			'singular_name'      => _x( $singular, 'Post type singular name', $this->textdomain ),
-			'menu_name'          => $plural,
-			'name_admin_bar'     => $singular,
-			'add_new'            => __( 'Add New', $this->textdomain ),
-			'add_new_item'       => sprintf( __( 'Add New %s', $this->textdomain ), $singular ),
-			'new_item'           => sprintf( __( 'New %s', $this->textdomain ), $singular ),
-			'edit_item'          => sprintf( __( 'Edit %s', $this->textdomain ), $singular ),
-			'view_item'          => sprintf( __( 'View %s', $this->textdomain ), $singular ),
-			'all_items'          => sprintf( __( 'All %s', $this->textdomain ), $plural ),
-			'search_items'       => sprintf( __( 'Search %s', $this->textdomain ), $plural ),
-			'not_found'          => __( 'Not found', $this->textdomain ),
-			'not_found_in_trash' => __( 'Not found in Trash', $this->textdomain ),
+			// Singular/plural already translated in concrete class.
+			'name'           => $plural,
+			'singular_name'  => $singular,
+			'menu_name'      => $plural,
+			'name_admin_bar' => $singular,
+
+			// Generic literals with placeholders and translator comments.
+			'add_new' => __( 'Add New', 'wp-flashnotes' ),
+
+			'add_new_item' => sprintf(
+				/* translators: %s: post type singular label. */
+				__( 'Add New %s', 'wp-flashnotes' ),
+				$singular
+			),
+			'new_item' => sprintf(
+				/* translators: %s: post type singular label. */
+				__( 'New %s', 'wp-flashnotes' ),
+				$singular
+			),
+			'edit_item' => sprintf(
+				/* translators: %s: post type singular label. */
+				__( 'Edit %s', 'wp-flashnotes' ),
+				$singular
+			),
+			'view_item' => sprintf(
+				/* translators: %s: post type singular label. */
+				__( 'View %s', 'wp-flashnotes' ),
+				$singular
+			),
+			'all_items' => sprintf(
+				/* translators: %s: post type plural label. */
+				__( 'All %s', 'wp-flashnotes' ),
+				$plural
+			),
+			'search_items' => sprintf(
+				/* translators: %s: post type plural label. */
+				__( 'Search %s', 'wp-flashnotes' ),
+				$plural
+			),
+
+			'not_found'          => __( 'Not found', 'wp-flashnotes' ),
+			'not_found_in_trash' => __( 'Not found in Trash', 'wp-flashnotes' ),
 		);
 	}
 
-	/** Sembrar capacidades en un rol (usar en activation hook) */
+	/**
+	 * Seed capabilities into a given role.
+	 *
+	 * Intended for use on plugin activation.
+	 *
+	 * @param string $role_name Role name. Default 'administrator'.
+	 */
 	public function seedCapabilitiesToRole( string $role_name = 'administrator' ): void {
 		$role_object = get_role( $role_name );
+
 		if ( ! $role_object ) {
 			return;
 		}
+
 		foreach ( $this->capabilities() as $capability ) {
 			$role_object->add_cap( $capability );
 		}
