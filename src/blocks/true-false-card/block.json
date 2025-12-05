@@ -1,0 +1,86 @@
+{
+    "apiVersion": 3,
+    "name": "wpfn/true-false-card",
+    "title": "FlashNotes: True/False Card",
+    "category": "widgets",
+    "icon": "sticky",
+    "description": "Create a card with a true/false question type.",
+    "supports": {
+        "html": false,
+        "anchor": true
+    },
+    "attributes": {
+        "block_id": {
+            "type": "string"
+        },
+        "question": {
+            "type": "string",
+            "default": ""
+        },
+        "explanation": {
+            "type": "string",
+            "default": ""
+        },
+        "answers_json": {
+            "type": "array",
+            "default": []
+        },
+        "right_answers": {
+            "type": "array",
+            "default": []
+        },
+        "setIds": {
+            "type": "array",
+            "items": {
+                "type": "integer"
+            },
+            "default": []
+        },
+        "margin": {
+            "type": "object",
+            "default": {
+                "top": "1em",
+                "right": "0",
+                "bottom": "1em",
+                "left": "0"
+            }
+        },
+        "padding": {
+            "type": "object",
+            "default": {
+                "top": "15px",
+                "right": "15px",
+                "bottom": "15px",
+                "left": "15px"
+            }
+        },
+        "border": {
+            "type": "object",
+            "default": {
+                "color": "#ddd",
+                "style": "solid",
+                "width": "1px"
+            }
+        },
+        "borderRadius": {
+            "type": "object",
+            "default": {
+                "top": "25px",
+                "right": "25px",
+                "bottom": "25px",
+                "left": "25px"
+            }
+        },
+        "backgroundColor": {
+            "type": "string",
+            "default": "#fafafa"
+        },
+        "hidden": {
+            "type": "boolean",
+            "default": false
+        }
+    },
+    "editorScript": "wpfn-blocks",
+    "style": "file:../../style-index.css",
+    "editorStyle": "file:../../index.css"
+}
