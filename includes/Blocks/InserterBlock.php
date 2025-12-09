@@ -29,7 +29,7 @@ final class InserterBlock extends BaseBlock {
 
 		// Assemble markup
 		$markup  = $card['question'] ?? '';
-		$answers = json_decode( $card['answers_json'], true ) ?: array();
+		$answers = json_decode( $card['answers'], true ) ?: array();
 
 		foreach ( $answers as $answer ) {
 			$markup .= $answer;

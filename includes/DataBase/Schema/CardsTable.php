@@ -36,15 +36,15 @@ class CardsTable extends BaseTable {
 				block_id VARCHAR(128) DEFAULT NULL,
 				user_id BIGINT UNSIGNED NOT NULL DEFAULT 0,
 				question TEXT NOT NULL,
-				answers_json TEXT DEFAULT NULL,
-				right_answers_json TEXT DEFAULT NULL,
+				answers TEXT DEFAULT NULL,
+				right_answers TEXT DEFAULT NULL,
 				explanation TEXT DEFAULT NULL,
 				card_type ENUM(
 					'flip',
-					'true_false',
-					'multiple_choice',
-					'multiple_select',
-					'fill_in_blank'
+					'true-false',
+					'multiple-choice',
+					'multiple-select',
+					'fill-in-blank'
 				) NOT NULL DEFAULT 'flip',
 				status ENUM('active', 'orphan') NOT NULL DEFAULT 'active',
 				deleted_at DATETIME DEFAULT NULL,

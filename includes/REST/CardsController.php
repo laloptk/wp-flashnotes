@@ -151,7 +151,7 @@ class CardsController extends BaseController {
 				'where'  => [ 'user_id' => (int) $user_id ],
 				'search' => [
 					'question'     => $search_query,
-					'answers_json' => $search_query,
+					'answers' => $search_query,
 				],
 				'limit'  => absint( $req->get_param( 'per_page' ) ) ?: 20,
 				'offset' => absint( $req->get_param( 'offset' ) ) ?: 0,

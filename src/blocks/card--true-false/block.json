@@ -1,6 +1,6 @@
 {
     "apiVersion": 3,
-    "name": "wpfn/true-false-card",
+    "name": "wpfn/card--true-false",
     "title": "FlashNotes: True/False Card",
     "category": "widgets",
     "icon": "sticky",
@@ -13,6 +13,10 @@
         "block_id": {
             "type": "string"
         },
+        "card_type": {
+            "type": "string",
+            "default": "true_false"
+        },
         "question": {
             "type": "string",
             "default": ""
@@ -21,7 +25,7 @@
             "type": "string",
             "default": ""
         },
-        "answers_json": {
+        "answers": {
             "type": "array",
             "default": []
         },

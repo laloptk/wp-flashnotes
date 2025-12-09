@@ -7,7 +7,7 @@ use WPFlashNotes\BaseClasses\BaseBlock;
 final class CardBlock extends BaseBlock {
 
 	protected function get_block_folder_name(): string {
-		return 'card';
+		return 'card--flip';
 	}
 
 	public function render( $attributes, $content, $block ) {

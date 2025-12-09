@@ -1,6 +1,6 @@
 {
   "apiVersion": 3,
-  "name": "wpfn/card",
+  "name": "wpfn/card--flip",
   "title": "FlashNotes: Card",
   "category": "widgets",
   "icon": "sticky",
@@ -13,6 +13,10 @@
     "block_id": {
       "type": "string"
     },
+    "card_type": {
+      "type": "string",
+      "default": "flip"
+    },
     "question": {
       "type": "string",
       "default": ""
@@ -21,7 +25,7 @@
       "type": "string",
       "default": ""
     },
-    "answers_json": {
+    "answers": {
       "type": "array",
       "default": []
     },

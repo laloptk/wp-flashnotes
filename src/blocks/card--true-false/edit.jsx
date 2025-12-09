@@ -4,9 +4,10 @@ import {
 	store as blockEditorStore,
 	useBlockProps,
 	InnerBlocks,
+	InspectorControls,
 } from '@wordpress/block-editor';
 import { normalizeStyle } from '@wpfn/styles';
-import { Button } from '@wordpress/components';
+import { Button, PanelBody, RadioControl } from '@wordpress/components';
 import { v4 as uuidv4 } from 'uuid';
 import { normalizeText } from '../../utils';
 import {
@@ -25,8 +26,11 @@ export default function Edit( { clientId, attributes, setAttributes } ) {
 		borderRadius,
 		backgroundColor,
 		hidden,
+		right_answers,
+		card_type,
 	} = attributes;
 	const [ stage, setStage ] = useState( 0 );
+	const [ selectedAnswer, setSelectedAnswer ] = useState( null );
 	const nextStage = () => setStage( ( stage + 1 ) % 3 );
 
 	const style = {
@@ -38,16 +42,26 @@ export default function Edit( { clientId, attributes, setAttributes } ) {
 	};
 
 	const blockProps = useBlockProps( {
-		className: 'wpfn-card',
+		className: 'wpfn-card wpfn-true-false-question',
 		style,
 	} );
 
 	// Assign UUID once
 	useEffect( () => {
 		if ( ! block_id ) {
-			setAttributes( { block_id: uuidv4() } );
+			setAttributes( { 
+				block_id: uuidv4(),
+				card_type: "true_false" 
+			} );
 		}
 	}, [ block_id, setAttributes ] );
+
+	// Initialize right_answers if empty
+	useEffect( () => {
+		if ( ! right_answers || right_answers.length === 0 ) {
+			setAttributes( { right_answers: [ 'true' ] } );
+		}
+	}, [ right_answers, setAttributes ] );
 
 	// Observe direct children (slots)
 	const childBlocks = useSelect(
@@ -61,7 +75,6 @@ export default function Edit( { clientId, attributes, setAttributes } ) {
 		}
 
 		let nextQuestion = '';
-		let nextAnswers = [];
 		let nextExplanation = '';
 
 		childBlocks.forEach( ( child ) => {
@@ -71,8 +84,6 @@ export default function Edit( { clientId, attributes, setAttributes } ) {
 
 				if ( role === 'question' ) {
 					nextQuestion = normalizeText( raw );
-				} else if ( role === 'answer' ) {
-					nextAnswers = raw ? [ normalizeText( raw ) ] : [];
 				} else if ( role === 'explanation' ) {
 					nextExplanation = raw;
 				}
@@ -81,13 +92,10 @@ export default function Edit( { clientId, attributes, setAttributes } ) {
 
 		if (
 			nextQuestion !== attributes.question ||
-			JSON.stringify( nextAnswers ) !==
-				JSON.stringify( attributes.answers_json ) ||
 			nextExplanation !== attributes.explanation
 		) {
 			setAttributes( {
 				question: nextQuestion,
-				answers_json: nextAnswers,
 				explanation: nextExplanation,
 			} );
 		}
@@ -95,12 +103,42 @@ export default function Edit( { clientId, attributes, setAttributes } ) {
 		childBlocks,
 		setAttributes,
 		attributes.question,
-		attributes.answers_json,
 		attributes.explanation,
 	] );
 
+	const handleAnswerClick = ( answer ) => {
+		setSelectedAnswer( answer );
+		setStage( 1 ); // Move to answer stage
+	};
+
+	// Get the correct answer (first item in array for true/false)
+	const correctAnswer = right_answers && right_answers.length > 0 
+		? right_answers[ 0 ] 
+		: 'true';
+	
+	const isCorrect = selectedAnswer === correctAnswer;
+
+	// Handle radio control change - update array with single value
+	const handleCorrectAnswerChange = ( value ) => {
+		setAttributes( { right_answers: [ value ] } );
+	};
+
 	return (
 		<>
+			<InspectorControls>
+				<PanelBody title={ __( 'Question Settings', 'wpfn' ) }>
+					<RadioControl
+						label={ __( 'Correct Answer', 'wpfn' ) }
+						selected={ correctAnswer }
+						options={ [
+							{ label: __( 'True', 'wpfn' ), value: 'true' },
+							{ label: __( 'False', 'wpfn' ), value: 'false' },
+						] }
+						onChange={ handleCorrectAnswerChange }
+					/>
+				</PanelBody>
+			</InspectorControls>
+
 			<VisibilityControls
 				attributes={ attributes }
 				setAttributes={ setAttributes }
@@ -118,18 +156,59 @@ export default function Edit( { clientId, attributes, setAttributes } ) {
 				<InnerBlocks
 					template={ [
 						[ 'wpfn/slot', { role: 'question' } ],
-						[ 'wpfn/slot', { role: 'answer' } ],
 						[ 'wpfn/slot', { role: 'explanation' } ],
 					] }
 					allowedBlocks={ [ 'wpfn/slot' ] }
 					templateLock="all"
 				/>
+
+				{ stage === 0 && (
+					<div className="wpfn-true-false-options">
+						<button
+							className="wpfn-option-button wpfn-true-button"
+							onClick={ () => handleAnswerClick( 'true' ) }
+							type="button"
+						>
+							{ __( 'True', 'wpfn' ) }
+						</button>
+						<button
+							className="wpfn-option-button wpfn-false-button"
+							onClick={ () => handleAnswerClick( 'false' ) }
+							type="button"
+						>
+							{ __( 'False', 'wpfn' ) }
+						</button>
+					</div>
+				) }
+
+				{ stage === 1 && (
+					<div
+						className={ `wpfn-answer-feedback ${ 
+							isCorrect ? 'wpfn-correct' : 'wpfn-incorrect'
+						}` }
+					>
+						<p>
+							{ isCorrect
+								? __( 'Correct!', 'wpfn' )
+								: __( 'Incorrect!', 'wpfn' ) }
+						</p>
+						<p>
+							{ __( 'The correct answer is: ', 'wpfn' ) }
+							<strong>
+								{ correctAnswer === 'true'
+									? __( 'True', 'wpfn' )
+									: __( 'False', 'wpfn' ) }
+							</strong>
+						</p>
+					</div>
+				) }
+
 				<Button onClick={ nextStage }>
 					{ stage === 0
-						? 'Show Answer'
+						? __( 'Show Answer', 'wpfn' )
 						: stage === 1
-						? 'Show Explanation'
-						: 'Back to Question' }
+						? __( 'Show Explanation', 'wpfn' )
+						: __( 'Back to Question', 'wpfn' ) }
 				</Button>
 			</div>
 		</>
