@@ -68,6 +68,7 @@ class EventHandler {
 	 * @return array                 Result payload for REST response.
 	 */
 	public function generate_studyset_from_origin( int $origin_post_id, string $title, int $author_id, string $status = 'publish' ): array {
+		// Important to avoid infine loops with save_post hook
 		do_action( 'wpfn_button_transform_context_start' );
 
 		$existing_set_id = $this->propagation->get_studyset_for_origin_post( $origin_post_id );

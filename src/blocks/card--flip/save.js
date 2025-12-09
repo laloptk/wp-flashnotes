@@ -10,6 +10,7 @@ export default function save( { attributes } ) {
 		padding,
 		borderRadius,
 		backgroundColor,
+		card_type,
 	} = attributes;
 
 	const style = {
@@ -21,7 +22,7 @@ export default function save( { attributes } ) {
 	};
 
 	const blockProps = useBlockProps.save( {
-		className: 'wpfn-card',
+		className: `wpfn-card ${card_type}`,
 		'data-id': block_id,
 		'data-stage': stage,
 		style,

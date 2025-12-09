@@ -64,6 +64,7 @@ class DataPropagation {
 
 		foreach ( $blocks as $block ) {
 			if ( $block['object_type'] === 'card' ) {
+				//error_log("From the propagate function:" . json_encode($block));
 				$card_id = $this->cards->upsert_from_block( $block );
 
 				if ( $post->post_type === 'studyset' && absint( $set_id ) > 0 ) {

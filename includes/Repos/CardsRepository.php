@@ -56,12 +56,12 @@ class CardsRepository extends BaseRepository {
 					$sanitized['question'] = $question;
 					break;
 
-				case 'answers_json':
-					$sanitized['answers_json'] = self::normalize_json_field( $value );
+				case 'answers':
+					$sanitized['answers'] = self::normalize_json_field( $value );
 					break;
 
-				case 'right_answers_json':
-					$sanitized['right_answers_json'] = self::normalize_json_field( $value );
+				case 'right_answers':
+					$sanitized['right_answers'] = self::normalize_json_field( $value );
 					break;
 
 				case 'explanation':
@@ -73,7 +73,7 @@ class CardsRepository extends BaseRepository {
 					break;
 
 				case 'card_type':
-					$allowed_types = array( 'flip', 'true_false', 'multiple_choice', 'multiple_select', 'fill_in_blank' );
+					$allowed_types = array( 'flip', 'true-false', 'multiple-choice', 'multiple-select', 'fill-in-blank' );
 					if ( ! in_array( $value, $allowed_types, true ) ) {
 						throw new WPFlashNotesError(
 							'validation',
@@ -129,9 +129,9 @@ class CardsRepository extends BaseRepository {
 		return array(
 			'block_id'           => '%s',
 			'question'           => '%s',
-			'answers_json'       => '%s',
+			'answers'       	 => '%s',
 			'user_id'            => '%d',
-			'right_answers_json' => '%s',
+			'right_answers' 	 => '%s',
 			'explanation'        => '%s',
 			'card_type'          => '%s',
 			'status'             => '%s',
@@ -154,6 +154,7 @@ class CardsRepository extends BaseRepository {
 	public function upsert_from_block( array $block ): int {
 		$attrs   = $block['attrs'] ?? array();
 		$block_id = $attrs['block_id'] ?? $block['block_id'] ?? null;
+		$card_type = $block['card_type'] ?? '';
 
 		if ( empty( $block_id ) ) {
 			throw new WPFlashNotesError(
@@ -163,12 +164,15 @@ class CardsRepository extends BaseRepository {
 			);
 		}
 
+		error_log("This comes from the CardsRepository attrs: " . json_encode($attrs));
+
 		$data = array(
 			'block_id'           => $block_id,
 			'question'           => $attrs['question'] ?? '',
-			'answers_json'       => $attrs['answers_json'] ?? '[]',
-			'right_answers_json' => $attrs['right_answers_json'] ?? '[]',
+			'answers'            => $attrs['answers'] ?? '[]',
+			'right_answers'      => $attrs['right_answers'] ?? '[]',
 			'explanation'        => $attrs['explanation'] ?? null,
+			'card_type'			 => $card_type,
 			'user_id'            => get_current_user_id(),
 		);
 

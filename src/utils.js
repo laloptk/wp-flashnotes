@@ -30,7 +30,7 @@ export const assembleContent = ( item ) => {
 	? `<div class="role-question">${item.question}</div>`
 	: '';
 	try {
-		const answers = JSON.parse( item.answers_json || '[]' );
+		const answers = JSON.parse( item.answers || '[]' );
 		for ( const ans of answers ) {
 			out += ans ? `<div class="role-answer">${ ans }</div>` : '';
 		}

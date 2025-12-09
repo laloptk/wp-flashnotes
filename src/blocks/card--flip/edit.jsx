@@ -25,6 +25,7 @@ export default function Edit( { clientId, attributes, setAttributes } ) {
 		borderRadius,
 		backgroundColor,
 		hidden,
+		card_type,
 	} = attributes;
 	const [ stage, setStage ] = useState( 0 );
 	const nextStage = () => setStage( ( stage + 1 ) % 3 );
@@ -45,7 +46,10 @@ export default function Edit( { clientId, attributes, setAttributes } ) {
 	// Assign UUID once
 	useEffect( () => {
 		if ( ! block_id ) {
-			setAttributes( { block_id: uuidv4() } );
+			setAttributes( { 
+				block_id: uuidv4(),
+				card_type: "flip" 
+			} );
 		}
 	}, [ block_id, setAttributes ] );
 
@@ -82,12 +86,12 @@ export default function Edit( { clientId, attributes, setAttributes } ) {
 		if (
 			nextQuestion !== attributes.question ||
 			JSON.stringify( nextAnswers ) !==
-				JSON.stringify( attributes.answers_json ) ||
+				JSON.stringify( attributes.answers ) ||
 			nextExplanation !== attributes.explanation
 		) {
 			setAttributes( {
 				question: nextQuestion,
-				answers_json: nextAnswers,
+				answers: nextAnswers,
 				explanation: nextExplanation,
 			} );
 		}
@@ -95,7 +99,7 @@ export default function Edit( { clientId, attributes, setAttributes } ) {
 		childBlocks,
 		setAttributes,
 		attributes.question,
-		attributes.answers_json,
+		attributes.answers,
 		attributes.explanation,
 	] );
 

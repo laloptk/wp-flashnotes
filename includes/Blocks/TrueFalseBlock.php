@@ -4,10 +4,10 @@ namespace WPFlashNotes\Blocks;
 
 use WPFlashNotes\BaseClasses\BaseBlock;
 
-final class CardBlock extends BaseBlock {
+class TrueFalseBlock extends BaseBlock {
 
 	protected function get_block_folder_name(): string {
-		return 'card--flip';
+		return 'card--true-false';
 	}
 
 	public function render( $attributes, $content, $block ) {

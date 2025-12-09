@@ -5,7 +5,7 @@ use WPFlashNotes\Interfaces\BlockTransformStrategy;
 
 class CardBlockStrategy implements BlockTransformStrategy {
 	public function supports( array $block ): bool {
-		return ( $block['blockName'] ?? null ) === 'wpfn/card';
+		return isset($block['blockName']) && str_contains($block['blockName'], 'wpfn/card');
 	}
 
 	public function transform( array $block ): array {
