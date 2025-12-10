@@ -164,8 +164,6 @@ class CardsRepository extends BaseRepository {
 			);
 		}
 
-		error_log("This comes from the CardsRepository attrs: " . json_encode($attrs));
-
 		$data = array(
 			'block_id'           => $block_id,
 			'question'           => $attrs['question'] ?? '',
@@ -188,6 +186,35 @@ class CardsRepository extends BaseRepository {
 
 	public function get_by_block_id( string $block_id ): ?array {
 		return $this->get_by_column( 'block_id', $block_id, 1 );
+	}
+
+	public function get_right_answers_by_block_id( string $card_block_id ): array {
+		$table_name = $this->get_table_name();
+
+		$sql = $this->wpdb->prepare(
+			"SELECT id, card_type, right_answers
+			FROM {$table_name}
+			WHERE block_id = %s
+			LIMIT 1",
+			$card_block_id
+		);
+
+		$row = $this->wpdb->get_row( $sql, ARRAY_A );
+
+		if ( empty( $row ) ) {
+			return array();
+		}
+
+		$right_answers = json_decode( $row['right_answers'], true );
+		if ( ! is_array( $right_answers ) ) {
+			$right_answers = array();
+		}
+
+		return array(
+			'id'            => (int) $row['id'],
+			'card_type'     => $row['card_type'],
+			'right_answers' => $right_answers,
+		);
 	}
 
 	private static function normalize_json_field( $value ): ?string {
