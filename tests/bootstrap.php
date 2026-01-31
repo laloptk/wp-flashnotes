@@ -5,11 +5,6 @@
  * @package WPFlashNotes
  */
 
-// 1) Flag to let the plugin disable side-effect hooks during tests bootstrap.
-if ( ! defined( 'WPFN_TESTING' ) ) {
-	define( 'WPFN_TESTING', true );
-}
-
 // 2) Locate the WP test suite (wordpress-tests-lib).
 $_tests_dir = getenv( 'WP_TESTS_DIR' );
 
@@ -61,14 +56,12 @@ tests_add_filter(
 			require_once $autoload;
 		}
 
+		$db_service = new \WPFlashNotes\Services\DatabaseService();
+        $db_service->install_schema();
+
 		require $plugin_main;
 	}
 );
 
 // 8) Bootstrap the WordPress testing environment.
 require "{$_tests_dir}/includes/bootstrap.php";
-
-// 9) Flag to let the system know bootstrap finished setting this up
-if ( ! defined( 'WPFN_TESTING_BOOTSTRAP_FINISHED' ) ) {
-	define( 'WPFN_TESTING_BOOTSTRAP_FINISHED', true );
-}
