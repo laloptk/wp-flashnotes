@@ -17,17 +17,12 @@ class BlockFormatter {
 		return array_values(
 			array_filter(
 				$blocks,
-				fn ( $block ) => in_array(
-					$block['blockName'] ?? '',
-					array( 
-						'wpfn/note', 
-						'wpfn/card--flip', 
-						'wpfn/inserter', 
-						'wpfn/note-inserter', 
-						'wpfn/card--true-false'
-					),
-					true
-				)
+				function ( $block ) {
+					$name = $block['blockName'] ?? '';
+					// Match any wpfn/card-* blocks or specific note blocks
+					return str_starts_with($name, 'wpfn/card-') 
+						|| in_array($name, ['wpfn/note', 'wpfn/inserter', 'wpfn/note-inserter'], true);
+				}
 			)
 		);
 	}
@@ -46,7 +41,7 @@ class BlockFormatter {
 				continue;
 			}
 
-			$is_card = isset($block['blockName']) && str_contains($block['blockName'], 'wpfn/card');
+			$is_card = isset($block['blockName']) && str_starts_with($block['blockName'], 'wpfn/card-');
 
 			$data = array(
 				'object_type' => $is_card === true ? 'card' : 'note',
@@ -55,10 +50,20 @@ class BlockFormatter {
 				'attrs'       => $attrs,
 			);
 
-			if($is_card === true) {
-				$card_name_parts = explode("--", $block['blockName']);
-				$card_type = $card_name_parts[1] ?? "";
-				$data["card_type"] = $card_type;
+			if ( $is_card === true ) {
+				// Extract card type from block name: wpfn/card-flip -> flip
+				$type_raw = str_replace('wpfn/card-', '', $block['blockName']);
+				
+				// Map block name to database ENUM format
+				$type_mapping = array(
+					'flip'           => 'flip',
+					'truefalse'      => 'true-false',
+					'multiplechoice' => 'multiple-choice',
+					'multipleselect' => 'multiple-select',
+					'fillinblank'    => 'fill-in-blank',
+				);
+				
+				$data["card_type"] = $type_mapping[$type_raw] ?? $type_raw;
 			}
 			
 			$result[] = $data;
