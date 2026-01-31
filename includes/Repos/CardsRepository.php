@@ -164,8 +164,6 @@ class CardsRepository extends BaseRepository {
 			);
 		}
 
-		error_log("This comes from the CardsRepository attrs: " . json_encode($attrs));
-
 		$data = array(
 			'block_id'           => $block_id,
 			'question'           => $attrs['question'] ?? '',
