@@ -1,6 +1,5 @@
 <?php
-require_once __DIR__ . '/BaseTestCase.php';
-class BaseTestCaseTest extends BaseTestCase
+class BaseTestCaseTest extends WP_UnitTestCase
 {
 
 	/**
