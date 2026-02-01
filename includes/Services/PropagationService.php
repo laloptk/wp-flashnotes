@@ -26,13 +26,8 @@ defined('ABSPATH') || exit;
  * This class replaces the old `includes/DataBase/bootstrap.php` logic.
  */
 final class PropagationService implements ServiceInterface {
-
-	/**
-	 * Registers hooks.
-	 * This ensures that propagation is initialized after CPTs and REST.
-	 */
 	public function register(): void {
-		add_action('init', [ $this, 'bootstrap' ], 20);
+		$this->bootstrap();
 	}
 
 	/**
