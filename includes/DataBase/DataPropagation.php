@@ -64,7 +64,6 @@ class DataPropagation {
 
 		foreach ( $blocks as $block ) {
 			if ( $block['object_type'] === 'card' ) {
-				//error_log("From the propagate function:" . json_encode($block));
 				$card_id = $this->cards->upsert_from_block( $block );
 
 				if ( $post->post_type === 'studyset' && absint( $set_id ) > 0 ) {
@@ -170,21 +169,59 @@ class DataPropagation {
 		}
 	}
 
-	public function tag_as_orphan( $block ) {
-		if ( $block['object_type'] === 'inserter' ) {
+	public function tag_as_orphan( $block ): void {
+		$object_type = $block['object_type'] ?? null;
+		$attrs       = $block['attrs'] ?? array();
+
+		// For inserters, prefer canonical source block_id from attrs; DB rows already use block_id directly.
+		if ( $object_type === 'inserter' ) {
+			$canonical_block_id = $attrs['card_block_id'] ?? $attrs['note_block_id'] ?? $block['block_id'] ?? null;
+		} else {
+			$canonical_block_id = $block['block_id'] ?? null;
+		}
+
+		if ( empty( $canonical_block_id ) ) {
 			return;
 		}
 
-		$related_in_db = $this->usage->get_relationships_by_column( 'block_id', $block['block_id'] );
-		$repo          = $block['object_type'] === 'card' ? $this->cards : $this->notes;
-		$flashnote     = $repo->get_by_column( 'block_id', $block['block_id'], 1 );
+		$related_in_db = $this->usage->get_relationships_by_column( 'block_id', $canonical_block_id );
+		if ( count( $related_in_db ) > 0 ) {
+			return;
+		}
 
-		if ( count( $related_in_db ) === 0 && ! empty( $flashnote ) ) {
-			$repo->update( $flashnote['id'], array( 'status' => 'orphan' ) );
+		if ( $object_type === 'card' ) {
+			$flashnote = $this->cards->get_by_column( 'block_id', $canonical_block_id, 1 );
+			if ( ! empty( $flashnote ) ) {
+				$this->cards->update( $flashnote['id'], array( 'status' => 'orphan' ) );
+			}
+			return;
+		}
+
+		if ( $object_type === 'note' ) {
+			$flashnote = $this->notes->get_by_column( 'block_id', $canonical_block_id, 1 );
+			if ( ! empty( $flashnote ) ) {
+				$this->notes->update( $flashnote['id'], array( 'status' => 'orphan' ) );
+			}
+			return;
+		}
+
+		// Inserter can target either cards or notes.
+		if ( $object_type === 'inserter' ) {
+			$card = $this->cards->get_by_column( 'block_id', $canonical_block_id, 1 );
+			if ( ! empty( $card ) ) {
+				$this->cards->update( $card['id'], array( 'status' => 'orphan' ) );
+				return;
+			}
+
+			$note = $this->notes->get_by_column( 'block_id', $canonical_block_id, 1 );
+			if ( ! empty( $note ) ) {
+				$this->notes->update( $note['id'], array( 'status' => 'orphan' ) );
+			}
 		}
 	}
 
 	public function tag_as_active( array $block ): void {
+
 		if ( $block['object_type'] !== 'inserter' ) {
 			return;
 		}
