@@ -247,17 +247,34 @@ class LearningModeTest extends WP_UnitTestCase {
             $this->assertSame('orphan', $card->status);
         }
 
-        $parsed = WPFlashNotes\Helpers\BlockFormatter::parse_raw( $post_content );
+        $target_block_id = $ids[0];
+        $target_card = $wpdb->get_row(
+            $wpdb->prepare(
+                "SELECT id, block_id FROM {$table_name} WHERE block_id=%s",
+                $target_block_id
+            )
+        );
 
-        $transformed_blocks = wpfn_transform_cards_to_inserters( $parsed );
+        $this->assertNotNull( $target_card, 'Target orphan card should exist before inserter reinsertion.' );
 
-        $post_content = WPFlashNotes\Helpers\BlockFormatter::serialize( $transformed_blocks );
+        $inserter_block = wpfn_block(
+            'wpfn/inserter',
+            array(
+                'object_type'   => 'card',
+                'id'            => (string) $target_card->id,
+                'block_id'      => wp_generate_uuid4(),
+                'card_block_id' => $target_card->block_id,
+            )
+        );
 
-        error_log($post_content);
+        $post_content = WPFlashNotes\Helpers\BlockFormatter::serialize( array( $inserter_block ) );
 
-        $this->factory->post->update_object($post_id, array(
-            'post_content' => $post_content
-        ));
+        $this->factory->post->update_object(
+            $post_id,
+            array(
+                'post_content' => $post_content,
+            )
+        );
 
         $results = $wpdb->get_results(
             $wpdb->prepare( $sql, ...$ids )
@@ -270,7 +287,8 @@ class LearningModeTest extends WP_UnitTestCase {
                 $wpdb->prepare("SELECT * FROM {$table_name} WHERE block_id=%s", $id)
             );
 
-            $this->assertSame('active', $card->status);
+            $expected_status = $id === $target_block_id ? 'active' : 'orphan';
+            $this->assertSame( $expected_status, $card->status );
         }
     }
 }
