@@ -41,10 +41,13 @@ class BlockFormatter {
 				continue;
 			}
 
-			$is_card = isset($block['blockName']) && str_starts_with($block['blockName'], 'wpfn/card-');
+			$block_name  = $block['blockName'] ?? '';
+			$is_card     = is_string( $block_name ) && str_starts_with( $block_name, 'wpfn/card-' );
+			$is_inserter = in_array( $block_name, array( 'wpfn/inserter', 'wpfn/note-inserter' ), true );
+			$object_type = $is_card ? 'card' : ( $is_inserter ? 'inserter' : 'note' );
 
 			$data = array(
-				'object_type' => $is_card === true ? 'card' : 'note',
+				'object_type' => $object_type,
 				'object_id'   => $attrs['id'] ?? null,
 				'block_id'    => $block_id,
 				'attrs'       => $attrs,
