@@ -17,7 +17,8 @@
     "plugin-zip": "wp-scripts plugin-zip",
     "start": "wp-scripts start",
     "test:e2e": "wp-scripts test-e2e",
-    "test:unit": "wp-scripts test-unit-js"
+    "test:unit": "wp-scripts test-unit-js",
+    "test:unit:watch": "wp-scripts test-unit-js --watch"
   },
   "dependencies": {
     "isomorphic-dompurify": "^2.26.0"

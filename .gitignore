@@ -11,6 +11,9 @@
 # Debugging files
 *.log
 *.error_log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
 # IDE/Editor files
 *.swp
@@ -23,10 +26,7 @@
 Thumbs.db
 
 # WordPress debug file
-wp-content/debug.log
-
-# Plugin-specific build artifacts (e.g., minified files)
-wp-content/plugins/wp-flashnotes/build/
+debug.log
 
 # Backup files
 *.bak
@@ -36,3 +36,13 @@ wp-content/plugins/wp-flashnotes/build/
 /phpunit.xml            # personal overrides, keep phpunit.xml.dist committed
 /.phpunit.result.cache
 /tests/_output/         # if you ever use Codeception or generate logs
+
+# Frontend/tooling caches
+.eslintcache
+coverage/
+*.cache
+
+# Local environment files
+.env
+.env.*
+!.env.example

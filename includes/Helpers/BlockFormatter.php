@@ -17,17 +17,12 @@ class BlockFormatter {
 		return array_values(
 			array_filter(
 				$blocks,
-				fn ( $block ) => in_array(
-					$block['blockName'] ?? '',
-					array( 
-						'wpfn/note', 
-						'wpfn/card--flip', 
-						'wpfn/inserter', 
-						'wpfn/note-inserter', 
-						'wpfn/card--true-false'
-					),
-					true
-				)
+				function ( $block ) {
+					$name = $block['blockName'] ?? '';
+					// Match any wpfn/card-* blocks or specific note blocks
+					return str_starts_with($name, 'wpfn/card-') 
+						|| in_array($name, ['wpfn/note', 'wpfn/inserter', 'wpfn/note-inserter'], true);
+				}
 			)
 		);
 	}
@@ -46,19 +41,32 @@ class BlockFormatter {
 				continue;
 			}
 
-			$is_card = isset($block['blockName']) && str_contains($block['blockName'], 'wpfn/card');
+			$block_name  = $block['blockName'] ?? '';
+			$is_card     = is_string( $block_name ) && str_starts_with( $block_name, 'wpfn/card-' );
+			$is_inserter = in_array( $block_name, array( 'wpfn/inserter', 'wpfn/note-inserter' ), true );
+			$object_type = $is_card ? 'card' : ( $is_inserter ? 'inserter' : 'note' );
 
 			$data = array(
-				'object_type' => $is_card === true ? 'card' : 'note',
+				'object_type' => $object_type,
 				'object_id'   => $attrs['id'] ?? null,
 				'block_id'    => $block_id,
 				'attrs'       => $attrs,
 			);
 
-			if($is_card === true) {
-				$card_name_parts = explode("--", $block['blockName']);
-				$card_type = $card_name_parts[1] ?? "";
-				$data["card_type"] = $card_type;
+			if ( $is_card === true ) {
+				// Extract card type from block name: wpfn/card-flip -> flip
+				$type_raw = str_replace('wpfn/card-', '', $block['blockName']);
+				
+				// Map block name to database ENUM format
+				$type_mapping = array(
+					'flip'           => 'flip',
+					'truefalse'      => 'true-false',
+					'multiplechoice' => 'multiple-choice',
+					'multipleselect' => 'multiple-select',
+					'fillinblank'    => 'fill-in-blank',
+				);
+				
+				$data["card_type"] = $type_mapping[$type_raw] ?? $type_raw;
 			}
 			
 			$result[] = $data;

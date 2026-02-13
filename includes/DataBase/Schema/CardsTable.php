@@ -39,13 +39,7 @@ class CardsTable extends BaseTable {
 				answers TEXT DEFAULT NULL,
 				right_answers TEXT DEFAULT NULL,
 				explanation TEXT DEFAULT NULL,
-				card_type ENUM(
-					'flip',
-					'true-false',
-					'multiple-choice',
-					'multiple-select',
-					'fill-in-blank'
-				) NOT NULL DEFAULT 'flip',
+				card_type ENUM('flip', 'true-false', 'multiple-choice', 'multiple-select', 'fill-in-blank') NOT NULL DEFAULT 'flip',
 				status ENUM('active', 'orphan') NOT NULL DEFAULT 'active',
 				deleted_at DATETIME DEFAULT NULL,
 				created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

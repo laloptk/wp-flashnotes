@@ -7,7 +7,7 @@ use WPFlashNotes\BaseClasses\BaseBlock;
 class TrueFalseBlock extends BaseBlock {
 
 	protected function get_block_folder_name(): string {
-		return 'card--true-false';
+		return 'card-truefalse';
 	}
 
 	public function render( $attributes, $content, $block ) {

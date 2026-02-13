@@ -12,7 +12,7 @@ use WPFlashNotes\Errors\WPFlashNotesError;
  *
  * CRUD for the wpfn_cards table (flexible card types).
  * - Supports partial updates (sanitize_data() only validates provided fields).
- * - Stores answers and right answers as normalized JSON strings (LONGTEXT).
+ * - Stores answers and right answers as normalized JSON strings.
  * - Includes a helper to record review results (simple SM-2-ish).
  */
 class CardsRepository extends BaseRepository {
@@ -163,8 +163,6 @@ class CardsRepository extends BaseRepository {
 				400
 			);
 		}
-
-		error_log("This comes from the CardsRepository attrs: " . json_encode($attrs));
 
 		$data = array(
 			'block_id'           => $block_id,
